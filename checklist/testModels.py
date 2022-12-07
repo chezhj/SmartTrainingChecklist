@@ -6,10 +6,8 @@ from checklist.models import Procedure
 
 class testCheckItem(TestCase):
 
-  
-
     def setUp(self) :
-        defaultProcedure = Procedure.objects.create(title="precedure one", step=1)
+        defaultProcedure = Procedure.objects.create(title="procedure one", step=1)
         CheckItem.objects.create(item="item one", procedure = defaultProcedure , step=3)
         CheckItem.objects.create(item="item two", procedure = defaultProcedure , step=1)
         CheckItem.objects.create(item="item three", procedure = defaultProcedure , step=5)
@@ -22,7 +20,19 @@ class testCheckItem(TestCase):
 
     def test_strCheckItem(self):
         item=CheckItem.objects.get(item="item three")
-        self.assertEqual(str(item),item.item)
+        self.assertEqual(str(item),item.item)   
+
+class testProcedure(TestCase): 
+
+    def setUp(self) :
+        defaultProcedure = Procedure.objects.create(title="procedure one", step=1)
+        CheckItem.objects.create(item="item one", procedure = defaultProcedure , step=3)
+        CheckItem.objects.create(item="item two", procedure = defaultProcedure , step=1)
+        CheckItem.objects.create(item="item three", procedure = defaultProcedure , step=5)
+
+    def test_strProcedure(self):
+        proc=Procedure.objects.get(title="procedure one")
+        self.assertEqual(str(proc),proc.title)
         
 
        
