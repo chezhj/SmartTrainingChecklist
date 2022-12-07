@@ -1,0 +1,94 @@
+.styled-text {
+    font-family: sans-serif;
+}
+
+.styled-table {
+    border-collapse: collapse;
+    margin: 25px 0;
+    font-size: 0.9em;
+    font-family: sans-serif;
+    min-width: 400px;
+    color: #14816b;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+}
+
+.styled-table thead tr {
+    background-color: #009879;
+    color: #ffffff;
+    text-align: left;
+}
+
+.styled-table th,
+.styled-table td {
+    padding: 9px 22px;
+}
+
+.styled-table tbody tr {
+    border-bottom: 1px solid #dddddd;
+}
+
+
+.styled-table tbody tr.checked-row {
+    background-color: #d4eee9;
+    color: #06bb97;
+}
+.styled-table tbody tr:last-of-type {
+    border-bottom: 2px solid #009879;
+}
+.styled-table tbody tr.active-row {
+
+    text-shadow:  0 0 1px rgb(0, 0, 0);
+    color: #010504;
+}
+
+.btn {  
+    font-family:  sans-serif;
+    text-align: center;
+    font-size: 12px;
+    color: #51739d;
+    background-color: #d4eee9;
+    border-radius: 3px;
+    width: 15%;
+    padding: 10px 0;
+    border: 1px solid #afafaf;
+}
+
+.btn:hover {
+    background-color: #4b6d5cb2;
+    color: #ffffff;
+}
+
+.btn-right {
+    float: right;
+}
+.btn-left {
+    float: left;
+}
+
+.cl-tag {
+    background-color: #4b6d5cb2 ;
+    color: #fff;
+    border-radius: 8px;
+    display: inline-block;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    padding-left: 8px;
+    padding-right: 8px;
+    text-align: center;
+    font-weight: normal;
+  }
+  .cl-tag-optional {
+    background-color: #7a7a79b2 ;
+  }
+  .cl-tag-NoActionNeed {
+    background-color: #4269d1b2 ;
+  }
+  .cl-tag-Online {
+    background-color: #a32b3fb2 ;
+  }
+  .cl-taglist {
+        padding-left: 0;
+        list-style: none;
+        margin-bottom: 0;
+        margin-left: -5px;
+  }

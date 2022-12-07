@@ -1,0 +1,21 @@
+[run]
+source = .
+omit =
+   */settings.py
+   */local_settings.py
+   */tests/*
+   *apps.py
+   *migrations/*
+   *asgi.py
+   *wsgi.py
+
+   *__init__*
+   */__pycache__/*
+   */static/*
+   */templates/*
+
+
+[report]
+#fail_under = 100
+show_missing = True
+#skip_covered = True

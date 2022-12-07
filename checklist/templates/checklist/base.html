@@ -1,0 +1,23 @@
+<html>
+<head>
+    <title></title>
+</head>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}geen titel{% endblock %}</title>
+</head>
+{% load static %}
+<link rel="stylesheet" type="text/css" href="{% static 'checklist/style.css' %}">
+
+{% block script %}
+{% endblock %}
+<body>
+    <div id="content" name="content">
+	{% block content %}
+	{% endblock %}
+    </div>
+
+</body>
+</html>

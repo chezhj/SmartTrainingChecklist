@@ -1,0 +1,44 @@
+{% extends 'checklist/base.html' %}
+{% block title %}
+Profile
+{% endblock %}
+{% block content %}
+
+<div style="width:fit-content" >
+<form action="{% url 'checklist:update_profile' %}" method="post">
+    {% csrf_token %}
+    <fieldset style="border:0">
+        <legend><h1>Specify session profile</h1></legend>
+
+        {% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
+        <table id="Table1" class="styled-table">
+            <thead>
+                <tr>
+                    <th>Check</th>
+                    <th>Profile attribute</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for check in attributes.all %}
+                <tr><td>
+                <input type="checkbox" name="attributes" id="{{ forloop.counter }}" value="{{ check.id }}" 
+                {% if profile in check.sessionprofile_set.all %}
+                    CHECKED/>
+                {% else %} 
+                    />   
+                {% endif %}
+                </td>
+                
+                <td><label for="{{ forloop.counter }}">{{ check.title }}</label></td>
+                <td><label for="{{ forloop.counter }}">{{ check.description }}</label></td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </fieldset>
+    <div style="text-align:right;">
+        <input class="btn" type="submit" value="Next">
+    </div>
+    </form>
+</div>
+{% endblock %}

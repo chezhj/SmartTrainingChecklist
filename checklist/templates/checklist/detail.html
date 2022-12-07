@@ -1,0 +1,73 @@
+{% extends 'checklist/base.html' %}
+{% block title %}
+Procedure details
+{% endblock %}
+
+{% block script %}    
+<script type="text/javascript">
+    function GetSelected() {
+        //Reference the Table.
+        console.info("enter")
+        var grid = document.getElementById("Table1");
+
+        //Reference the CheckBoxes in Table.
+        var checkBoxes = grid.getElementsByClassName("clCheckBox");
+        //Loop through the CheckBoxes.
+        for (var i = 0; i < checkBoxes.length; i++) {
+            
+            if (checkBoxes[i].checked) {
+                checkBoxes[i].parentElement.parentElement.setAttributeNS(null, 'class', 'checked-row')
+                var lastChecked=i
+                
+            } else {
+                checkBoxes[i].parentElement.parentElement.setAttributeNS(null, 'class', '')
+            }
+        }
+        checkBoxes[lastChecked+1].parentElement.parentElement.classList.add("active-row")
+    }
+</script>
+{% endblock %}
+
+{% block content %}
+<h1 class="styled-text">{{ procedure.title }}</h1>
+
+<div style="width:fit-content" >
+<table id="Table1" class="styled-table">
+    <thead>
+        <tr>
+            <th>Done</th>
+            <th>Item</th>
+            <th>Check</th>
+            <th>attributes</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in check_items %}
+            
+            {% if forloop.counter == 1 %}
+                <tr  name="row{{ forloop.counter }}" class = "active-row">
+            {% else %}
+                <tr name="row{{ forloop.counter }}">
+            {% endif %}
+            <td><input type="checkbox" name="name{{ item.id }}" class="clCheckBox" onclick="GetSelected()"/></td>
+            <td>{{ item.item }}</td>
+            <td>{{ item.setting}}</td>
+            <td>
+            <ul class="cl-taglist">
+            {% for attrib in item.attributes.all %}
+                {% include 'checklist\attrib_detail.html' %}    
+            {% endfor %}
+            </ul>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<a class="btn btn-left" href="javascript:history.back()">Go Back</a>
+{% if nextproc %}
+<div > <a class="btn btn-right" href=" {% url 'checklist:detail' nextproc.slug %} ">Next</a></div>
+
+</div>
+{% endif %}
+
+{% endblock %}
