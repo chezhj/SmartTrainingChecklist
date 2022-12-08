@@ -63,8 +63,6 @@ class IndexView(generic.ListView):
 def profile_view(request):
     profile2view= get_object_or_404(SessionProfile.objects.all(), pk=1)
     attributes=Attribute.objects.order_by('order')
-    for attr in attributes:
-        print(attr.sessionprofile_set.all())
             
     return TemplateResponse(request,'checklist/profile.html', {'profile':profile2view, 'attributes':attributes})
 

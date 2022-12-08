@@ -13,7 +13,7 @@ Main check page
     </thead>
     <tbody>
         {% for proc in procedure_list %}
-        <tr><td>{{ forloop.counter }}</td><td><a href="{% url 'checklist:detail' proc.slug %}">{{ proc.title }}</a></td></tr>
+            <tr><td>{{ forloop.counter }}</td><td><a href="{{ proc.get_absolute_url }} "</a>{{ proc.title }}</td></tr>
     {% endfor %}
     </tbody>
 </table>

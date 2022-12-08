@@ -14,7 +14,8 @@ class Procedure(models.Model):
         return self.title
 
     def get_absolute_url(self):
-        return reverse("procedure_detail", kwargs={"slug": self.slug})
+        return reverse("checklist:detail", kwargs={"slug": self.slug})
+        
 
 class CheckItem(models.Model):
     item = models.CharField(max_length=50)
