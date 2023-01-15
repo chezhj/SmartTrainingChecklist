@@ -16,11 +16,13 @@
     background-color: #009879;
     color: #ffffff;
     text-align: left;
+    cursor: pointer;
 }
 
 .styled-table th,
 .styled-table td {
     padding: 9px 22px;
+    cursor: pointer;
 }
 
 .styled-table tbody tr {

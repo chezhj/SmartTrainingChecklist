@@ -15,6 +15,8 @@ def procedure_detail(request,slug):
     tStart = time()
     procedure2view= get_object_or_404(Procedure.objects.all(), slug=slug)
     nextproc=Procedure.objects.filter(step__gt=procedure2view.step).order_by('step').first()
+    prevproc=Procedure.objects.filter(step__lt=procedure2view.step).order_by('step').last()
+    
     profile2view= get_object_or_404(SessionProfile.objects.all(), pk=1)
     if profile2view.attributes.filter(pk=3).count()==0 :
         selected_item_id=procedure2view.checkitem_set.filter(attributes__in=profile2view.attributes.all()
@@ -36,7 +38,7 @@ def procedure_detail(request,slug):
     #| procedure2view.checkitem_set.filter(attributes__isnull=True)
     tFinish=time()
     print(f"Procedure-detail:  {tFinish - tStart}")
-    return TemplateResponse(request,'checklist/detail.html', {'procedure':procedure2view, 'check_items':check_items, 'nextproc':nextproc})
+    return TemplateResponse(request,'checklist/detail.html', {'procedure':procedure2view, 'check_items':check_items, 'nextproc':nextproc,'prevproc':prevproc, })
 
 
 """ q = Model.objects.filter(...)...
