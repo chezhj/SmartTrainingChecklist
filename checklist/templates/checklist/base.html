@@ -13,11 +13,17 @@
 
 {% block script %}
 {% endblock %}
-<body>
-    <div id="content" name="content">
+<body class="body">
+    <div class="content" id="content" name="content">
 	{% block content %}
 	{% endblock %}
     </div>
-
+    <div class="footer">
+        <p>Made by: ChezHJ<br>
+            {% block footer %}
+            {% endblock %}
+        </p>
+    </div>
+      
 </body>
 </html>

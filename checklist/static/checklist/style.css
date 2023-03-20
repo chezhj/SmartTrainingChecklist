@@ -1,5 +1,6 @@
 .styled-text {
     font-family: sans-serif;
+    width: fit-content;
 }
 
 .styled-table {
@@ -16,14 +17,17 @@
     background-color: #009879;
     color: #ffffff;
     text-align: left;
-    cursor: pointer;
 }
 
 .styled-table th,
 .styled-table td {
     padding: 9px 22px;
+}
+
+.text-cel td {
     cursor: pointer;
 }
+
 
 .styled-table tbody tr {
     border-bottom: 1px solid #dddddd;
@@ -93,4 +97,34 @@
         list-style: none;
         margin-bottom: 0;
         margin-left: -5px;
+  }
+  .footer {
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    background-color: rgb(212, 238, 233);
+    color: rgb(11, 11, 11);
+    text-align: center;
+    height: 70px;
+    position:absolute; 
+    right:0px; 
+    overflow:hidden;
+  }
+
+  .body {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    overflow:auto;
+   }
+
+  .content {
+    position:absolute;
+    top: 1px;
+    bottom:70px; 
+    left:20px; 
+    right:0px; 
+    overflow:auto;
+    margin-bottom: 20px;
+
   }

@@ -27,6 +27,17 @@ class CheckItem(models.Model):
     def __str__(self) -> str:
         return self.item
 
+    def shouldshow(self,profile):
+        profattr=profile.attributes.all()
+        attributes=self.attributes.all()
+        if attributes:
+            # if the checkitem attributes match all profile attributes, then shouldshow=true 
+            sel_attributes=attributes.intersection(profattr)
+            return (sel_attributes.count()==attributes.count())
+        else:
+            #Is a mandatory checkitem as it has no attributes
+            return True
+
     class Meta:
         ordering = ['step']
 

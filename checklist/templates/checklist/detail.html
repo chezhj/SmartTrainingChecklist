@@ -8,6 +8,7 @@ Procedure details
     function GetSelected() {
         //Reference the Table.
         
+        
         var grid = document.getElementById("Table1");
 
         //Reference the CheckBoxes in Table.
@@ -31,7 +32,7 @@ Procedure details
 
     function selectCheckbox(id) {
         var checkbox = document.getElementById(id)
-        
+        console.log("selectCheckBox")
         checkbox.checked=!checkbox.checked
         GetSelected();
         
@@ -57,13 +58,13 @@ Procedure details
         {% for item in check_items %}
             
             {% if forloop.counter == 1 %}
-                <tr onclick="selectCheckbox('name{{ item.id }}')" name="row{{ forloop.counter }}" class = "active-row">
+                <tr name="row{{ forloop.counter }}" class = "active-row">
             {% else %}
-                <tr onclick="selectCheckbox('name{{ item.id }}')" name="row{{ forloop.counter }}">
+                <tr  name="row{{ forloop.counter }}">
             {% endif %}
             <td><input type="checkbox" id="name{{ item.id }}" name="name{{ item.id }}" class="clCheckBox" onclick="GetSelected()"/></td>
-            <td >{{ item.item }}</td>
-            <td>{{ item.setting}}</td>
+            <td class="text-cel" onclick="selectCheckbox('name{{ item.id }}')">{{ item.item }}</td>
+            <td class="text-cel" onclick="selectCheckbox('name{{ item.id }}')">{{ item.setting}}</td>
             <td>
             <ul class="cl-taglist">
             {% for attrib in item.attributes.all %}
@@ -81,8 +82,10 @@ Procedure details
 {% if nextproc %}
 <div > <a class="btn btn-right" href=" {% url 'checklist:detail' nextproc.slug %} ">Next</a></div>
 {% endif %}
-
 </div>
 
 
+{% endblock %}
+{% block footer %}
+ query time: {{ proctime }} s
 {% endblock %}
