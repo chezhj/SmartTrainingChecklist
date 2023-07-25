@@ -38,17 +38,19 @@
     background-color: #d4eee9;
     color: #06bb97;
 }
+
 .styled-table tbody tr:last-of-type {
     border-bottom: 2px solid #009879;
 }
+
 .styled-table tbody tr.active-row {
 
-    text-shadow:  0 0 1px rgb(0, 0, 0);
+    text-shadow: 0 0 1px rgb(0, 0, 0);
     color: #010504;
 }
 
-.btn {  
-    font-family:  sans-serif;
+.btn {
+    font-family: sans-serif;
     text-align: center;
     font-size: 12px;
     color: #51739d;
@@ -57,6 +59,7 @@
     width: 15%;
     padding: 10px 0;
     border: 1px solid #afafaf;
+    text-decoration: none;
 }
 
 .btn:hover {
@@ -67,12 +70,13 @@
 .btn-right {
     float: right;
 }
+
 .btn-left {
     float: left;
 }
 
 .cl-tag {
-    background-color: #4b6d5cb2 ;
+    background-color: #4b6d5cb2;
     color: #fff;
     border-radius: 8px;
     display: inline-block;
@@ -82,23 +86,28 @@
     padding-right: 8px;
     text-align: center;
     font-weight: normal;
-  }
-  .cl-tag-optional {
-    background-color: #7a7a79b2 ;
-  }
-  .cl-tag-NoActionNeed {
-    background-color: #4269d1b2 ;
-  }
-  .cl-tag-Online {
-    background-color: #a32b3fb2 ;
-  }
-  .cl-taglist {
-        padding-left: 0;
-        list-style: none;
-        margin-bottom: 0;
-        margin-left: -5px;
-  }
-  .footer {
+}
+
+.cl-tag-optional {
+    background-color: #7a7a79b2;
+}
+
+.cl-tag-NoActionNeed {
+    background-color: #4269d1b2;
+}
+
+.cl-tag-Online {
+    background-color: #a32b3fb2;
+}
+
+.cl-taglist {
+    padding-left: 0;
+    list-style: none;
+    margin-bottom: 0;
+    margin-left: -5px;
+}
+
+.footer {
     left: 0;
     bottom: 0;
     width: 100%;
@@ -106,25 +115,25 @@
     color: rgb(11, 11, 11);
     text-align: center;
     height: 70px;
-    position:absolute; 
-    right:0px; 
-    overflow:hidden;
-  }
+    position: absolute;
+    right: 0px;
+    overflow: hidden;
+}
 
-  .body {
+.body {
     height: 100%;
     width: 100%;
     margin: 0;
-    overflow:auto;
-   }
+    overflow: auto;
+}
 
-  .content {
-    position:absolute;
+.content {
+    position: absolute;
     top: 1px;
-    bottom:70px; 
-    left:20px; 
-    right:0px; 
-    overflow:auto;
+    bottom: 70px;
+    left: 20px;
+    right: 0px;
+    overflow: auto;
     margin-bottom: 20px;
 
-  }
+}

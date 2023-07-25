@@ -29,13 +29,11 @@ class CheckItem(models.Model):
     def __str__(self) -> str:
         return self.item
 
-    def shouldshow(self, profile):
-        profattr = profile.attributes.all()
-        attributes = self.attributes.all()
+    def shouldshow(self, profile_list):
+        attributes = self.attributes.values_list("id", flat=True)
         if attributes:
-            # if the checkitem attributes match all profile attributes, then shouldshow=true
-            sel_attributes = attributes.intersection(profattr)
-            return sel_attributes.count() == attributes.count()
+            matching = set(attributes) & set(profile_list)
+            return len(matching) == len(attributes)
         else:
             # Is a mandatory checkitem as it has no attributes
             return True
@@ -51,8 +49,3 @@ class Attribute(models.Model):
 
     def __str__(self) -> str:
         return self.title
-
-
-class SessionProfile(models.Model):
-    sessionId = models.IntegerField()
-    attributes = models.ManyToManyField("Attribute", blank=True)

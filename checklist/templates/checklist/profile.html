@@ -9,7 +9,7 @@ Profile
     {% csrf_token %}
     <fieldset style="border:0">
         <legend><h1>Specify session profile</h1></legend>
-
+     
         {% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
         <table id="Table1" class="styled-table">
             <thead>
@@ -20,14 +20,17 @@ Profile
                 </tr>
             </thead>
             <tbody>
+            
             {% for check in attributes.all %}
                 <tr><td>
-                <input type="checkbox" name="attributes" id="{{ forloop.counter }}" value="{{ check.id }}" 
-                {% if profile in check.sessionprofile_set.all %}
+                <input type="checkbox" name="attributes" id="{{ forloop.counter }}" value={{ check.id }} 
+                
+                {% if check.id in request.session.attrib %}
                     CHECKED/>
                 {% else %} 
                     />   
                 {% endif %}
+             
                 </td>
                 
                 <td><label for="{{ forloop.counter }}">{{ check.title }}</label></td>
@@ -36,9 +39,12 @@ Profile
             </tbody>
         </table>
     </fieldset>
+    <a class="btn btn-left" href="{% url 'checklist:profile' %}?Clean ">Clear</a> 
     <div style="text-align:right;">
-        <input class="btn" type="submit" value="Next">
+        <input class="btn" type="submit" value="Next"
     </div>
     </form>
+    <p>{{ request.session.session_key }}</p>
+    <p>{{ request.session.attrib }}</p>
 </div>
 {% endblock %}
