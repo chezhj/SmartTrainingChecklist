@@ -1,2 +1,4 @@
 cov.xml
 .coverage
+**/__pycache__
+.coveragerc

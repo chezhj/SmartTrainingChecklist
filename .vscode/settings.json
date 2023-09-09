@@ -1,5 +1,5 @@
 {
-     "python.testing.pytestArgs": [
+    "python.testing.pytestArgs": [
         "checklist"
     ],
     "python.testing.unittestEnabled": false,
@@ -11,6 +11,4 @@
         "-p",
         "test*.py"
     ],
-    "python.linting.enabled": true
 }
-

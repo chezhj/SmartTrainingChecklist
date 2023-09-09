@@ -6,17 +6,18 @@ from django.utils.text import slugify
 # Create your tests here.
 from checklist.models import CheckItem
 from checklist.models import Procedure
-from checklist.models import Attribute, SessionProfile
+from checklist.models import Attribute
 
 
 class testCheckItem(TestCase):
+    profile_list = []
+
     def setUp(self):
         defaultProcedure = Procedure.objects.create(title="procedure one", step=1)
         Attribute.objects.create(title="left", order=1)
         Attribute.objects.create(title="right", order=2)
         Attribute.objects.create(title="center", order=3)
-        profile = SessionProfile.objects.create(sessionId=1)
-        profile.attributes.add(Attribute.objects.get(title="left"))
+        self.profile_list.append(Attribute.objects.get(title="left").id)
 
         CheckItem.objects.create(item="item one", procedure=defaultProcedure, step=3)
         CheckItem.objects.create(item="item two", procedure=defaultProcedure, step=1)
@@ -69,45 +70,42 @@ class testCheckItem(TestCase):
 
     def test_shouldshow_with_no_attributes(self):
         item = CheckItem.objects.get(item="item three")
-        self.assertTrue(item.shouldshow(SessionProfile.objects.get(sessionId=1)))
+        self.assertTrue(item.shouldshow(self.profile_list))
 
     def test_shouldshow_with_matching_attributes(self):
         item = CheckItem.objects.get(item="item three")
         item.attributes.add(Attribute.objects.get(title="left"))
-        self.assertTrue(item.shouldshow(SessionProfile.objects.get(sessionId=1)))
+        self.assertTrue(item.shouldshow(self.profile_list))
 
     def test_should_NOT_show_with_NON_matching_attributes(self):
         item = CheckItem.objects.get(item="item three")
         item.attributes.add(Attribute.objects.get(title="right"))
-        self.assertFalse(item.shouldshow(SessionProfile.objects.get(sessionId=1)))
+        self.assertFalse(item.shouldshow(self.profile_list))
 
     def test_should_show_with_ONE_matching_attributes(self):
         item = CheckItem.objects.get(item="item three")
         item.attributes.add(Attribute.objects.get(title="right"))
         # prepare profile with two attributes
-        profile = SessionProfile.objects.get(sessionId=1)
-        profile.attributes.add(Attribute.objects.get(title="right"))
+        self.profile_list.append(Attribute.objects.get(title="right").id)
 
-        self.assertTrue(item.shouldshow(SessionProfile.objects.get(sessionId=1)))
+        self.assertTrue(item.shouldshow(self.profile_list))
 
     def test_should_show_with_ALL_matching_attributes(self):
         item = CheckItem.objects.get(item="item three")
         item.attributes.add(Attribute.objects.get(title="right"))
         item.attributes.add(Attribute.objects.get(title="left"))
         # prepare profile with two attributes
-        profile = SessionProfile.objects.get(sessionId=1)
-        profile.attributes.add(Attribute.objects.get(title="right"))
+        self.profile_list.append(Attribute.objects.get(title="right").id)
 
-        self.assertTrue(item.shouldshow(SessionProfile.objects.get(sessionId=1)))
+        self.assertTrue(item.shouldshow(self.profile_list))
 
     def test_should_NOT_show_with_two_and_one_matching_attributes(self):
         item = CheckItem.objects.get(item="item three")
         item.attributes.add(Attribute.objects.get(title="right"))
         item.attributes.add(Attribute.objects.get(title="left"))
         # prepare profile with two attributes
-        profile = SessionProfile.objects.get(sessionId=1)
 
-        self.assertFalse(item.shouldshow(SessionProfile.objects.get(sessionId=1)))
+        self.assertFalse(item.shouldshow(self.profile_list))
 
 
 class testProcedure(TestCase):
