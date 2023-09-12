@@ -1,5 +1,7 @@
-from .base import *
+"""Production settings file"""
+# pylint: disable=unused-wildcard-import,wildcard-import
 from decouple import config
+from .base import *
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = config("SECRET_KEY")

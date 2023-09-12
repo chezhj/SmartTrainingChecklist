@@ -13,4 +13,7 @@ from django.core.wsgi import get_wsgi_application
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "SmartTrainingChecklist.settings.dev")
 
-application = get_wsgi_application()
+if os.environ.get("DJANGO_SETTINGS_MODULE").endswith("dev"):
+    application = get_wsgi_application()
+else:
+    app = get_wsgi_application()

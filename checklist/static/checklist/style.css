@@ -60,6 +60,7 @@
     padding: 10px 0;
     border: 1px solid #afafaf;
     text-decoration: none;
+    cursor: pointer;
 }
 
 .btn:hover {

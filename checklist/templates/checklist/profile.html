@@ -40,11 +40,10 @@ Profile
         </table>
     </fieldset>
     <a class="btn btn-left" href="{% url 'checklist:profile' %}?Clean ">Clear</a> 
-    <div style="text-align:right;">
-        <input class="btn" type="submit" value="Next"
-    </div>
+           <input class="btn btn-right" type="submit" value="Next">
     </form>
-    <p>{{ request.session.session_key }}</p>
-    <p>{{ request.session.attrib }}</p>
+   
+   
 </div>
+
 {% endblock %}

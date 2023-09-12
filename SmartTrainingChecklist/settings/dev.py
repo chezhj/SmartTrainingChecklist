@@ -1,4 +1,7 @@
+"""Development settings file"""
+# pylint: disable=unused-wildcard-import,wildcard-import
 from .base import *
+
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = "django-insecure-ky_2(^&n3xfwf-jadnm(m^ti9ybjb43%k6%m!&ek9(_s!gx^m_"
