@@ -1,0 +1,29 @@
+Release
+
+-Tag repo in github
+-get release on server
+	- ssh to server
+	- make tmp dir in /domains/vdwaal.net
+cd domains/vdwaal.net
+mkdir latest
+cd latest
+	- clone release
+git clone -branch "release-tag" https://github.com/chezhj/SmartTrainingChecklist.git
+
+- Now copy related files
+cd domains/vdwaal.net/latest
+cp -r checklist ../checklist/checklist
+cp -r SmartTrainingChecklist ../checklist/SmartTrainingChecklist
+cp db.sqlite3 ../checklist/
+cp passenger_wsgi.py ../checklist/
+cp manage.py ../checklist/
+
+- migrate database
+python manage.py migrate
+- collect static files
+python manage.py collectstatic
+- restart "app" 
+via web interface (try restart.txt later)
+- remove temp dir
+cd domains/vdwaal.net
+rm -r latest
