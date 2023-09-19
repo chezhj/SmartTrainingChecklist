@@ -1,4 +1,4 @@
-from re import T
+# pylint: disable=no-member
 from django.urls import reverse
 from django.db import models
 
@@ -11,7 +11,7 @@ class Procedure(models.Model):
     slug = models.SlugField(unique=True)
 
     def __str__(self) -> str:
-        return self.title
+        return self.title.__str__()
 
     def get_absolute_url(self):
         return reverse("checklist:detail", kwargs={"slug": self.slug})
@@ -27,7 +27,7 @@ class CheckItem(models.Model):
     )
 
     def __str__(self) -> str:
-        return self.item
+        return self.item.__str__()
 
     def shouldshow(self, profile_list):
         attributes = self.attributes.values_list("id", flat=True)
@@ -43,9 +43,16 @@ class CheckItem(models.Model):
 
 
 class Attribute(models.Model):
+    """
+    Model for the attributes of a procedure
+    The Title is the main identifier
+    The order is used to sort
+    """
+
     title = models.CharField(max_length=30)
     order = models.PositiveIntegerField()
     description = models.TextField(blank=True)
+    show = models.BooleanField(default="True")
 
     def __str__(self) -> str:
-        return self.title
+        return self.title.__str__()

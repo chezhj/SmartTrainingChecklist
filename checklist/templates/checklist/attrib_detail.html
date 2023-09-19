@@ -1,1 +1,4 @@
-<li class="cl-tag cl-tag-{{ attrib.title }}">{{ attrib.title }} </li> 
+
+{% if  attrib.show  %}
+    <li class="cl-tag cl-tag-{{ attrib.title }}">{{ attrib.title }} </li> 
+{% endif %}
