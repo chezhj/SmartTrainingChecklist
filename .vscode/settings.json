@@ -11,4 +11,9 @@
         "-p",
         "test*.py"
     ],
+    "pylint.args": [
+        "--load-plugins=pylint_django",
+        "--django-settings-module=SmartTrainingChecklist.settings.dev",
+        "--generated-members=objects"
+    ],
 }

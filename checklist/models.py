@@ -1,3 +1,6 @@
+"""
+Main models module for al database objects
+"""
 # pylint: disable=no-member
 from django.urls import reverse
 from django.db import models
@@ -53,6 +56,9 @@ class Attribute(models.Model):
     order = models.PositiveIntegerField()
     description = models.TextField(blank=True)
     show = models.BooleanField(default="True")
+    over_ruled_by = models.ForeignKey(
+        "self", on_delete=models.SET_NULL, blank=True, null=True
+    )
 
     def __str__(self) -> str:
         return self.title.__str__()

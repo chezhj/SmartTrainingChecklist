@@ -119,6 +119,11 @@
     position: absolute;
     right: 0px;
     overflow: hidden;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    /* Two equal-width columns */
+    gap: 10px;
+    /* Add some spacing between columns */
 }
 
 .body {
@@ -137,4 +142,18 @@
     overflow: auto;
     margin-bottom: 20px;
 
+}
+
+
+
+.column {
+    border: 1px solid #ccc;
+    /* Add borders to visually separate columns */
+    padding: 10px;
+    /* Add padding for content */
+}
+
+.footer-img {
+    width: auto;
+    height: 30px;
 }

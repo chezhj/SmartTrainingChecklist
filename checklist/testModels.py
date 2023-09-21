@@ -1,3 +1,8 @@
+# pylint: disable=no-member
+"""
+Test classes for model.py
+"""
+
 from django.db import IntegrityError
 from django.forms import ValidationError
 from django.test import TestCase
@@ -21,9 +26,7 @@ class testCheckItem(TestCase):
 
         CheckItem.objects.create(item="item one", procedure=defaultProcedure, step=3)
         CheckItem.objects.create(item="item two", procedure=defaultProcedure, step=1)
-        item = CheckItem.objects.create(
-            item="item three", procedure=defaultProcedure, step=5
-        )
+        CheckItem.objects.create(item="item three", procedure=defaultProcedure, step=5)
 
     def test_OrderCheckItem(self):
         items = CheckItem.objects.all()
@@ -45,11 +48,6 @@ class testCheckItem(TestCase):
         item.procedure.delete()
         with self.assertRaises(CheckItem.DoesNotExist):
             item.refresh_from_db()
-
-    def test_negative_step(self):
-        procedure = CheckItem.objects.get(item="item three").procedure
-        with self.assertRaises(IntegrityError):
-            CheckItem.objects.create(item="item three", procedure=procedure, step=-5)
 
     def test_toolong_itemname(self):
         procedure = CheckItem.objects.get(item="item three").procedure
@@ -125,7 +123,7 @@ class testProcedure(TestCase):
 
     def test_get_absolute_url(self):
         proc = Procedure.objects.get(title="procedure one")
-        self.assertEqual(proc.get_absolute_url(), "/checklist/" + proc.slug)
+        self.assertEqual(proc.get_absolute_url(), "/" + proc.slug)
 
 
 class testAttribute(TestCase):

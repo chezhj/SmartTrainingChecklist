@@ -1,5 +1,6 @@
 {% extends 'checklist/base.html' %}
-{% block title %}
+{% load environment_tags %}
+{% block xtitle %}
 Profile
 {% endblock %}
 {% block content %}
@@ -22,19 +23,21 @@ Profile
             <tbody>
             
             {% for check in attributes.all %}
-                <tr><td>
-                <input type="checkbox" name="attributes" id="{{ forloop.counter }}" value={{ check.id }} 
+                {% if check.show %}
+                    <tr><td>
+                    <input type="checkbox" name="attributes" id="{{ forloop.counter }}" value={{ check.id }} 
                 
-                {% if check.id in request.session.attrib %}
-                    CHECKED/>
-                {% else %} 
-                    />   
-                {% endif %}
+                    {% if check.id in request.session.attrib %}
+                        CHECKED/>
+                    {% else %} 
+                        />   
+                    {% endif %}
              
-                </td>
+                    </td>
                 
-                <td><label for="{{ forloop.counter }}">{{ check.title }}</label></td>
-                <td><label for="{{ forloop.counter }}">{{ check.description }}</label></td></tr>
+                    <td><label for="{{ forloop.counter }}">{{ check.title }}</label></td>
+                    <td><label for="{{ forloop.counter }}">{{ check.description }}</label></td></tr>
+                {% endif %}
             {% endfor %}
             </tbody>
         </table>
@@ -46,4 +49,10 @@ Profile
    
 </div>
 
+{% endblock %}
+
+{% block  footer %}
+    {% if 'DEBUG'|setting == True %}
+       {{ request.session.attrib }}
+    {% endif %}
 {% endblock %}

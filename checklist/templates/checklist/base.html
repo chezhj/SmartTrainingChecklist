@@ -9,6 +9,7 @@
     <title>{% block title %}geen titel{% endblock %}</title>
 </head>
 {% load static %}
+{% load environment_tags %}
 <link rel="stylesheet" type="text/css" href="{% static 'checklist/style.css' %}">
 
 {% block script %}
@@ -19,10 +20,17 @@
 	{% endblock %}
     </div>
     <div class="footer">
-        <p>Made by: ChezHJ<br>
+        <div class="column">
+        Made by: ChezHJ<br>
             {% block footer %}
             {% endblock %}
-        </p>
+        </div>
+        <div class="column">
+            Based on checklist by<br>
+            <a href="https://forums.x-plane.org/index.php?/profile/136100-skymatix/" target="_blank">
+                <img src="{% static 'checklist/VA_logo.png' %}" alt="Skymatix logo" class="footer-img" >
+            </a>
+        </div>
     </div>
       
 </body>

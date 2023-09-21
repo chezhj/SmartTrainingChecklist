@@ -1,21 +1,22 @@
-from re import A
-from select import select
+"""
+Base views for checklist
+"""
 from time import time
-from django.shortcuts import render, get_object_or_404, HttpResponseRedirect
+from django.shortcuts import get_object_or_404, HttpResponseRedirect
 from django.template.response import TemplateResponse
 from django.urls import reverse
-from django.db.models import Subquery
 
 # Create your views here.
-from django.http import HttpResponse
 from django.views import generic
 from .models import Procedure, Attribute
 
-QUERYMETHOD = False
-
 
 def procedure_detail(request, slug):
-    tStart = time()
+    """ "
+    view/function to show all checkitems and attribs for the given slug
+    based on the flight profile in the session
+    """
+    time_start = time()
     procedure2view = get_object_or_404(Procedure.objects.all(), slug=slug)
     nextproc = (
         Procedure.objects.filter(step__gt=procedure2view.step).order_by("step").first()
@@ -24,16 +25,14 @@ def procedure_detail(request, slug):
         Procedure.objects.filter(step__lt=procedure2view.step).order_by("step").last()
     )
 
-    # profile2view = get_object_or_404(sessionKey=request.session.session_key)
-
     allitems = procedure2view.checkitem_set.all()
     query_ids = [
         item.id for item in allitems if item.shouldshow(request.session["attrib"])
     ]
     check_items = procedure2view.checkitem_set.filter(id__in=query_ids)
 
-    tFinish = time()
-    query_time = round(tFinish - tStart, 3)
+    time_finished = time()
+    query_time = round(time_finished - time_start, 3)
 
     return TemplateResponse(
         request,
@@ -48,13 +47,9 @@ def procedure_detail(request, slug):
     )
 
 
-""" q = Model.objects.filter(...)...
-# here is the trick
-q_ids = [o.id for o in q if o.method()]
-q = q.filter(id__in=q_ids) """
-
-
 class IndexView(generic.ListView):
+    """basic class view to show all procedures"""
+
     template_name = "checklist/index.html"
     context_object_name = "procedure_list"
 
@@ -62,30 +57,12 @@ class IndexView(generic.ListView):
         return Procedure.objects.order_by("step")
 
 
-""" class DetailView(generic.DetailView):
-    model = Procedure
-    template_name = 'checklist/detail.html'
-    
-    def get_queryset(self, **kwargs):
-        req_attr= Attribute.objects.get(id=1)
-        return Procedure.objects.filter(checkitem__in=items) """
-
-
 def profile_view(request):
+    """basic function view for the profile"""
     if "Clean" in request.GET:
         request.session.flush()
 
-    request.session["profile"] = 0
-
-    # if request.session.session_key:
-    #     profile2view = SessionProfile.objects.filter(
-    #         sessionKey=request.session.session_key
-    #     ).first()
-    #     # hier nog iets met fout aghandeling
-    #     if profile2view:
-    #         request.session["profile"] = profile2view.pk
-    # else:
-    #     profile2view = None
+    # request.session["profile"] = 0
 
     attributes = Attribute.objects.order_by("order")
 
@@ -99,28 +76,36 @@ def profile_view(request):
 
 
 def update_profile(request):
-    # profile = None
-    # if request.session.session_key:
-    #     profile = SessionProfile.objects.filter(
-    #         sessionKey=request.session.session_key
-    #     ).first()
-    # if not profile:
-    #     profile = SessionProfile.objects.create()
-    # profile.sessionKey = request.session.session_key
-    # profile.attributes.clear()
-    attrset = request.POST.getlist("attributes")
+    """
+    function that is called when profile is submitted
+    Stores profile in session
+    add default attributes
+    and removes default if related attrib is selected
+    """
+
     attlist = []
+
+    over_rules = {}
+    non_visual_attributes = list(Attribute.objects.filter(show=False))
+    for default_attrib in non_visual_attributes:
+        attlist.append(default_attrib.id)
+        if default_attrib.over_ruled_by:
+            over_rules[default_attrib.over_ruled_by.id] = default_attrib.id
+
+    attrset = request.POST.getlist("attributes")
+
     for att in attrset:
         attlist.append(int(att))
+        if over_rules.get(int(att), None):
+            attlist.remove(over_rules[int(att)])
+
     request.session["attrib"] = attlist
 
-    # for id in attrset:
-    #    attribute2Add = get_object_or_404(Attribute.objects.all(), id=id)
-    # profile.attributes.add(attribute2Add)
-    # profile.save()
     return HttpResponseRedirect(reverse("checklist:index"))
 
 
 class ProfileView(generic.DetailView):
+    """Basic class view for flight profile"""
+
     # model = SessionProfile
     template_name = "checklist/profile.html"
