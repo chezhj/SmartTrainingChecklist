@@ -55,9 +55,9 @@
     font-size: 12px;
     color: #51739d;
     background-color: #d4eee9;
-    border-radius: 3px;
+    border-radius: 4px;
     width: 15%;
-    padding: 10px 0;
+    padding: 8px 0;
     border: 1px solid #afafaf;
     text-decoration: none;
     cursor: pointer;
@@ -74,6 +74,11 @@
 
 .btn-left {
     float: left;
+}
+
+.btn-mid {
+    margin: 1.5%;
+
 }
 
 .cl-tag {
@@ -115,7 +120,7 @@
     background-color: rgb(212, 238, 233);
     color: rgb(11, 11, 11);
     text-align: center;
-    height: 70px;
+    height: 60px;
     position: absolute;
     right: 0px;
     overflow: hidden;
@@ -124,6 +129,7 @@
     /* Two equal-width columns */
     gap: 1px;
     /* Add some spacing between columns */
+    font-size: 13px;
 }
 
 .body {
@@ -151,9 +157,9 @@
     /* Add borders to visually separate columns */
     padding: 5px;
     /* Add padding for content */
-}
 
-.footer-img {
-    width: auto;
-    height: 30px;
-}
+
+    .footer-img {
+        width: auto;
+        height: 30px;
+    }
