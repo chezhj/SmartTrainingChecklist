@@ -7,7 +7,7 @@ import sys
 def main():
     """Run administrative tasks."""
     os.environ.setdefault(
-        "DJANGO_SETTINGS_MODULE", "SmartTrainingChecklist.settings.dev"
+        "DJANGO_SETTINGS_MODULE", "smart_training_checklist.settings.dev"
     )
     try:
         from django.core.management import execute_from_command_line

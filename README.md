@@ -1,4 +1,4 @@
-# SmartTrainingChecklist
+# smart_training_checklist
 
 My attempt to create a dynamic checklist for sim flying (737)
 

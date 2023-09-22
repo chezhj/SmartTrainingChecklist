@@ -14,7 +14,7 @@ git clone --branch release-tag https://github.com/chezhj/SmartTrainingChecklist.
 - Now copy related files
 cd domains/vdwaal.net/latest/SmartTrainingChecklist
 cp -r checklist ../../checklist/
-cp -r SmartTrainingChecklist ../../checklist/
+cp -r smart_training_checklist ../../checklist/
 cp db.sqlite3 ../../checklist/
 cp passenger_wsgid.py ../checklist/
 cp manage.py ../checklist/
@@ -24,7 +24,7 @@ cd /home/vdwanet/domains/vdwaal.net
 source setenv.sh 
 # sets DJANGO module and SECRET KEY
 
-## [vdwanet@da122 checklist]$ DJANGO_SETTINGS_MODULE="SmartTrainingChecklist.settings.prod"
+## [vdwanet@da122 checklist]$ DJANGO_SETTINGS_MODULE="smart_training_checklist.settings.prod"
 ## [vdwanet@da122 checklist]$ export DJANGO_SETTINGS_MODULE
 
 
