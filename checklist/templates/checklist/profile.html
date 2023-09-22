@@ -53,6 +53,7 @@ Profile
 
 {% block  footer %}
     {% if 'DEBUG'|setting == True %}
-       {{ request.session.attrib }}
+
+        {{ request.session.attrib }}
     {% endif %}
 {% endblock %}

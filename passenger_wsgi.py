@@ -2,7 +2,7 @@
 import os
 import sys
 
-from SmartTrainingChecklist.wsgi import app
+from smart_training_checklist.wsgi import app
 
 sys.path.insert(0, os.path.dirname(__file__))
 

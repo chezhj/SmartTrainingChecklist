@@ -120,9 +120,9 @@
     right: 0px;
     overflow: hidden;
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
     /* Two equal-width columns */
-    gap: 10px;
+    gap: 1px;
     /* Add some spacing between columns */
 }
 
@@ -149,7 +149,7 @@
 .column {
     border: 1px solid #ccc;
     /* Add borders to visually separate columns */
-    padding: 10px;
+    padding: 5px;
     /* Add padding for content */
 }
 

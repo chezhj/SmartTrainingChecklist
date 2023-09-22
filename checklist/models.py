@@ -37,9 +37,9 @@ class CheckItem(models.Model):
         if attributes:
             matching = set(attributes) & set(profile_list)
             return len(matching) == len(attributes)
-        else:
-            # Is a mandatory checkitem as it has no attributes
-            return True
+
+        # Is a mandatory checkitem as it has no attributes
+        return True
 
     class Meta:
         ordering = ["step"]
