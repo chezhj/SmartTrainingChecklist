@@ -7,7 +7,7 @@
     "python.testing.unittestArgs": [
         "-v",
         "-s",
-        ".",
+        "./checklist",
         "-p",
         "test*.py"
     ],

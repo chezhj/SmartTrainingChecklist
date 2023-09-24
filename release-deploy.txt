@@ -10,15 +10,16 @@ mkdir latest
 cd latest
 	- clone release
 git clone --branch release-tag https://github.com/chezhj/SmartTrainingChecklist.git
+git clone --branch v0.6.0alpha https://github.com/chezhj/SmartTrainingChecklist.git
 
 - Now copy related files
 cd domains/vdwaal.net/latest/SmartTrainingChecklist
 cp -r checklist ../../checklist/
 cp -r smart_training_checklist ../../checklist/
 cp db.sqlite3 ../../checklist/
-cp passenger_wsgid.py ../checklist/
-cp manage.py ../checklist/
-cp requirements.txt ../checklist
+cp passenger_wsgid.py ../../checklist/
+cp manage.py ../../checklist/
+cp requirements.txt ../../checklist
 
 cd /home/vdwanet/domains/vdwaal.net
 source setenv.sh 

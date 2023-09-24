@@ -102,10 +102,3 @@ def update_profile(request):
     request.session["attrib"] = attlist
 
     return HttpResponseRedirect(reverse("checklist:index"))
-
-
-class ProfileView(generic.DetailView):
-    """Basic class view for flight profile"""
-
-    # model = SessionProfile
-    template_name = "checklist/profile.html"
