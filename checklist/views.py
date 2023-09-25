@@ -34,6 +34,10 @@ def procedure_detail(request, slug):
     time_finished = time()
     query_time = round(time_finished - time_start, 3)
 
+    if len(check_items) == 0 and nextproc is not None:
+        # If len(check_items) is zero and there's a next procedure, redirect to it
+        return HttpResponseRedirect(reverse("checklist:detail", args=[nextproc.slug]))
+
     return TemplateResponse(
         request,
         "checklist/detail.html",
