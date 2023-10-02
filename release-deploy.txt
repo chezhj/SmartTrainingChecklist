@@ -44,3 +44,11 @@ via web interface (try restart.txt later)
 - remove temp dir
 cd domains/vdwaal.net
 rm -r latest
+
+# check if I can run from symlink 
+mv checklist checklist_060
+ln -s checklist_060 checklist
+
+Restart ad try
+
+ln -s target_file link_name

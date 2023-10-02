@@ -1,45 +1,57 @@
-<html>
-<head>
-    <title></title>
-</head>
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>{% block title %}geen titel{% endblock %}</title>
-</head>
-{% load static %}
-{% load environment_tags %}
-<link rel="stylesheet" type="text/css" href="{% static 'checklist/style.css' %}">
-
-{% block script %}
-{% endblock %}
-<body class="body">
-    <div class="content" id="content" name="content">
-	{% block content %}
-	{% endblock %}
-    </div>
-    <div class="footer">
-        <div class="column">
-            <a class="btn btn-left btn-mid" href="{% url 'checklist:profile' %} ">Profile</a>
-            Version:  {{ 'VERSION'|setting }}
-            <a class="btn btn-right btn-mid" href="https://github.com/chezhj/SmartTrainingChecklist/wiki/Smart-training-checklist-wiki" target="_blank" >Help</a>
-            
+    <head>
+        <meta charset="UTF-8">
+        <meta name="description"
+              content="Training Checklist for 737 for simulation">
+        <meta name="keywords" content="HTML, CSS, JavaScript">
+        <meta name="author" content="ChezHJ">
+        <title>
+            {% block title %}
+                geen titel
+            {% endblock title %}
+        </title>
+        {% load static %}
+        {% load environment_tags %}
+        <link rel="stylesheet"
+              type="text/css"
+              href="{% static 'checklist/style.css' %}">
+        {% block script %}
+        {% endblock script %}
+    </head>
+    <body class="body">
+        <div class="content" id="content">
+            {% block content %}
+            {% endblock content %}
         </div>
-       
-        <div class="column">
-        Made by: ChezHJ<br>
-    
-            {% block footer %}
-            {% endblock %}
+        <div class="footer">
+            <div class="column footer-left">
+                <a class="btn btn-left btn-mid" href="{% url 'checklist:profile' %} ">Profile</a>
+                Version:  {{ 'VERSION'|setting }}
+                <a class="btn btn-right btn-mid"
+                   href="https://github.com/chezhj/SmartTrainingChecklist/wiki/Smart-training-checklist-wiki"
+                   target="_blank">Help</a>
+                <br>
+                simulation only
+            </div>
+            <div class="column footer-center">
+                Made by: ChezHJ
+                <br>
+                {% block footer %}
+                {% endblock footer %}
+            </div>
+            <div class="column footer-right">
+                Based on checklist by
+                <br>
+                <a href="https://forums.x-plane.org/index.php?/profile/136100-skymatix/"
+                   target="_blank">
+                    <img src="{% static 'checklist/VA_logo.png' %}"
+                         width="124"
+                         height="30"
+                         alt="Skymatix logo"
+                         class="footer-img">
+                </a>
+            </div>
         </div>
-        <div class="column">
-            Based on checklist by<br>
-            <a href="https://forums.x-plane.org/index.php?/profile/136100-skymatix/" target="_blank">
-                <img src="{% static 'checklist/VA_logo.png' %}" alt="Skymatix logo" class="footer-img" >
-            </a>
-        </div>
-    </div>
-      
-</body>
+    </body>
 </html>

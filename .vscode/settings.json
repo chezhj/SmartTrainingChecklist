@@ -13,7 +13,6 @@
     ],
     "pylint.args": [
         "--load-plugins=pylint_django",
-        "--django-settings-module=smart_training_hecklist.settings.dev",
         "--generated-members=objects"
     ],
 }

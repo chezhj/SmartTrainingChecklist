@@ -17,7 +17,12 @@ def procedure_detail(request, slug):
     based on the flight profile in the session
     """
     time_start = time()
+    ## get the procedure to view based on slug
     procedure2view = get_object_or_404(Procedure.objects.all(), slug=slug)
+
+    # get next and previous procedure to fill next and back button
+    # As step does not need to have increments of 1, get the first or last
+    # ordered by step, filtered by current step number
     nextproc = (
         Procedure.objects.filter(step__gt=procedure2view.step).order_by("step").first()
     )
@@ -25,6 +30,9 @@ def procedure_detail(request, slug):
         Procedure.objects.filter(step__lt=procedure2view.step).order_by("step").last()
     )
 
+    # Check if profile exits
+    if "attrib" not in request.session:
+        return HttpResponseRedirect(reverse("checklist:start"))
     allitems = procedure2view.checkitem_set.all()
     query_ids = [
         item.id for item in allitems if item.shouldshow(request.session["attrib"])
@@ -38,16 +46,17 @@ def procedure_detail(request, slug):
         # If len(check_items) is zero and there's a next procedure, redirect to it
         return HttpResponseRedirect(reverse("checklist:detail", args=[nextproc.slug]))
 
+    context = {
+        "procedure": procedure2view,
+        "check_items": check_items,
+        "nextproc": nextproc,
+        "prevproc": prevproc,
+        "proctime": query_time,
+    }
     return TemplateResponse(
         request,
         "checklist/detail.html",
-        {
-            "procedure": procedure2view,
-            "check_items": check_items,
-            "nextproc": nextproc,
-            "prevproc": prevproc,
-            "proctime": query_time,
-        },
+        context,
     )
 
 

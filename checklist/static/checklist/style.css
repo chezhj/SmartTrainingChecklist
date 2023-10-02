@@ -8,7 +8,7 @@
     margin: 25px 0;
     font-size: 0.9em;
     font-family: sans-serif;
-    min-width: 400px;
+    min-width: 850px;
     color: #14816b;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
 }
@@ -26,6 +26,10 @@
 
 .text-cel td {
     cursor: pointer;
+}
+
+.styled-table td.descrip {
+    word-wrap: break-word;
 }
 
 
@@ -48,6 +52,8 @@
     text-shadow: 0 0 1px rgb(0, 0, 0);
     color: #010504;
 }
+
+
 
 .btn {
     font-family: sans-serif;
@@ -122,6 +128,7 @@
     left: 0;
     bottom: 0;
     width: 100%;
+    max-width: 900px;
     background-color: rgb(212, 238, 233);
     color: rgb(11, 11, 11);
     text-align: center;
@@ -131,15 +138,18 @@
     overflow: hidden;
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
+    grid-template-areas: "Left Center Right";
     /* Two equal-width columns */
     gap: 1px;
     /* Add some spacing between columns */
     font-size: 13px;
 }
 
+
 .body {
     height: 100%;
     width: 100%;
+    min-width: 900px;
     margin: 0;
     overflow: auto;
 }
@@ -147,14 +157,19 @@
 .content {
     position: absolute;
     top: 1px;
-    bottom: 70px;
+    bottom: 60px;
     left: 20px;
-    right: 0px;
+    right: 20px;
     overflow: auto;
-    margin-bottom: 20px;
+    margin-bottom: 2px;
+
 
 }
 
+.btn-bar {
+    height: 45px;
+    max-width: 850px;
+}
 
 
 .column {
@@ -167,4 +182,47 @@
 .footer-img {
     width: auto;
     height: 30px;
+}
+
+.footer-left {
+    grid-area: Left;
+}
+
+.footer-center {
+    grid-area: Center;
+}
+
+.footer-right {
+    grid-area: Right;
+}
+
+.table-div {
+    width: 100%
+}
+
+@media (max-width: 730px) {
+
+    /* Replace with 360 or whatever you intend to */
+    .footer {
+        /* You can also use a parent for specificity */
+        grid-template-columns: 1fr;
+        /* One column */
+        grid-template-rows: repeat(2, 1fr);
+        /* three rows */
+        grid-template-areas: "Left"
+            /* Stacked areas */
+            "Center"
+        ;
+        height: 110px;
+    }
+
+
+    .footer-right {
+        display: none;
+    }
+
+    .content {
+        bottom: 120px;
+    }
+
 }
