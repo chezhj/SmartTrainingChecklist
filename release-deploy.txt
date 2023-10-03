@@ -45,6 +45,7 @@ via web interface (try restart.txt later)
 cd domains/vdwaal.net
 rm -r latest
 
+
 # check if I can run from symlink 
 mv checklist checklist_060
 ln -s checklist_060 checklist
@@ -52,3 +53,30 @@ ln -s checklist_060 checklist
 Restart ad try
 
 ln -s target_file link_name
+02-10-2023
+Symbolic links worden niet ondersteund door de python /apache module
+
+Dus de strategie wordt 
+- koperen naar checklist-new
+- app uit zetten
+- mv checklist checklist-v 
+- mv checklist-new checklist
+- setenv
+- virtualenv
+- pip load requirements.txt
+- database migratie (nog niet nodig)
+- collectstatic
+- app starten
+
+- Now copy related files
+NEW_PATH=./checklist_new
+SRC_PATH=./latest/
+cd
+cd domains/vdwaal.net
+cd latest/SmartTrainingChecklist
+cp -r checklist ../../checklist/
+cp -r smart_training_checklist ../../checklist/
+cp db.sqlite3 ../../checklist/
+cp passenger_wsgid.py ../../checklist/
+cp manage.py ../../checklist/
+cp requirements.txt ../../checklist
