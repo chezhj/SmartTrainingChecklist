@@ -1,59 +1,56 @@
-{% extends 'checklist/base.html' %}
+{% extends "checklist/base.html" %}
 {% load environment_tags %}
-{% block xtitle %}
-Profile
-{% endblock %}
+{% block title %}
+    Session profile
+{% endblock title %}
 {% block content %}
-
-<div style="width:fit-content" >
-<form action="{% url 'checklist:update_profile' %}" method="post">
-    {% csrf_token %}
-    <fieldset style="border:0">
-        <legend><h1>Specify session profile</h1></legend>
-     
-        {% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
-        <table id="Table1" class="styled-table">
-            <thead>
-                <tr>
-                    <th>Check</th>
-                    <th>Profile attribute</th>
-                    <th>Description</th>
-                </tr>
-            </thead>
-            <tbody>
-            
-            {% for check in attributes.all %}
-                {% if check.show %}
-                    <tr><td>
-                    <input type="checkbox" name="attributes" id="{{ forloop.counter }}" value={{ check.id }} 
-                
-                    {% if check.id in request.session.attrib %}
-                        CHECKED/>
-                    {% else %} 
-                        />   
-                    {% endif %}
-             
-                    </td>
-                
-                    <td><label for="{{ forloop.counter }}">{{ check.title }}</label></td>
-                    <td><label for="{{ forloop.counter }}">{{ check.description }}</label></td></tr>
+    <div style="width:fit-content">
+        <form action="{% url 'checklist:update_profile' %}" method="post">
+            {% csrf_token %}
+            <fieldset style="border:0">
+                <legend>
+                    <h1>Specify session profile</h1>
+                </legend>
+                {% if error_message %}
+                    <p>
+                        <strong>{{ error_message }}</strong>
+                    </p>
                 {% endif %}
-            {% endfor %}
-            </tbody>
-        </table>
-    </fieldset>
-    <a class="btn btn-left" href="{% url 'checklist:profile' %}?Clean ">Clear</a> 
-           <input class="btn btn-right" type="submit" value="Next">
+                <table id="Table1" class="styled-table">
+                    <thead>
+                        <tr>
+                            <th>Check</th>
+                            <th>Profile attribute</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for check in attributes.all %}
+                            {% if check.show %}
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" name="attributes" id="{{ forloop.counter }}" value={{ check.id }}  {% if check.id in request.session.attrib %} CHECKED />
+                                    {% else %}
+                                        />
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <label for="{{ forloop.counter }}">{{ check.title }}</label>
+                                </td>
+                                <td>
+                                    <label for="{{ forloop.counter }}">{{ check.description }}</label>
+                                </td>
+                            </tr>
+                        {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </fieldset>
+        <a class="btn btn-left" href="{% url 'checklist:profile' %}?Clean ">Clear</a>
+        <input class="btn btn-right" type="submit" value="Next">
     </form>
-   
-   
 </div>
-
-{% endblock %}
-
-{% block  footer %}
-    {% if 'DEBUG'|setting == True %}
-
-        {{ request.session.attrib }}
-    {% endif %}
-{% endblock %}
+{% endblock content %}
+{% block footer %}
+    {% if 'DEBUG'|setting == True %}{{ request.session.attrib }}{% endif %}
+{% endblock footer %}
