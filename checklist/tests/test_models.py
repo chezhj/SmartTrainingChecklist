@@ -130,5 +130,9 @@ class TestProcedure(TestCase):
 
 class TestAttribute(TestCase):
     def test_title_as_string(self):
-        att = Attribute.objects.create(title="left", order=1)
-        self.assertEqual(str(att), att.title)
+        self.att = Attribute.objects.create(title="left", order=1)
+        self.assertEquals(str(self.att), self.att.title)
+
+    def test_default_color(self):
+        att = Attribute.objects.create(title="dummy", order=2)
+        self.assertEquals(att.btn_color, "#194D33")

@@ -25,6 +25,7 @@ VERSION = __version__
 
 INSTALLED_APPS = [
     "checklist.apps.ChecklistConfig",
+    "colorfield",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",

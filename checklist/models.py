@@ -2,6 +2,8 @@
 Main models module for al database objects
 """
 # pylint: disable=no-member
+
+from colorfield.fields import ColorField
 from django.urls import reverse
 from django.db import models
 
@@ -59,6 +61,7 @@ class Attribute(models.Model):
     over_ruled_by = models.ForeignKey(
         "self", on_delete=models.SET_NULL, blank=True, null=True
     )
+    btn_color = ColorField(default="#194D33")
 
     def __str__(self) -> str:
         return self.title.__str__()

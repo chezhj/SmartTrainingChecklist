@@ -3,3 +3,5 @@ cov.xml
 **/__pycache__
 .coveragerc
 coverage.lcov
+**/static/admin
+**/static/colorfield
