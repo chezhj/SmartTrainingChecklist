@@ -1,26 +1,29 @@
-{% extends 'checklist/base.html' %}
+{% extends "checklist/base.html" %}
 {% block title %}
-Main check page
-{% endblock %}
+    Procedure overview
+{% endblock title %}
 {% block content %}
-{% if procedure_list %}
-<table id="Table1" class="styled-table">
-    <thead>
-        <tr>
-            <th>&nbsp;</th>
-            <th>Procedure</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for proc in procedure_list %}
-            <tr><td>{{ forloop.counter }}</td><td><a href="{{ proc.get_absolute_url }} "</a>{{ proc.title }}</td></tr>
-    {% endfor %}
-    </tbody>
-</table>
-  
-{% else %}
-    <p>No items are available.</p>
-{% endif %}
-
-{% endblock %}
-
+    <h1 class="styled-text">Procedure overview</h1>
+    {% if procedure_list %}
+        <table id="Table1" class="styled-table">
+            <thead>
+                <tr>
+                    <th>&nbsp;</th>
+                    <th>Procedure</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for proc in procedure_list %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>
+                            <a href="{{ proc.get_absolute_url }} ">{{ proc.title }}</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No items are available.</p>
+    {% endif %}
+{% endblock content %}
