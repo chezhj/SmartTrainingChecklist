@@ -1,3 +1,9 @@
+## v0.8.0 (2023-10-20)
+
+### Feat
+
+- **ChecklistsData**: Added recommended safety checks
+
 ## v0.7.1 (2023-10-13)
 
 ### Fix
