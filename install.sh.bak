@@ -3,9 +3,6 @@
 # Check if the release tag argument is provided
 if [ -z "$1" ]; then
     echo "Usage: $0 <release-tag>"
-    echo ""
-    echo "Current tags:"
-    git ls-remote --tags https://github.com/chezhj/SmartTrainingChecklist.git | gawk '{print substr($2,11)}'
     exit 1
 fi
 
