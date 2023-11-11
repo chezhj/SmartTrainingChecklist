@@ -108,13 +108,47 @@ class TestProcedureDetailView(ViewTestCase):
         proc_two = ProcedureFactory(step=check_item.procedure.step + 1)
 
         request = self.create_request_with_session(
-            "/", session_data={"attrib": [atrib_one.id]}
+            "/", session_data={"attrib": [atrib_one.id]}, referer="Any string"
         )
 
         response = procedure_detail(request, slug=check_item.procedure.slug)
 
         self.assertEqual(response.status_code, 302)
         self.assertAlmostEqual(response.url, "/" + proc_two.slug)
+
+    def test_procedure_detail_with_zero_checkitems_no_redirect_if_no_next(self):
+        atrib_one = AttributeFactory()
+        atrib_two = AttributeFactory()
+        check_item = CheckItemFactory(attributes=[atrib_one, atrib_two])
+        ProcedureFactory(step=check_item.procedure.step - 1)
+
+        # proc_two = ProcedureFactory(step=check_item.procedure.step + 1)
+
+        request = self.create_request_with_session(
+            "/", session_data={"attrib": [atrib_one.id]}, referer="Any string"
+        )
+        response = procedure_detail(request, slug=check_item.procedure.slug)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context_data["procedure"].id, check_item.procedure.id)
+
+    def test_procedure_detail_with_zero_checkitems_will_redirect_backward(self):
+        atrib_one = AttributeFactory()
+        atrib_two = AttributeFactory()
+        check_item = CheckItemFactory(attributes=[atrib_one, atrib_two])
+        proc_prev = ProcedureFactory(step=check_item.procedure.step - 1)
+
+        proc_next = ProcedureFactory(step=check_item.procedure.step + 1)
+
+        request = self.create_request_with_session(
+            "/",
+            session_data={"attrib": [atrib_one.id]},
+            referer="A long url with" + proc_next.slug,
+        )
+
+        response = procedure_detail(request, slug=check_item.procedure.slug)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, "/" + proc_prev.slug)
 
     def test_procedure_detail_with_checkitems_should_provide_next_prev(self):
         atrib_one = AttributeFactory()

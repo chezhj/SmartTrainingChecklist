@@ -29,10 +29,11 @@ def procedure_detail(request, slug):
     prevproc = (
         Procedure.objects.filter(step__lt=procedure2view.step).order_by("step").last()
     )
-
+    # print(request.)
     # Check if profile exits
     if "attrib" not in request.session:
         return HttpResponseRedirect(reverse("checklist:start"))
+
     allitems = procedure2view.checkitem_set.all()
     query_ids = [
         item.id for item in allitems if item.shouldshow(request.session["attrib"])
@@ -42,9 +43,20 @@ def procedure_detail(request, slug):
     time_finished = time()
     query_time = round(time_finished - time_start, 3)
 
-    if len(check_items) == 0 and nextproc is not None:
-        # If len(check_items) is zero and there's a next procedure, redirect to it
-        return HttpResponseRedirect(reverse("checklist:detail", args=[nextproc.slug]))
+    # If len(check_items) is zero and there's a next procedure, redirect to it
+    if len(check_items) == 0:
+        # Check if referrer is same as next
+        if nextproc and (nextproc.slug in request.META["HTTP_REFERER"]):
+            if prevproc:
+                return HttpResponseRedirect(
+                    reverse("checklist:detail", args=[prevproc.slug])
+                )
+        ##and nextproc is not None:
+        else:
+            if nextproc:
+                return HttpResponseRedirect(
+                    reverse("checklist:detail", args=[nextproc.slug])
+                )
 
     context = {
         "procedure": procedure2view,
