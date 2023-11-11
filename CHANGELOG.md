@@ -1,3 +1,13 @@
+## v0.9.0 (2023-11-11)
+
+### Feat
+
+- **database**: Improved Pushpack checks
+
+### Fix
+
+- Going back with empty checklist
+
 ## v0.8.0 (2023-10-20)
 
 ### Feat
