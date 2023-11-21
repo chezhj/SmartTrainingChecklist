@@ -1,3 +1,9 @@
+## v0.9.1 (2023-11-21)
+
+### Fix
+
+- **procedures**: Fixed typo and improved testcode
+
 ## v0.9.0 (2023-11-11)
 
 ### Feat
