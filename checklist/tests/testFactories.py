@@ -6,6 +6,7 @@ from checklist.models import Attribute, CheckItem, Procedure
 class AttributeFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Attribute
+        skip_postgeneration_save = True
 
     title = factory.Faker("word")
     order = factory.Sequence(lambda n: n)
@@ -43,6 +44,7 @@ class ProcedureFactory(factory.django.DjangoModelFactory):
 class CheckItemFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = CheckItem
+        skip_postgeneration_save = True
 
     item = factory.Faker("word")
     procedure = factory.SubFactory(ProcedureFactory, __sequence=30)
@@ -57,3 +59,4 @@ class CheckItemFactory(factory.django.DjangoModelFactory):
         if extracted:
             for attribute in extracted:
                 self.attributes.add(attribute)
+            self.save()
