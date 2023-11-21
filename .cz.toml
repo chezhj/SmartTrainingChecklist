@@ -8,3 +8,6 @@ major_version_zero = true
 version_files = [
     "smart_training_checklist/__init__.py",
 ]
+post_bump_hooks=[
+  "build\\push_all.cmd"
+]
