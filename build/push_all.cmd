@@ -1,1 +1,1 @@
-git push origin --follow-tags
+git push origin --tags

@@ -62,7 +62,9 @@ Dus de strategie wordt
 - mv checklist checklist-v 
 - mv checklist-new checklist
 - setenv
+
 - virtualenv
+source /home/vdwanet/virtualenv/domains/vdwaal.net/checklist/3.8/bin/activate && cd /home/vdwanet/domains/vdwaal.net/checklist
 - pip load requirements.txt
 - database migratie (nog niet nodig)
 - collectstatic
