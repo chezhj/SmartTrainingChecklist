@@ -1,3 +1,9 @@
+## v0.9.2 (2024-01-21)
+
+### Fix
+
+- **database**: Changed conditions below 10
+
 ## v0.9.1 (2023-11-21)
 
 ### Fix
