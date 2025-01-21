@@ -10,4 +10,5 @@ urlpatterns = [
     path("<slug:slug>", views.procedure_detail, name="detail"),
     path("profile/", views.profile_view, name="profile"),
     path("update_profile/", views.update_profile, name="update_profile"),
+    path("export/", views.export, name="export"),
 ]

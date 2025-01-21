@@ -1,19 +1,20 @@
 """
 Main models module for al database objects
 """
+
 # pylint: disable=no-member
 
 from colorfield.fields import ColorField
 from django.urls import reverse
 from django.db import models
 
-# Create your models here.
-
 
 class Procedure(models.Model):
     title = models.CharField(max_length=40)
     step = models.PositiveIntegerField()
     slug = models.SlugField(unique=True)
+    show_expression = models.TextField(blank=True)
+    auto_continue = models.BooleanField(default=False)
 
     def __str__(self) -> str:
         return self.title.__str__()
@@ -27,12 +28,23 @@ class CheckItem(models.Model):
     procedure = models.ForeignKey(Procedure, on_delete=models.CASCADE)
     step = models.PositiveIntegerField()
     setting = models.CharField(max_length=80)
+    action_label = models.CharField(max_length=8, blank=True)
+    dataref_expression = models.TextField(blank=True)
     attributes = models.ManyToManyField(
         "Attribute", blank=True, related_name="checkItems"
     )
 
     def __str__(self) -> str:
         return self.item.__str__()
+
+    def get_action_label(self):
+        if self.action_label:
+            return self.action_label
+
+        if not self.attributes.filter(title="NoActionNeed").exists():
+            return "SET"
+        else:
+            return "CHECKED"
 
     def shouldshow(self, profile_list):
         attributes = self.attributes.values_list("id", flat=True)

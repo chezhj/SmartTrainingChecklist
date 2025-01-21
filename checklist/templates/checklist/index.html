@@ -5,24 +5,29 @@
 {% block content %}
     <h1 class="styled-text">Procedure overview</h1>
     {% if procedure_list %}
-        <table id="Table1" class="styled-table">
-            <thead>
-                <tr>
-                    <th>&nbsp;</th>
-                    <th>Procedure</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for proc in procedure_list %}
+        <div class="table-div">
+            <table id="Table1" class="styled-table">
+                <thead>
                     <tr>
-                        <td>{{ forloop.counter }}</td>
-                        <td>
-                            <a href="{{ proc.get_absolute_url }} ">{{ proc.title }}</a>
-                        </td>
+                        <th>&nbsp;</th>
+                        <th>Procedure</th>
                     </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    {% for proc in procedure_list %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>
+                                <a href="{{ proc.get_absolute_url }} ">{{ proc.title }}</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <div class="btn-bar">
+                <a class="btn btn-right" href=" {% url 'checklist:export' %} ">Export xCheckList</a>
+            </div>
+        </div>
     {% else %}
         <p>No items are available.</p>
     {% endif %}

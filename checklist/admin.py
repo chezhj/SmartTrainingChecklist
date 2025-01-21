@@ -16,4 +16,5 @@ class ProcedureAdmin(admin.ModelAdmin):
 
 # Register your models here.
 admin.site.register(Procedure, ProcedureAdmin)
+admin.site.register(CheckItem)
 admin.site.register(Attribute)
