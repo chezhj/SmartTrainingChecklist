@@ -1,3 +1,13 @@
+## v0.10.0 (2025-01-21)
+
+### Feat
+
+- File checkils and Icing procedure
+
+### Fix
+
+- **buld**: Added quotes to be sure
+
 ## v0.9.2 (2024-01-21)
 
 ### Fix
