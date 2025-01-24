@@ -1,3 +1,9 @@
+## v0.10.1 (2025-01-24)
+
+### Fix
+
+- **data**: Fixed attribute of de-icing location
+
 ## v0.10.0 (2025-01-21)
 
 ### Feat
