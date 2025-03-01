@@ -212,12 +212,19 @@ def export(request):
     for procedure in procedures:
 
         procedure_lines = make_procedure_lines(procedure)
-        lines.extend(procedure_lines)
+
+        item_lines = []
 
         for checkitem in procedure.checkitem_set.order_by("step"):
             if checkitem.shouldshow(request.session["attrib"]):
-                lines.extend(make_item_lines(checkitem))
-        lines.extend(make_end_procedure_lines(procedure))
+                item_lines.extend(make_item_lines(checkitem))
+
+        # Add procedure lines only if there are items to show
+        # Skip empty procedures
+        if len(item_lines) > 0:
+            lines.extend(procedure_lines)
+            lines.extend(item_lines)
+            lines.extend(make_end_procedure_lines(procedure))
 
     response.writelines(lines)
     return response
