@@ -1,3 +1,9 @@
+## v0.11.2 (2025-03-01)
+
+### Fix
+
+- Skip empty procedure & data_ref changes
+
 ## v0.11.1 (2025-02-20)
 
 ### Fix
