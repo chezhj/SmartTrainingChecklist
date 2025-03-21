@@ -4,38 +4,76 @@
     Session profile
 {% endblock title %}
 {% block content %}
-    <div style="width:fit-content">
+    <div class="fit-content">
+        <fieldset class="no-border">
+            <legend>
+                <h1>Specify session profile</h1>
+            </legend>
+            {% if error_message %}
+                <p>
+                    <strong>{{ error_message }}</strong>
+                </p>
+            {% endif %}
+            <div class="profile-section">
+                {% if simbrief_id %}
+                    <p class="styled-text">
+                        Departure Airport: <strong>{{ origin }}</strong>,
+                        Alt: <strong>{{ elevation }}</strong>,
+                        RWY:<strong>{{ runway }} ({{ rwy_length }})</strong>,
+                        Temp:<strong>{{ temperature }}</strong>
+                    </br>
+                    Departure setting - Flaps: <strong>{{ flap_setting }}</strong> Bleed: <strong>{{ bleed_setting }}</strong>
+                    (based on Simbrief plan, not a proper takeoff performance calculation)
+                </p>
+            {% else %}
+                <p class="styled-text">
+                    <form action="{% url 'checklist:profile' %}"
+                          method="post"
+                          class="profile-form">
+                        {% csrf_token %}
+                        <label for="simbrief_id" class="form-label">Simbrief ID:</label>
+                        <input type="text"
+                               id="simbrief_id"
+                               name="simbrief_id"
+                               value="{{ simbrief_id }}"
+                               class="form-input">
+                        <label for="remember_me" class="form-label form-right">
+                            <input type="checkbox"
+                                   id="remember_me"
+                                   name="remember_me"
+                                   value="1"
+                                   class="form-checkbox"
+                                   {% if remember_me %}checked{% endif %}>
+                            Remember me
+                        </label>
+                        <input type="submit" value="Get Plan" class="btn btn-right">
+                    </form>
+                </p>
+            {% endif %}
+        </div>
         <form action="{% url 'checklist:update_profile' %}" method="post">
             {% csrf_token %}
-            <fieldset style="border:0">
-                <legend>
-                    <h1>Specify session profile</h1>
-                </legend>
-                {% if error_message %}
-                    <p>
-                        <strong>{{ error_message }}</strong>
-                    </p>
-                {% endif %}
-                <table id="Table1" class="styled-table">
-                    <thead>
-                        <tr>
-                            <th>Check</th>
-                            <th>Profile attribute</th>
-                            <th>Description</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for check in attributes.all %}
-                            {% if check.show %}
-                                <tr>
-                                    <td>
-                                        <input type="checkbox" name="attributes" id="{{ forloop.counter }}" value={{ check.id }}  {% if check.id in request.session.attrib %} CHECKED />
-                                    {% else %}
-                                        />
-                                    {% endif %}
+            <table id="Table1" class="styled-table">
+                <thead>
+                    <tr>
+                        <th>Check</th>
+                        <th>Profile attribute</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for check in attributes.all %}
+                        {% if check.show %}
+                            <tr>
+                                <td>
+                                    <input type="checkbox"
+                                           name="attributes"
+                                           id="{{ forloop.counter }}"
+                                           value="{{ check.id }}"
+                                           {% if check.id in request.session.attrib %}CHECKED{% endif %} />
                                 </td>
                                 <td>
-                                    <label for="{{ forloop.counter }}">{{ check.title }}</label>
+                                    <label for="{{ forloop.counter|escape }}">{{ check.title }}</label>
                                 </td>
                                 <td>
                                     <label for="{{ forloop.counter }}">{{ check.description }}</label>
@@ -46,8 +84,13 @@
                 </tbody>
             </table>
         </fieldset>
-        <a class="btn btn-left" href="{% url 'checklist:profile' %}?Clean ">Clear</a>
         <input class="btn btn-right" type="submit" value="Next">
+    </form>
+    <!-- Separate form for the "Clear" button -->
+    <form action="{% url 'checklist:profile' %}" method="post" class="inline">
+        {% csrf_token %}
+        <input type="hidden" name="Clean" value="1">
+        <button type="submit" class="btn btn-left">Clear</button>
     </form>
 </div>
 {% endblock content %}

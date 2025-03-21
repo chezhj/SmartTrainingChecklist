@@ -8,9 +8,13 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, HttpResponseRedirect
 from django.template.response import TemplateResponse
 from django.urls import reverse
+from datetime import timedelta
+from django.utils.timezone import now
 
 # Create your views here.
 from django.views import generic
+
+from checklist.simbrief import SimBrief
 from .models import Procedure, Attribute
 
 
@@ -85,22 +89,98 @@ class IndexView(generic.ListView):
         return Procedure.objects.order_by("step")
 
 
+def update_profile_with_simbrief(request, simbrief):
+    """
+    Update the session['attrib'] list based on SimBrief data.
+    """
+    # Retrieve the current attribute list from the session
+    attlist = request.session.get("attrib", [])
+
+    # Extract cleaned temperature once
+    if simbrief.temperature:
+        cleaned_temperature = float(simbrief.temperature.replace("°C", ""))
+
+        # Example condition: Add attribute ID 7 if temperature is below 0°C
+        if cleaned_temperature < 0:
+            if 7 not in attlist:
+                attlist.append(7)
+
+        # Example condition: Add attribute ID 10 if temperature is between 0°C and 10°C
+        if 0 < cleaned_temperature < 11:
+            if 9 not in attlist:
+                attlist.append(9)
+            if 7 in attlist:
+                attlist.remove(7)
+
+        # if temperature is above 10°C, remove attribute ID 9 and 7
+        if cleaned_temperature > 10:
+            if 9 in attlist:
+                attlist.remove(9)
+            if 7 in attlist:
+                attlist.remove(7)
+
+    # if bleeds are off, add attribute ID 8
+    if simbrief.bleed_setting == "OFF":
+        if 8 not in attlist:
+            attlist.append(8)
+
+    # Update the session with the modified attribute list
+    request.session["attrib"] = attlist
+
+
 def profile_view(request):
-    """basic function view for the profile"""
-    if "Clean" in request.GET:
-        request.session.flush()
 
-    # request.session["profile"] = 0
+    if request.method == "POST":
+        # Handle the "Clean" action
+        if "Clean" in request.POST:
+            print("Cleaning session")
+            request.session.flush()
 
-    attributes = Attribute.objects.order_by("order")
+    # Retrieve simbrief_pilot_id from the cookie or request.POST
+    simbrief_pilot_id = request.COOKIES.get("simbrief_pilot_id")
+    if not simbrief_pilot_id and "simbrief_id" in request.POST:
+        simbrief_pilot_id = request.POST["simbrief_id"]
 
-    return TemplateResponse(
+    # Create SimBrief object and fetch data
+    simbrief = SimBrief(simbrief_pilot_id)
+    simbrief.fetch_data()
+
+    # Update the session['attrib'] list based on SimBrief data
+    update_profile_with_simbrief(request, simbrief)
+
+    # Add a cookie for simbrief_pilot_id if "remember_me" is in the GET request
+    response = TemplateResponse(
         request,
         "checklist/profile.html",
         {
-            "attributes": attributes,
+            "attributes": Attribute.objects.order_by("order"),
+            "origin": simbrief.origin or "Unknown",
+            "elevation": simbrief.elevation or "Unknown",
+            "temperature": simbrief.temperature or "Unknown",
+            "runway": simbrief.runway or "Unknown",
+            "rwy_length": simbrief.rwy_length or "Unknown",
+            "altimeter": simbrief.altimeter or "Unknown",
+            "flap_setting": simbrief.flap_setting or "Unknown",
+            "bleed_setting": simbrief.bleed_setting or "Unknown",
+            "simbrief_id": simbrief.pilot_id or "",
         },
     )
+
+    # set cookie if remember me is checked or if cookie already exists
+    if (request.COOKIES.get("simbrief_pilot_id")) or (
+        "remember_me" in request.POST and simbrief_pilot_id
+    ):
+        expiration_date = now() + timedelta(days=31)
+        response.set_cookie(
+            "simbrief_pilot_id",
+            simbrief_pilot_id,
+            expires=expiration_date,
+            secure=True,  # Ensures the cookie is sent over HTTPS only
+            httponly=True,  # Prevents JavaScript access to the cookie
+            samesite="Lax",  # Restricts cross-site cookie sharing
+        )
+
+    return response
 
 
 def update_profile(request):
@@ -127,7 +207,6 @@ def update_profile(request):
         attlist.append(int(att))
         if over_rules.get(int(att), None):
             attlist.remove(over_rules[int(att)])
-            print(f"Removed {over_rules[int(att)]} from list")
 
     request.session["attrib"] = attlist
 

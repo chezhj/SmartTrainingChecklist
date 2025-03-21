@@ -76,6 +76,10 @@
 
 .btn-right {
     float: right;
+    margin-left: auto;
+    /* Dit duwt de knop naar rechts */
+
+
 }
 
 .btn-left {
@@ -201,6 +205,102 @@
     width: 100%
 }
 
+
+.profile-section {
+    margin: 20px 0;
+    padding: 7px 15px;
+    border: 2px solid #009879;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    font-family: sans-serif;
+    color: #14816b;
+    max-width: 850px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.profile-section .styled-text {
+    font-size: 0.9em;
+    line-height: 1.6;
+    color: #14816b;
+}
+
+
+legend {
+    text-align: center;
+    width: 100%;
+}
+
+legend h1 {
+    font-size: 1.5em;
+    color: #009879;
+    border-bottom: 2px solid #009879;
+    padding-bottom: 5px;
+    margin-bottom: 15px;
+    font-family: sans-serif;
+    display: inline-block;
+    width: 100%;
+}
+
+
+
+
+/* Styling for form labels */
+.form-label {
+    font-family: sans-serif;
+    font-size: 0.9em;
+    margin-right: 10px;
+}
+
+/* Styling for form inputs */
+.form-input {
+    font-family: sans-serif;
+    padding: 5px;
+    font-size: 0.9em;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    width: 200px;
+}
+
+/* Styling for checkboxes */
+.form-checkbox {
+    font-family: sans-serif;
+    font-size: 0.9em;
+    margin-left: 5px;
+}
+
+.form-right {
+    float: right;
+}
+
+.profile-form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+
+.form-group {
+    flex: 1;
+    /* Laat het veld groeien, zodat de knop rechts blijft */
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.fit-content {
+    width: fit-content;
+}
+
+.no-border {
+    border: 0;
+}
+
+.inline {
+    display: inline;
+}
+
 @media (max-width: 730px) {
 
     /* Replace with 360 or whatever you intend to */
@@ -226,4 +326,13 @@
         bottom: 120px;
     }
 
+    .profile-section {
+        padding: 10px;
+        font-size: 0.85em;
+    }
+
+    legend h1 {
+        font-size: 1.2em;
+
+    }
 }
