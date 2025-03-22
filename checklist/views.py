@@ -123,6 +123,9 @@ def update_profile_with_simbrief(request, simbrief):
     if simbrief.bleed_setting == "OFF":
         if 8 not in attlist:
             attlist.append(8)
+    else:
+        if 8 in attlist:
+            attlist.remove(8)
 
     # Update the session with the modified attribute list
     request.session["attrib"] = attlist
@@ -163,6 +166,7 @@ def profile_view(request):
             "flap_setting": simbrief.flap_setting or "Unknown",
             "bleed_setting": simbrief.bleed_setting or "Unknown",
             "simbrief_id": simbrief.pilot_id or "",
+            "error_message": simbrief.error_message or "",
         },
     )
 

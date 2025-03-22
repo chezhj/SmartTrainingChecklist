@@ -1,6 +1,9 @@
 import unittest
 from unittest.mock import patch, MagicMock
+
+from requests import RequestException
 from checklist.simbrief import SimBrief
+import xml.etree.ElementTree as ET
 
 
 class TestSimBriefInit(unittest.TestCase):
@@ -25,6 +28,9 @@ class TestSimBriefInit(unittest.TestCase):
 
         # Assert that parse_xml was not called
         mock_parse_xml.assert_not_called()
+
+    #test error message is set if pilot_id is not provided
+    
 
     def test_attributes_set_to_none_without_pilot_id(self):
         """
@@ -93,6 +99,45 @@ class TestSimBriefInit(unittest.TestCase):
         self.assertIsNone(simbrief.altimeter)
         self.assertIsNone(simbrief.flap_setting)
         self.assertIsNone(simbrief.bleed_setting)
+
+    # test that validates an error message is set in simbrief.error_message if an error occurs during fetch_data
+    @patch("checklist.simbrief.requests.get")
+    def test_error_message_set_on_fetch_data_error(self, mock_get):
+        """
+        Test that an error message is set in simbrief.error_message if an error occurs during fetch_data.
+        """
+        # Mock the requests.get method to raise an exception
+        mock_get.side_effect = RequestException("No plan found")
+
+        # Initialize SimBrief with a pilot_id
+        pilot_id = "12345"
+        simbrief = SimBrief(pilot_id=pilot_id)
+        simbrief.fetch_data()
+
+        # Assert that the error message is set
+        self.assertIn("No plan found", simbrief.error_message)
+
+    # test that validates an error message is set in simbrief.error_message if an error occurs during parse_xml
+    @patch("checklist.simbrief.requests.get")
+    @patch("checklist.simbrief.ET.fromstring")
+    def test_error_message_set_on_parse_xml_error(self, mock_fromstring, mock_get):
+        """
+        Test that an error message is set in simbrief.error_message if an error occurs during parse_xml.
+        """
+        # Mock the requests.get method to return a valid response
+        mock_get.return_value.status_code = 200
+        mock_get.return_value.text = self.dummy_xml
+
+        # Mock the ET.fromstring method to raise an exception
+        mock_fromstring.side_effect = ET.ParseError("XML is invalid")
+
+        # Initialize SimBrief with a pilot_id
+        pilot_id = "12345"
+        simbrief = SimBrief(pilot_id=pilot_id)
+        simbrief.fetch_data()
+
+        # Assert that the error message is set
+        self.assertIn("XML is invalid", simbrief.error_message)
 
 
 if __name__ == "__main__":

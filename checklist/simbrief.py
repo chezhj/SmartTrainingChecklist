@@ -17,6 +17,7 @@ class SimBrief:
         self.altimeter = None
         self.flap_setting = None
         self.bleed_setting = None
+        self.error_message = None
 
     def xml_url(self) -> str:
         """
@@ -31,6 +32,7 @@ class SimBrief:
         Fetch and parse the SimBrief XML data.
         """
         if not self.pilot_id:
+            self.error_message = "Pilot ID is required to fetch data."
             return
 
         try:
@@ -38,8 +40,10 @@ class SimBrief:
             response.raise_for_status()  # Raise an error for HTTP issues
             self.parse_xml(response.content)
         except requests.RequestException as e:
+            self.error_message = f"Error fetching SimBrief data: {e}"
             print(f"Error fetching SimBrief data: {e}")
         except ET.ParseError as e:
+            self.error_message = f"Error parsing SimBrief XML: {e}"
             print(f"Error parsing SimBrief XML: {e}")
 
     def parse_xml(self, xml_data):

@@ -15,7 +15,7 @@
                 </p>
             {% endif %}
             <div class="profile-section">
-                {% if simbrief_id %}
+                {% if simbrief_id and error_message == "" %}
                     <p class="styled-text">
                         Departure Airport: <strong>{{ origin }}</strong>,
                         Alt: <strong>{{ elevation }}</strong>,
@@ -44,7 +44,7 @@
                                    value="1"
                                    class="form-checkbox"
                                    {% if remember_me %}checked{% endif %}>
-                            Remember me
+                            Remember me (uses cookies)
                         </label>
                         <input type="submit" value="Get Plan" class="btn btn-right">
                     </form>

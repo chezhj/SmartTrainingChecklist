@@ -1,4 +1,5 @@
 """Test views"""
+
 # pylint: disable=no-member
 # pylint: disable=missing-class-docstring
 # pylint: disable=missing-function-docstring
@@ -19,7 +20,7 @@ from checklist.views import IndexView, procedure_detail, profile_view, update_pr
 
 class TestProfileView(ViewTestCase):
     def test_called_with_template(self):
-        request = self.req_factory.get("/")
+        request = self.req_factory.post("/")
 
         response = profile_view(request)
         # render.assert_called_once_with("checklist/profile.html")
