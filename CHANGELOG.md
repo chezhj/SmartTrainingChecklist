@@ -1,3 +1,10 @@
+## v0.12.0 (2025-03-22)
+
+### Feat
+
+- Added error message to user
+- **Profile**: Added simbrief load to set profile
+
 ## v0.11.2 (2025-03-01)
 
 ### Fix
