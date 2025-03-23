@@ -1,3 +1,9 @@
+## v0.12.1 (2025-03-23)
+
+### Fix
+
+- **modules**: Anyio module dependecy upgrade
+
 ## v0.12.0 (2025-03-22)
 
 ### Feat
