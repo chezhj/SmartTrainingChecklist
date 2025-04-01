@@ -1,4 +1,5 @@
 """Development settings file"""
+
 # pylint: disable=unused-wildcard-import,wildcard-import
 from .base import *
 
@@ -18,3 +19,6 @@ ALLOWED_HOSTS = ["espresso", "localhost"]
 STATIC_URL = "static/"
 
 STATIC_ROOT = "./checklist/static/"
+
+# SIMBRIEF_URL = "https://www.simbrief.com/api/xml.fetcher.php?userid="
+SIMBRIEF_URL = "https://localhost/api/xml.fetcher.php?userid="

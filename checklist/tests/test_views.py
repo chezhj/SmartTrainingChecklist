@@ -4,7 +4,7 @@
 # pylint: disable=missing-class-docstring
 # pylint: disable=missing-function-docstring
 import random
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, patch, MagicMock
 
 from django.db.models.query import QuerySet
 from django.http import QueryDict
@@ -15,15 +15,29 @@ from checklist.tests.testFactories import (
     CheckItemFactory,
     ProcedureFactory,
 )
-from checklist.views import IndexView, procedure_detail, profile_view, update_profile
+from checklist.views import (
+    IndexView,
+    procedure_detail,
+    profile_view,
+    update_profile,
+    update_profile_with_simbrief,
+)
 
 
 class TestProfileView(ViewTestCase):
+
     def test_called_with_template(self):
+        # Create a POST request
         request = self.req_factory.post("/")
 
+        # Mock the session as a dict-like object
+        session = {}
+        request.session = session
+
+        # Call the profile_view function
         response = profile_view(request)
-        # render.assert_called_once_with("checklist/profile.html")
+
+        # Assert the response
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.template_name, "checklist/profile.html")
 
@@ -33,6 +47,9 @@ class TestProfileView(ViewTestCase):
         qs.__iter__.return_value = [Mock(), Mock()]
         qs.count.return_value = 2
         request = self.req_factory.get("/")
+        # Mock the session as a dict-like object
+        session = {}
+        request.session = session
 
         response = profile_view(request)
         # render.assert_called_once_with("checklist/profile.html")
@@ -40,22 +57,102 @@ class TestProfileView(ViewTestCase):
         self.assertEqual(response.template_name, "checklist/profile.html")
         qs.assert_called_once()
 
-    def test_profile_clean_upper_removes_atrributes_from_session(self):
-        request = self.req_factory.get("/?Clean")
-        session = Mock()
+    @patch("checklist.views.Attribute.objects.order_by")
+    def test_profile_view_updates_session_attrib(self, mock_order_by):
+        """
+        Test that the profile_view updates the session['attrib'] key correctly.
+        """
+        # Mock the session as a dict-like object
+        session = {}
+        request = self.req_factory.post("/")
         request.session = session
 
+        # Mock SimBrief data
+        mock_simbrief = MagicMock()
+        mock_simbrief.temperature = "15°C"
+        mock_simbrief.bleed_setting = "ON"
+
+        # Patch SimBrief initialization and fetch_data
+        with patch("checklist.views.SimBrief", return_value=mock_simbrief):
+            response = profile_view(request)
+
+        # Assert that session['attrib'] is updated
+        self.assertIn("attrib", request.session)
+        self.assertIsInstance(request.session["attrib"], list)
+
+        # Assert the response
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.template_name, "checklist/profile.html")
+
+    def test_profile_clean_upper_removes_atrributes_from_session(self):
+        """
+        Test that the profile_view function flushes the session when the 'clean' parameter is passed.
+        """
+        # Create a POST request with the 'clean' parameter
+        request = self.req_factory.post("/", data={"Clean": True})
+
+        # Mock the session as a dict-like object
+        session = {"attrib": [1, 2, 3]}  # Simulate some attributes in the session
+
+        # Add a mock flush method to the session
+        class MockSession(dict):
+            def flush(self):
+                self.clear()
+
+        request.session = MockSession(session)
+
+        # Call the profile_view function
         profile_view(request)
-        session.flush.assert_called_once()
+
+        # Assert that the session's flush method was called
+        self.assertEqual(request.session["attrib"], [])  # The session should be cleared
 
     def test_profile_clean_lower_does_not_remove_atrributes_from_session(self):
-        request = self.req_factory.get("/?clean")
-        session = Mock()
-        request.session = session
+        """
+        Test that the profile_view function flushes the session when the 'clean' parameter is passed.
+        """
+        # Create a POST request with the 'clean' parameter
+        request = self.req_factory.post("/", data={"clean": True})
 
+        # Mock the session as a dict-like object
+        session = {"attrib": [1, 2, 3]}  # Simulate some attributes in the session
+
+        # Add a mock flush method to the session
+        class MockSession(dict):
+            def flush(self):
+                self.clear()
+
+        request.session = MockSession(session)
+
+        # Call the profile_view function
         profile_view(request)
 
-        session.flush.assert_not_called()
+        # Assert that the session's flush method was called
+        self.assertEqual(
+            request.session["attrib"], [1, 2, 3]
+        )  # The session should be cleared
+
+    # Test if the post request is handled correctly
+    @patch("checklist.views.SimBrief")
+    def test_profile_view_id_in_post_request(self, mock_simbrief):
+
+        request = self.create_request_with_session(
+            "/", session_data={"attrib": []}, request_data={"simbrief_id": "67890"}
+        )
+
+        profile_view(request)
+        mock_simbrief.assert_called_once_with("67890")
+
+    # test if the cookie in the post request is handled correctly
+
+    @patch("checklist.views.SimBrief")
+    def test_profile_view_id_in_cookie(self, mock_simbrief):
+        request = self.create_request_with_session("/", session_data={"attrib": []})
+        request.COOKIES["simbrief_pilot_id"] = "67890"
+        request.method = "POST"
+
+        profile_view(request)
+        mock_simbrief.assert_called_once_with("67890")
 
 
 class TestProcedureView(ViewTestCase):
@@ -257,3 +354,79 @@ class TestUpdateProfile(ViewTestCase):
         self.assertNotIn(atrib_non_visual.id, request.session["attrib"])
         self.assertIn(atrib_visual.id, request.session["attrib"])
         self.assertEqual(response.status_code, 302)
+
+
+class TestUpdateProfileWithSimBrief(ViewTestCase):
+    def test_adds_attribute_7_when_temperature_below_zero(self):
+        request = self.create_request_with_session("/", session_data={"attrib": []})
+        mock_simbrief = MagicMock()
+        mock_simbrief.temperature = "-5°C"
+        mock_simbrief.bleed_setting = "ON"
+
+        update_profile_with_simbrief(request, mock_simbrief)
+
+        self.assertIn(7, request.session["attrib"])
+
+    def test_adds_attribute_9_and_removes_7_when_temperature_between_zero_and_ten(
+        self,
+    ):
+        request = self.create_request_with_session("/", session_data={"attrib": [7]})
+        mock_simbrief = MagicMock()
+        mock_simbrief.temperature = "5°C"
+        mock_simbrief.bleed_setting = "ON"
+
+        update_profile_with_simbrief(request, mock_simbrief)
+
+        self.assertIn(9, request.session["attrib"])
+        self.assertNotIn(7, request.session["attrib"])
+
+    def test_removes_attributes_7_and_9_when_temperature_above_ten(self):
+        request = self.create_request_with_session("/", session_data={"attrib": [7, 9]})
+        mock_simbrief = MagicMock()
+        mock_simbrief.temperature = "15°C"
+        mock_simbrief.bleed_setting = "ON"
+
+        update_profile_with_simbrief(request, mock_simbrief)
+
+        self.assertNotIn(7, request.session["attrib"])
+        self.assertNotIn(9, request.session["attrib"])
+
+    def test_adds_attribute_8_when_bleed_setting_is_off(self):
+        request = self.create_request_with_session("/", session_data={"attrib": []})
+        mock_simbrief = MagicMock()
+        mock_simbrief.temperature = "15°C"
+        mock_simbrief.bleed_setting = "OFF"
+
+        update_profile_with_simbrief(request, mock_simbrief)
+
+        self.assertIn(8, request.session["attrib"])
+
+    def test_removes_attribute_8_when_bleed_setting_is_on(self):
+        request = self.create_request_with_session("/", session_data={"attrib": [8]})
+        mock_simbrief = MagicMock()
+        mock_simbrief.temperature = "15°C"
+        mock_simbrief.bleed_setting = "ON"
+
+        update_profile_with_simbrief(request, mock_simbrief)
+
+        self.assertNotIn(8, request.session["attrib"])
+
+    def test_handles_missing_temperature_gracefully(self):
+        request = self.create_request_with_session("/", session_data={"attrib": []})
+        mock_simbrief = MagicMock()
+        mock_simbrief.temperature = None
+        mock_simbrief.bleed_setting = "ON"
+
+        update_profile_with_simbrief(request, mock_simbrief)
+
+        self.assertEqual(request.session["attrib"], [])
+
+    def test_handles_missing_bleed_setting_gracefully(self):
+        request = self.create_request_with_session("/", session_data={"attrib": []})
+        mock_simbrief = MagicMock()
+        mock_simbrief.temperature = "15°C"
+        mock_simbrief.bleed_setting = None
+
+        update_profile_with_simbrief(request, mock_simbrief)
+
+        self.assertEqual(request.session["attrib"], [])

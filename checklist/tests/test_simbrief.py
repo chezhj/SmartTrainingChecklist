@@ -29,8 +29,7 @@ class TestSimBriefInit(unittest.TestCase):
         # Assert that parse_xml was not called
         mock_parse_xml.assert_not_called()
 
-    #test error message is set if pilot_id is not provided
-    
+    # test error message is set if pilot_id is not provided
 
     def test_attributes_set_to_none_without_pilot_id(self):
         """
@@ -138,6 +137,39 @@ class TestSimBriefInit(unittest.TestCase):
 
         # Assert that the error message is set
         self.assertIn("XML is invalid", simbrief.error_message)
+
+    @patch(
+        "checklist.simbrief.conf_settings.SIMBRIEF_URL",
+        "https://any_host/fetcher.php?userid=",
+    )
+    def test_xml_url_with_valid_setting(self):
+        """
+        Test that xml_url generates the correct URL when SIMBRIEF_URL is defined.
+        """
+        simbrief = SimBrief(pilot_id="12345")
+        expected_url = "https://any_host/fetcher.php?userid=12345"
+        self.assertEqual(simbrief.xml_url(), expected_url)
+
+    @patch("checklist.simbrief.conf_settings.SIMBRIEF_URL", None)
+    def test_xml_url_with_missing_setting(self):
+        """
+        Test that xml_url raises a ValueError when SIMBRIEF_URL is not defined.
+        """
+        simbrief = SimBrief(pilot_id="12345")
+        with self.assertRaises(ValueError) as context:
+            simbrief.xml_url()
+        self.assertEqual(str(context.exception), "No SIMBRIEF_URL found in settings.")
+
+    def test_xml_url_without_pilot_id(self):
+        """
+        Test that xml_url raises a ValueError when pilot_id is not provided.
+        """
+        simbrief = SimBrief()
+        with self.assertRaises(ValueError) as context:
+            simbrief.xml_url()
+        self.assertEqual(
+            str(context.exception), "Pilot ID is required to generate the XML URL."
+        )
 
 
 if __name__ == "__main__":

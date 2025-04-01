@@ -1,4 +1,5 @@
 """Production settings file"""
+
 # pylint: disable=unused-wildcard-import,wildcard-import
 from decouple import config
 from .base import *
@@ -20,3 +21,5 @@ WWW_DIR = Path(BASE_DIR).resolve().parent / "public_html/checklist/"
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 STATIC_ROOT = WWW_DIR / "static/"
 STATIC_URL = "static/"
+
+SIMBRIEF_URL = "https://www.simbrief.com/api/xml.fetcher.php?userid="

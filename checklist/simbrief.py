@@ -1,6 +1,8 @@
 import requests
 import xml.etree.ElementTree as ET
 
+from django.conf import settings as conf_settings
+
 
 class SimBrief:
     """
@@ -25,7 +27,15 @@ class SimBrief:
         """
         if not self.pilot_id:
             raise ValueError("Pilot ID is required to generate the XML URL.")
-        return f"https://www.simbrief.com/api/xml.fetcher.php?userid={self.pilot_id}"
+
+        simbrief_url = getattr(conf_settings, "SIMBRIEF_URL", None)
+
+        if not simbrief_url:  # This should be defined in your settings
+            raise ValueError("No SIMBRIEF_URL found in settings.")
+
+        # Add the pilot ID to the URL
+        simbrief_url = simbrief_url + self.pilot_id
+        return simbrief_url
 
     def fetch_data(self):
         """
