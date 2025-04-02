@@ -172,5 +172,53 @@ class TestSimBriefInit(unittest.TestCase):
         )
 
 
+class TestSimBriefHeaders(unittest.TestCase):
+    @patch("checklist.simbrief.requests.get")
+    @patch.object(SimBrief, "parse_xml")  # Mock parse_xml
+    @patch.object(SimBrief, "xml_url")  # Mock xml_url
+    def test_headers_are_empty_if_no_token(
+        self, mock_xml_url, mock_parse_xml, mock_requests_get
+    ):
+        """
+        Test that the headers are empty if no mock_token is provided.
+        """
+        # Arrange
+        simbrief = SimBrief(pilot_id="12345")
+        simbrief.mock_token = None  # No token provided
+        mock_xml_url.return_value = "https://mocked-url.com"  # Mocked URL
+
+        # Act
+        simbrief.fetch_data()
+
+        # Assert
+        mock_requests_get.assert_called_once()
+        args, kwargs = mock_requests_get.call_args
+        self.assertEqual(kwargs["headers"], {})  # Headers should be empty
+
+    @patch("checklist.simbrief.requests.get")
+    @patch.object(SimBrief, "parse_xml")  # Mock parse_xml
+    @patch.object(SimBrief, "xml_url")  # Mock xml_url
+    def test_headers_include_token_if_given(
+        self, mock_xml_url, mock_parse_xml, mock_requests_get
+    ):
+        """
+        Test that the headers include the mock_token if it is provided.
+        """
+        # Arrange
+        simbrief = SimBrief(pilot_id="12345")
+        simbrief.mock_token = "mocked_token"
+        mock_xml_url.return_value = "https://mocked-url.com"  # Mocked URL
+
+        # Act
+        simbrief.fetch_data()
+
+        # Assert
+        mock_requests_get.assert_called_once()
+        args, kwargs = mock_requests_get.call_args
+        self.assertEqual(
+            kwargs["headers"], {"X-Auth-Token": "mocked_token"}
+        )  # Token should be in headers
+
+
 if __name__ == "__main__":
     unittest.main()

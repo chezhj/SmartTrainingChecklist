@@ -20,6 +20,7 @@ class SimBrief:
         self.flap_setting = None
         self.bleed_setting = None
         self.error_message = None
+        self.mock_token = None
 
     def xml_url(self) -> str:
         """
@@ -29,6 +30,9 @@ class SimBrief:
             raise ValueError("Pilot ID is required to generate the XML URL.")
 
         simbrief_url = getattr(conf_settings, "SIMBRIEF_URL", None)
+        self.mock_token = getattr(conf_settings, "MOCK_TOKEN", None)
+
+        # self.mock_token = getattr(conf_settings, "X-Auth-Token", None)
 
         if not simbrief_url:  # This should be defined in your settings
             raise ValueError("No SIMBRIEF_URL found in settings.")
@@ -46,7 +50,13 @@ class SimBrief:
             return
 
         try:
-            response = requests.get(self.xml_url(), timeout=10)
+            url = self.xml_url()
+            headers = {}
+            if self.mock_token:
+                headers = {"X-Auth-Token": self.mock_token}
+            # Make the GET request with headers
+            response = requests.get(url, headers=headers, timeout=10)
+
             response.raise_for_status()  # Raise an error for HTTP issues
             self.parse_xml(response.content)
         except requests.RequestException as e:

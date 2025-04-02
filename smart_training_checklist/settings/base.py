@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 
 from pathlib import Path
+from decouple import config
 from .. import __version__
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -111,3 +112,5 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+MOCK_TOKEN = config("X-Auth-Token", default=None)
