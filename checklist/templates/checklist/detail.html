@@ -41,54 +41,62 @@
     </script>
 {% endblock script %}
 {% block content %}
-    <h1 class="styled-text">{{ procedure.title }}</h1>
-    <div class="table-div">
-        <table id="Table1" class="styled-table">
-            <thead>
-                <tr>
-                    <th>Done</th>
-                    <th>Item</th>
-                    <th>Check</th>
-                    <th>attributes</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in check_items %}
-                    {% if forloop.counter == 1 %}
-                        <tr id="row{{ forloop.counter }}" class="active-row">
-                        {% else %}
-                            <tr id="row{{ forloop.counter }}">
-                            {% endif %}
-                            <td>
-                                <input type="checkbox"
-                                       id="name{{ item.id }}"
-                                       name="name{{ item.id }}"
-                                       class="clCheckBox"
-                                       onclick="GetSelected()">
-                            </td>
-                            <td class="text-cel" onclick="selectCheckbox('name{{ item.id }}')">{{ item.item }}</td>
-                            <td class="text-cel descrip"
-                                onclick="selectCheckbox('name{{ item.id }}')">{{ item.setting }}</td>
-                            <td>
-                                <ul class="cl-taglist">
-                                    {% for attrib in item.attributes.all %}
-                                        {% include "checklist/attrib_detail.html" %}
-                                    {% endfor %}
-                                </ul>
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            <div class="btn-bar">
-                {% if prevproc %}
-                    <a class="btn btn-left"
-                       href="{% url 'checklist:detail' prevproc.slug %} ">Prev</a>
-                {% endif %}
-                {% if nextproc %}
-                    <a class="btn btn-right"
-                       href=" {% url 'checklist:detail' nextproc.slug %} ">Next</a>
-                {% endif %}
+    <div class="fit-content">
+        <legend>
+            <h1>{{ procedure.title }}</h1>
+        </legend>
+        <div class="table-div">
+            <table id="Table1" class="styled-table">
+                <thead>
+                    <tr>
+                        <th>Done</th>
+                        <th>Item</th>
+                        {% if request.session.shared_flight %}<th>Role</th>{% endif %}
+                        <th>Check</th>
+                        <th>attributes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in check_items %}
+                        {% if forloop.counter == 1 %}
+                            <tr id="row{{ forloop.counter }}" class="active-row">
+                            {% else %}
+                                <tr id="row{{ forloop.counter }}">
+                                {% endif %}
+                                <td>
+                                    <input type="checkbox"
+                                           id="name{{ item.id }}"
+                                           name="name{{ item.id }}"
+                                           class="clCheckBox"
+                                           onclick="GetSelected()">
+                                </td>
+                                <td class="text-cel" onclick="selectCheckbox('name{{ item.id }}')">{{ item.item }}</td>
+                                {% if request.session.shared_flight %}
+                                    <td class="text-cel" onclick="selectCheckbox('name{{ item.id }}')">{{ item.role }}</td>
+                                {% endif %}
+                                <td class="text-cel descrip"
+                                    onclick="selectCheckbox('name{{ item.id }}')">{{ item.setting }}</td>
+                                <td>
+                                    <ul class="cl-taglist">
+                                        {% for attrib in item.attributes.all %}
+                                            {% include "checklist/attrib_detail.html" %}
+                                        {% endfor %}
+                                    </ul>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <div class="btn-bar">
+                    {% if prevproc %}
+                        <a class="btn btn-left"
+                           href="{% url 'checklist:detail' prevproc.slug %} ">Prev</a>
+                    {% endif %}
+                    {% if nextproc %}
+                        <a class="btn btn-right"
+                           href=" {% url 'checklist:detail' nextproc.slug %} ">Next</a>
+                    {% endif %}
+                </div>
             </div>
         </div>
     {% endblock content %}

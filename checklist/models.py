@@ -34,6 +34,21 @@ class CheckItem(models.Model):
         "Attribute", blank=True, related_name="checkItems"
     )
 
+    ROLE_CHOICES = [
+        ("PF", "Pilot Flying"),
+        ("PM", "Pilot Monitoring"),
+        ("C", "Captain"),
+        ("BOTH", "Both"),
+        ("FO", "First Officer"),
+    ]
+    role = models.CharField(
+        max_length=10,
+        choices=ROLE_CHOICES,
+        default="",
+        blank=True,
+        help_text="Indicates who should perform this check item.",
+    )
+
     def __str__(self) -> str:
         return self.item.__str__()
 

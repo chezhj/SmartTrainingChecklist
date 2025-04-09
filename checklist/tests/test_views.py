@@ -62,10 +62,10 @@ class TestProfileView(ViewTestCase):
         """
         Test that the profile_view updates the session['attrib'] key correctly.
         """
-        # Mock the session as a dict-like object
-        session = {}
-        request = self.req_factory.post("/")
-        request.session = session
+        # create valid request with simbrief_id
+        request = self.create_request_with_session(
+            "/", session_data={"attrib": []}, request_data={"simbrief_id": "1234"}
+        )
 
         # Mock SimBrief data
         mock_simbrief = MagicMock()
@@ -96,8 +96,10 @@ class TestProfileView(ViewTestCase):
 
         # Add a mock flush method to the session
         class MockSession(dict):
+            self.called = False
+
             def flush(self):
-                self.clear()
+                self.called = True
 
         request.session = MockSession(session)
 
@@ -105,7 +107,8 @@ class TestProfileView(ViewTestCase):
         profile_view(request)
 
         # Assert that the session's flush method was called
-        self.assertEqual(request.session["attrib"], [])  # The session should be cleared
+        # request.session.flush.assert_called_once()
+        self.assertTrue(request.session.called)  # The session is flushed
 
     def test_profile_clean_lower_does_not_remove_atrributes_from_session(self):
         """
@@ -130,7 +133,7 @@ class TestProfileView(ViewTestCase):
         # Assert that the session's flush method was called
         self.assertEqual(
             request.session["attrib"], [1, 2, 3]
-        )  # The session should be cleared
+        )  # The session is not flushed
 
     # Test if the post request is handled correctly
     @patch("checklist.views.SimBrief")
@@ -153,6 +156,15 @@ class TestProfileView(ViewTestCase):
 
         profile_view(request)
         mock_simbrief.assert_called_once_with("67890")
+
+    @patch("checklist.views.SimBrief")
+    def test_profile_view_id_in_session(self, mock_simbrief):
+        request = self.create_request_with_session("/", session_data={"attrib": []})
+        request.session["simbrief_pilot_id"] = "12457"
+        request.method = "POST"
+
+        profile_view(request)
+        mock_simbrief.assert_called_once_with("12457")
 
 
 class TestProcedureView(ViewTestCase):

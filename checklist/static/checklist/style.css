@@ -1,3 +1,11 @@
+:root {
+    /* Define a reusable variable */
+    --max-width: 875px;
+    --max-width-footer: 915px;
+    /* nax-width +40 */
+
+}
+
 .styled-text {
     font-family: sans-serif;
     width: fit-content;
@@ -8,7 +16,8 @@
     margin: 25px 0;
     font-size: 0.9em;
     font-family: sans-serif;
-    min-width: 850px;
+    max-width: var(--max-width);
+    width: 100%;
     color: #14816b;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
 }
@@ -21,7 +30,7 @@
 
 .styled-table th,
 .styled-table td {
-    padding: 9px 22px;
+    padding: 9px 11px;
 }
 
 .text-cel td {
@@ -102,22 +111,7 @@
     padding-right: 8px;
     text-align: center;
     font-weight: normal;
-}
-
-.cl-tag-optional {
-    background-color: #7a7a79b2;
-}
-
-.cl-tag-NoActionNeed {
-    background-color: #4269d1b2;
-}
-
-.cl-tag-Online {
-    background-color: #a32b3fb2;
-}
-
-.cl-tag-Short Runway {
-    background-color: #e24f26b2;
+    font-size: smaller;
 }
 
 
@@ -133,7 +127,7 @@
     left: 0;
     bottom: 0;
     width: 100%;
-    max-width: 900px;
+    max-width: var(--max-width-footer);
     background-color: rgb(212, 238, 233);
     color: rgb(11, 11, 11);
     text-align: center;
@@ -173,7 +167,8 @@
 
 .btn-bar {
     height: 45px;
-    max-width: 850px;
+    max-width: var(--max-width);
+    /* Reuse the same variable */
 }
 
 
@@ -215,7 +210,8 @@
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     font-family: sans-serif;
     color: #14816b;
-    max-width: 850px;
+    max-width: var(--max-width);
+    /* Reuse the same variable */
     width: 100%;
     box-sizing: border-box;
 }
@@ -290,7 +286,8 @@ legend h1 {
 }
 
 .fit-content {
-    width: fit-content;
+    max-width: var(--max-width);
+    /* Use the variable */
 }
 
 .no-border {

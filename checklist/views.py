@@ -89,6 +89,24 @@ class IndexView(generic.ListView):
         return Procedure.objects.order_by("step")
 
 
+def get_simbrief_context(simbrief=None):
+    """
+    Extracts context fields related to SimBrief data.
+    If simbrief is None, default values are returned.
+    """
+    return {
+        "origin": getattr(simbrief, "origin", "Unknown"),
+        "elevation": getattr(simbrief, "elevation", "Unknown"),
+        "temperature": getattr(simbrief, "temperature", "Unknown"),
+        "runway": getattr(simbrief, "runway", "Unknown"),
+        "rwy_length": getattr(simbrief, "rwy_length", "Unknown"),
+        "altimeter": getattr(simbrief, "altimeter", "Unknown"),
+        "flap_setting": getattr(simbrief, "flap_setting", "Unknown"),
+        "bleed_setting": getattr(simbrief, "bleed_setting", "Unknown"),
+        "error_message": getattr(simbrief, "error_message", ""),
+    }
+
+
 def update_profile_with_simbrief(request, simbrief):
     """
     Update the session['attrib'] list based on SimBrief data.
@@ -131,6 +149,18 @@ def update_profile_with_simbrief(request, simbrief):
     request.session["attrib"] = attlist
 
 
+def update_shared_flight(request, clean=False):
+    """
+    Updates the 'shared_flight' value in the session based on the POST data.
+    """
+    if not clean:
+        shared_flight = request.POST.get("shared_flight", False)
+    else:
+        shared_flight = False
+
+    request.session["shared_flight"] = shared_flight
+
+
 def profile_view(request):
 
     if request.method == "POST":
@@ -138,39 +168,39 @@ def profile_view(request):
         if "Clean" in request.POST:
             print("Cleaning session")
             request.session.flush()
+            update_shared_flight(request, clean=True)
 
     # Retrieve simbrief_pilot_id from the cookie or request.POST
-    simbrief_pilot_id = request.COOKIES.get("simbrief_pilot_id")
-    if not simbrief_pilot_id and "simbrief_id" in request.POST:
+    simbrief_pilot_id = None
+
+    if "simbrief_id" in request.POST:
         simbrief_pilot_id = request.POST["simbrief_id"]
+    # POST data overrides cookie
+    elif "simbrief_pilot_id" in request.COOKIES:
+        simbrief_pilot_id = request.COOKIES.get("simbrief_pilot_id")
+    elif "simbrief_pilot_id" in request.session:
+        simbrief_pilot_id = request.session["simbrief_pilot_id"]
 
-    # Create SimBrief object and fetch data
-    simbrief = SimBrief(simbrief_pilot_id)
-    simbrief.fetch_data()
+    # Initialize simbrief object only if simbrief_pilot_id is provided
+    simbrief = None
+    if simbrief_pilot_id:
+        simbrief = SimBrief(simbrief_pilot_id)
+        simbrief.fetch_data()
+        # Update the session['attrib'] list based on SimBrief data
+        update_profile_with_simbrief(request, simbrief)
+        request.session["simbrief_pilot_id"] = simbrief_pilot_id
 
-    # Update the session['attrib'] list based on SimBrief data
-    update_profile_with_simbrief(request, simbrief)
+    # Build the context using the extracted function
+    context = {
+        "attributes": Attribute.objects.order_by("order"),
+        "simbrief_id": simbrief_pilot_id or "",
+        **get_simbrief_context(simbrief),
+    }
 
     # Add a cookie for simbrief_pilot_id if "remember_me" is in the GET request
-    response = TemplateResponse(
-        request,
-        "checklist/profile.html",
-        {
-            "attributes": Attribute.objects.order_by("order"),
-            "origin": simbrief.origin or "Unknown",
-            "elevation": simbrief.elevation or "Unknown",
-            "temperature": simbrief.temperature or "Unknown",
-            "runway": simbrief.runway or "Unknown",
-            "rwy_length": simbrief.rwy_length or "Unknown",
-            "altimeter": simbrief.altimeter or "Unknown",
-            "flap_setting": simbrief.flap_setting or "Unknown",
-            "bleed_setting": simbrief.bleed_setting or "Unknown",
-            "simbrief_id": simbrief.pilot_id or "",
-            "error_message": simbrief.error_message or "",
-        },
-    )
+    response = TemplateResponse(request, "checklist/profile.html", context)
 
-    # set cookie if remember me is checked or if cookie already exists
+    # Set cookie if "remember_me" is checked or if cookie already exists
     if (request.COOKIES.get("simbrief_pilot_id")) or (
         "remember_me" in request.POST and simbrief_pilot_id
     ):
@@ -183,6 +213,8 @@ def profile_view(request):
             httponly=True,  # Prevents JavaScript access to the cookie
             samesite="Lax",  # Restricts cross-site cookie sharing
         )
+    else:
+        response.delete_cookie("simbrief_pilot_id")
 
     return response
 
@@ -213,5 +245,6 @@ def update_profile(request):
             attlist.remove(over_rules[int(att)])
 
     request.session["attrib"] = attlist
+    update_shared_flight(request)
 
     return HttpResponseRedirect(reverse("checklist:index"))
