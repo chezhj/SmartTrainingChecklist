@@ -1,3 +1,11 @@
+## v0.13.0 (2025-04-23)
+
+### Feat
+
+- Added dual pilot mode
+- **checklist**: Added PF/PM/CP/FO
+- **simbrief**: Added wire mock & security
+
 ## v0.12.1 (2025-03-23)
 
 ### Fix
