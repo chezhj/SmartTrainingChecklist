@@ -10,6 +10,10 @@ from django.db.models.query import QuerySet
 from django.http import QueryDict
 from checklist.tests.ViewTestCase import ViewTestCase
 
+from django.test import TestCase, RequestFactory
+from django.http import JsonResponse
+
+
 from checklist.tests.testFactories import (
     AttributeFactory,
     CheckItemFactory,
@@ -21,6 +25,7 @@ from checklist.views import (
     profile_view,
     update_profile,
     update_profile_with_simbrief,
+    update_session_role,
 )
 
 
@@ -165,6 +170,51 @@ class TestProfileView(ViewTestCase):
 
         profile_view(request)
         mock_simbrief.assert_called_once_with("12457")
+
+    def test_cookie_is_removed_when_clear_cookie_is_set(self):
+        """
+        Test that the 'simbrief_pilot_id' cookie is removed when 'clear_cookie' is set in the POST data.
+        """
+        # Create a POST request with 'clear_cookie' set
+        request = self.create_request_with_session(
+            "/profile/",
+            session_data={"attrib": []},
+            request_data={"Clean": True, "clear_cookie": "1"},
+        )
+        request.COOKIES["simbrief_pilot_id"] = "12345"  # Simulate an existing cookie
+
+        # Call the profile_view function
+        response = profile_view(request)
+
+        # Assert that the response is a redirect
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, "/profile/")
+
+        # Assert that the cookie is removed
+        self.assertIn("simbrief_pilot_id", response.cookies)
+        self.assertEqual(response.cookies["simbrief_pilot_id"].value, "")
+
+    def test_cookie_is_not_removed_when_clear_cookie_is_not_set(self):
+        """
+        Test that the 'simbrief_pilot_id' cookie is not removed when 'clear_cookie' is not set in the POST data.
+        """
+        # Create a POST request without 'clear_cookie'
+        request = self.create_request_with_session(
+            "/profile/",
+            session_data={"attrib": []},
+            request_data={"Clean": True},
+        )
+        request.COOKIES["simbrief_pilot_id"] = "12345"  # Simulate an existing cookie
+
+        # Call the profile_view function
+        response = profile_view(request)
+
+        # Assert that the response is a redirect
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("checklist/profile.html", response.template_name)
+
+        # Assert that the cookie is not removed
+        self.assertIn("simbrief_pilot_id", response.cookies)
 
 
 class TestProcedureView(ViewTestCase):
@@ -315,6 +365,69 @@ class TestProcedureDetailView(ViewTestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, "/")
 
+    def test_procedure_detail_without_dualmode_should_return_lowlight_false_for_all(
+        self,
+    ):
+        atrib_one = AttributeFactory()
+        AttributeFactory()
+        check_item = CheckItemFactory(attributes=[atrib_one])
+        ProcedureFactory(step=check_item.procedure.step - 1)
+
+        proc_two = ProcedureFactory(step=check_item.procedure.step + 1)
+
+        request = self.create_request_with_session(
+            "/", session_data={"attrib": [atrib_one.id]}
+        )
+
+        response = procedure_detail(request, slug=check_item.procedure.slug)
+
+        self.assertEqual(response.status_code, 200)
+        for item in response.context_data["check_items"]:
+            self.assertFalse(item.lowlight)
+
+    def test_procedure_detail_lowlight_logic(self):
+        test_cases = [
+            # Format: (pilot_role, captain_role, check_item_role, expected_lowlight)
+            ("PM", "FO", "BOTH", False),
+            ("PM", "FO", "PM", False),
+            ("PM", "FO", "FO", False),
+            ("PM", "FO", "C", True),
+            ("C", "FO", "PM", True),
+            ("C", "FO", "C", False),
+            ("C", "FO", "FO", False),
+        ]
+
+        for pilot_role, captain_role, check_item_role, expected_lowlight in test_cases:
+            with self.subTest(
+                pilot_role=pilot_role,
+                captain_role=captain_role,
+                check_item_role=check_item_role,
+            ):
+
+                atrib_one = AttributeFactory()
+                check_item = CheckItemFactory(attributes=[atrib_one])
+                check_item.role = check_item_role
+                check_item.save()
+
+                ProcedureFactory(step=check_item.procedure.step - 1)
+                ProcedureFactory(step=check_item.procedure.step + 1)
+
+                request = self.create_request_with_session(
+                    "/",
+                    session_data={
+                        "attrib": [atrib_one.id],
+                        "dual_mode": True,
+                        "pilot_role": pilot_role,
+                        "captain_role": captain_role,
+                    },
+                )
+
+                response = procedure_detail(request, slug=check_item.procedure.slug)
+
+                self.assertEqual(response.status_code, 200)
+                for item in response.context_data["check_items"]:
+                    self.assertEqual(item.lowlight, expected_lowlight)
+
 
 class TestUpdateProfile(ViewTestCase):
     def test_update_profile_should_redirect(self):
@@ -442,3 +555,50 @@ class TestUpdateProfileWithSimBrief(ViewTestCase):
         update_profile_with_simbrief(request, mock_simbrief)
 
         self.assertEqual(request.session["attrib"], [])
+
+
+class TestUpdateSessionRole(TestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+
+    def test_no_post_returns_400(self):
+        """Test that a non-POST request returns a 400 status with success=False."""
+        request = self.factory.get("/update-session-role/")  # Simulate a GET request
+        response = update_session_role(request)
+
+        self.assertEqual(response.status_code, 400)
+        self.assertJSONEqual(
+            response.content, {"success": False}
+        )  # Ensure the response JSON matches
+
+    def test_defaults_are_assigned(self):
+        """Test that default roles are assigned when no data is provided."""
+        request = self.factory.post("/update-session-role/", data={})  # Empty POST data
+        request.session = {}  # Simulate a session
+
+        response = update_session_role(request)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertJSONEqual(
+            response.content,
+            {"success": True, "pilot_role": "PM", "captain_role": "FO"},
+        )
+        self.assertEqual(request.session["pilot_role"], "PM")
+        self.assertEqual(request.session["captain_role"], "FO")
+
+    def test_correct_assignment(self):
+        """Test that roles are correctly assigned when valid data is provided."""
+        request = self.factory.post(
+            "/update-session-role/",
+            data={"pilot_role": "PF", "captain_role": "C"},
+        )
+        request.session = {}  # Simulate a session
+
+        response = update_session_role(request)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertJSONEqual(
+            response.content, {"success": True, "pilot_role": "PF", "captain_role": "C"}
+        )
+        self.assertEqual(request.session["pilot_role"], "PF")
+        self.assertEqual(request.session["captain_role"], "C")

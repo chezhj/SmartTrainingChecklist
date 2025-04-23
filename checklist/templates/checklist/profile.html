@@ -3,6 +3,35 @@
 {% block title %}
     Session profile
 {% endblock title %}
+{% block script %}
+    <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const clearButton = document.getElementById("clear-button");
+        const clearForm = document.getElementById("clear-form");
+        const clearCookieInput = document.getElementById("clear-cookie-input");
+
+        clearButton.addEventListener("click", function (event) {
+            const cookiePresent = clearButton.dataset.cookiePresent === "true";
+
+            if (cookiePresent) {
+                // Prevent the form from submitting immediately
+                event.preventDefault();
+
+                // Show a confirmation dialog
+                const confirmClearCookie = confirm(
+                    "The SimBrief cookie is present. Do you also want to clear the cookie?"
+                );
+
+                // Update the hidden input based on the user's choice
+                clearCookieInput.value = confirmClearCookie ? "1" : "0";
+
+                // Submit the form after updating the input
+                clearForm.submit();
+            }
+        });
+    });
+    </script>
+{% endblock script %}
 {% block content %}
     <div class="fit-content">
         <fieldset class="no-border">
@@ -65,16 +94,16 @@
                     <tr>
                         <td>
                             <input type="checkbox"
-                                   name="shared_flight"
-                                   id="shared_flight"
+                                   name="dual_mode"
+                                   id="dual_mode"
                                    value="True"
-                                   {% if request.session.shared_flight %}CHECKED{% endif %} />
+                                   {% if request.session.dual_mode %}CHECKED{% endif %} />
                         </td>
                         <td>
-                            <label for="shared_flight">Shared Flight</label>
+                            <label for="dual_mode">Two Pilots</label>
                         </td>
                         <td>
-                            <label for="shared_flight">Check this to enable PF/PM indicators</label>
+                            <label for="dual_mode">Check this to enable PF/PM indicators</label>
                         </td>
                     </tr>
                     {% for check in attributes.all %}
@@ -101,10 +130,19 @@
             <input class="btn btn-right" type="submit" value="Next">
         </form>
         <!-- Separate form for the "Clear" button -->
-        <form action="{% url 'checklist:profile' %}" method="post" class="inline">
+        <form action="{% url 'checklist:profile' %}"
+              method="post"
+              class="inline"
+              id="clear-form">
             {% csrf_token %}
             <input type="hidden" name="Clean" value="1">
-            <button type="submit" class="btn btn-left">Clear</button>
+            <input type="hidden" name="clear_cookie" value="0" id="clear-cookie-input">
+            <button type="submit"
+                    class="btn btn-left"
+                    id="clear-button"
+                    data-cookie-present="{% if request.COOKIES.simbrief_pilot_id %}true{% else %}false{% endif %}">
+                Clear
+            </button>
         </form>
     </fieldset>
 </div>

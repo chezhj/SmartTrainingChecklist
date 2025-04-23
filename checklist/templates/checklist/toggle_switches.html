@@ -1,0 +1,30 @@
+<!-- filepath: c:\Code\SmartTrainingChecklist\checklist\templates\checklist\toggle_switches.html -->
+<div class="toggle-switches">
+    <div class="toggle-group left">
+        <label for="pilot_role">Pilot Flying</label>
+        <label class="switch">
+            <input type="checkbox"
+                   name="pilot_role"
+                   id="pilot_role"
+                   value="PM"
+                   {% if request.session.pilot_role == "PM" %}checked{% endif %}>
+            <span class="slider"></span>
+        </label>
+        <label for="pilot_role">Pilot Monitoring</label>
+    </div>
+    <div class="toggle-group middle">
+        <label for="dual">Dual Operating</label>
+    </div>
+    <div class="toggle-group right">
+        <label for="captain_role">Captain</label>
+        <label class="switch">
+            <input type="checkbox"
+                   name="captain_role"
+                   id="captain_role"
+                   value="FO"
+                   {% if request.session.captain_role == "FO" %}checked{% endif %}>
+            <span class="slider"></span>
+        </label>
+        <label for="captain_role">First Officer</label>
+    </div>
+</div>

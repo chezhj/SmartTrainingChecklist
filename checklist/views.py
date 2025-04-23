@@ -7,6 +7,7 @@ from time import time
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, HttpResponseRedirect
 from django.template.response import TemplateResponse
+from django.http import JsonResponse
 from django.urls import reverse
 from datetime import timedelta
 from django.utils.timezone import now
@@ -42,13 +43,27 @@ def procedure_detail(request, slug):
         return HttpResponseRedirect(reverse("checklist:start"))
 
     allitems = procedure2view.checkitem_set.all()
+    pilot_role = request.session.get("pilot_role", None)
+    captain_role = request.session.get("captain_role", None)
+    dual_mode = request.session.get("dual_mode", False)
+
     query_ids = [
         item.id for item in allitems if item.shouldshow(request.session["attrib"])
     ]
-    check_items = procedure2view.checkitem_set.filter(id__in=query_ids)
+    filtered_check_items = procedure2view.checkitem_set.filter(id__in=query_ids)
 
     time_finished = time()
     query_time = round(time_finished - time_start, 3)
+
+    # Annotate each item with a 'lowlight' flag
+    check_items = []
+    for item in filtered_check_items:
+        item.lowlight = (
+            dual_mode
+            and item.role != "BOTH"
+            and item.role not in [pilot_role, captain_role]
+        )
+        check_items.append(item)
 
     # If len(check_items) is zero and there's a next procedure, redirect to it
     if len(check_items) == 0:
@@ -149,16 +164,16 @@ def update_profile_with_simbrief(request, simbrief):
     request.session["attrib"] = attlist
 
 
-def update_shared_flight(request, clean=False):
+def update_dual_mode(request, clean=False):
     """
-    Updates the 'shared_flight' value in the session based on the POST data.
+    Updates the 'dual_mode' value in the session based on the POST data.
     """
     if not clean:
-        shared_flight = request.POST.get("shared_flight", False)
+        dual_mode = request.POST.get("dual_mode", False)
     else:
-        shared_flight = False
+        dual_mode = False
 
-    request.session["shared_flight"] = shared_flight
+    request.session["dual_mode"] = dual_mode
 
 
 def profile_view(request):
@@ -168,7 +183,13 @@ def profile_view(request):
         if "Clean" in request.POST:
             print("Cleaning session")
             request.session.flush()
-            update_shared_flight(request, clean=True)
+            update_dual_mode(request, clean=True)
+
+            # Check if the user wants to clear the cookie
+            if request.POST.get("clear_cookie") == "1":
+                response = HttpResponseRedirect(reverse("checklist:profile"))
+                response.delete_cookie("simbrief_pilot_id")
+                return response
 
     # Retrieve simbrief_pilot_id from the cookie or request.POST
     simbrief_pilot_id = None
@@ -245,6 +266,25 @@ def update_profile(request):
             attlist.remove(over_rules[int(att)])
 
     request.session["attrib"] = attlist
-    update_shared_flight(request)
+    update_dual_mode(request)
 
     return HttpResponseRedirect(reverse("checklist:index"))
+
+
+def update_session_role(request):
+    """
+    Updates the session with the selected roles (Pilot Role and Captain Role).
+    """
+    if request.method == "POST":
+        pilot_role = request.POST.get("pilot_role", "PM")
+        captain_role = request.POST.get("captain_role", "FO")
+
+        # Update the session with the new roles
+        request.session["pilot_role"] = pilot_role
+        request.session["captain_role"] = captain_role
+
+        return JsonResponse(
+            {"success": True, "pilot_role": pilot_role, "captain_role": captain_role}
+        )
+
+    return JsonResponse({"success": False}, status=400)

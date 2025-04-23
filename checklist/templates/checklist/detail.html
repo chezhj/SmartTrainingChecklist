@@ -1,49 +1,61 @@
 {% extends "checklist/base.html" %}
+{% load static %}
 {% load environment_tags %}
 {% block title %}
     Smart Checklist
 {% endblock title %}
 {% block script %}
+    <script src="{% static 'checklist/toggle_switches.js' %}"></script>
     <script>
     function GetSelected() {
-        //Reference the Table.
-        
-        
+        // Reference the Table.
         var grid = document.getElementById("Table1");
 
-        //Reference the CheckBoxes in Table.
+        // Reference the CheckBoxes in Table.
         var checkBoxes = grid.getElementsByClassName("clCheckBox");
-        //Loop through the CheckBoxes.
+
+        // Loop through the CheckBoxes.
         for (var i = 0; i < checkBoxes.length; i++) {
-            
+            var row = checkBoxes[i].parentElement.parentElement;
+
+            row.classList.remove("active-row"); 
+
+            // Check if the checkbox is checked.
             if (checkBoxes[i].checked) {
-                checkBoxes[i].parentElement.parentElement.setAttributeNS(null, 'class', 'checked-row')
-                var lastChecked=i
+                row.classList.add("checked-row");
                 
+                var lastChecked = i;
             } else {
-                checkBoxes[i].parentElement.parentElement.setAttributeNS(null, 'class', '')
+                row.classList.remove("checked-row");
+
+             
             }
         }
-        if ((lastChecked+1) < checkBoxes.length){
-            checkBoxes[lastChecked+1].parentElement.parentElement.classList.add("active-row")
+
+        // Highlight the next row as active-row.
+        if ((lastChecked + 1) < checkBoxes.length) {
+            checkBoxes[lastChecked + 1].parentElement.parentElement.classList.add("active-row");
         }
-        
     }
 
-    function selectCheckbox(id) {
+    function switchCheckbox(id) {
         var checkbox = document.getElementById(id)
-        console.log("selectCheckBox")
         checkbox.checked=!checkbox.checked
-        GetSelected();
-        
+        GetSelected(); 
             
     }
+
+
     </script>
 {% endblock script %}
 {% block content %}
     <div class="fit-content">
         <legend>
+            {% csrf_token %}
             <h1>{{ procedure.title }}</h1>
+            {% if request.session.dual_mode %}
+                {% include "checklist/toggle_switches.html" %}
+            {% endif %}
         </legend>
         <div class="table-div">
             <table id="Table1" class="styled-table">
@@ -51,17 +63,21 @@
                     <tr>
                         <th>Done</th>
                         <th>Item</th>
-                        {% if request.session.shared_flight %}<th>Role</th>{% endif %}
+                        {% if request.session.dual_mode %}<th>Role</th>{% endif %}
                         <th>Check</th>
-                        <th>attributes</th>
+                        <th class="attributes-column">attributes</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for item in check_items %}
                         {% if forloop.counter == 1 %}
-                            <tr id="row{{ forloop.counter }}" class="active-row">
+                            <tr id="row{{ forloop.counter }}"
+                                class="active-row {% if item.lowlight %}lowlight{% endif %}"
+                                data-role="{{ item.role }}">
                             {% else %}
-                                <tr id="row{{ forloop.counter }}">
+                                <tr id="row{{ forloop.counter }}"
+                                    {% if item.lowlight %}class="lowlight"{% endif %}
+                                    data-role="{{ item.role }}">
                                 {% endif %}
                                 <td>
                                     <input type="checkbox"
@@ -70,13 +86,14 @@
                                            class="clCheckBox"
                                            onclick="GetSelected()">
                                 </td>
-                                <td class="text-cel" onclick="selectCheckbox('name{{ item.id }}')">{{ item.item }}</td>
-                                {% if request.session.shared_flight %}
-                                    <td class="text-cel" onclick="selectCheckbox('name{{ item.id }}')">{{ item.role }}</td>
+                                <td class="text-cel" onclick="switchCheckbox('name{{ item.id }}')">{{ item.item }}</td>
+                                {% if request.session.dual_mode %}
+                                    <td class="text-cel"  onclick="switchCheckbox('name{{ item.id }}')">{{ item.role }}</td>
                                 {% endif %}
                                 <td class="text-cel descrip"
-                                    onclick="selectCheckbox('name{{ item.id }}')">{{ item.setting }}</td>
-                                <td>
+                                    onclick="switchCheckbox('name{{ item.id }}')">{{ item.setting }}</td>
+                                <td class="attributes-column"
+                                    onclick="switchCheckbox('name{{ item.id }}')">
                                     <ul class="cl-taglist">
                                         {% for attrib in item.attributes.all %}
                                             {% include "checklist/attrib_detail.html" %}
@@ -104,3 +121,29 @@
         query time: {{ proctime }} s
         {% if 'DEBUG'|setting == True %}{{ request.session.attrib }}{% endif %}
     {% endblock footer %}
+    {% block end-script %}
+        <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // Call GetSelected() on page load
+            GetSelected();
+
+            // Override the updateSessionRoles callback to include a page reload
+            const pilotRoleSwitch = document.getElementById("pilot_role");
+            const captainRoleSwitch = document.getElementById("captain_role");
+
+            if (pilotRoleSwitch && captainRoleSwitch) {
+                pilotRoleSwitch.addEventListener("change", () => {
+                    updateSessionRoles(() => {
+                        location.reload(); // Reload the page after updating the session
+                    });
+                });
+
+                captainRoleSwitch.addEventListener("change", () => {
+                    updateSessionRoles(() => {
+                        location.reload(); // Reload the page after updating the session
+                    });
+                });
+            }
+        });
+        </script>
+    {% endblock end-script %}

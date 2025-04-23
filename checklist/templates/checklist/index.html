@@ -1,11 +1,18 @@
 {% extends "checklist/base.html" %}
+{% load static %}
 {% block title %}
     Procedure overview
 {% endblock title %}
+{% block script %}
+{% endblock script %}
 {% block content %}
     <div class="fit-content">
         <legend>
+            {% csrf_token %}
             <h1>Procedure overview</h1>
+            {% if request.session.dual_mode %}
+                {% include "checklist/toggle_switches.html" %}
+            {% endif %}
         </legend>
         {% if error_message %}
             <p>
@@ -41,3 +48,6 @@
         {% endif %}
     </div>
 {% endblock content %}
+{% block end-script %}
+    <script src="{% static 'checklist/toggle_switches.js' %}" defer></script>
+{% endblock end-script %}
