@@ -1,3 +1,9 @@
+## v0.13.1 (2025-05-10)
+
+### Fix
+
+- **settings**: Fix bug in static root path
+
 ## v0.13.0 (2025-04-23)
 
 ### Feat
