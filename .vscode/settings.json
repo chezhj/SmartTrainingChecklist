@@ -15,4 +15,11 @@
         "--load-plugins=pylint_django",
         "--generated-members=objects"
     ],
+    "python-envs.pythonProjects": [
+        {
+            "path": "",
+            "envManager": "ms-python.python:venv",
+            "packageManager": "ms-python.python:pip"
+        }
+    ],
 }
