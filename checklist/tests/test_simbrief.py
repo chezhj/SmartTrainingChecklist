@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 from requests import RequestException
 from checklist.simbrief import SimBrief
@@ -23,7 +23,7 @@ class TestSimBriefInit(unittest.TestCase):
         simbrief = SimBrief()
 
         # Mock fetch_data to ensure it doesn't call parse_xml
-        with patch.object(simbrief, "fetch_data", return_value=None) as mock_fetch_data:
+        with patch.object(simbrief, "fetch_data", return_value=None):
             simbrief.fetch_data()
 
         # Assert that parse_xml was not called

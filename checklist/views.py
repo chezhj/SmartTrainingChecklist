@@ -2,21 +2,21 @@
 Base views for checklist
 """
 
-import csv
-from time import time
-from django.http import HttpResponse
-from django.shortcuts import get_object_or_404, HttpResponseRedirect
-from django.template.response import TemplateResponse
-from django.http import JsonResponse
-from django.urls import reverse
 from datetime import timedelta
+from time import time
+
+from django.http import JsonResponse
+from django.shortcuts import HttpResponseRedirect, get_object_or_404
+from django.template.response import TemplateResponse
+from django.urls import reverse
 from django.utils.timezone import now
 
 # Create your views here.
 from django.views import generic
 
 from checklist.simbrief import SimBrief
-from .models import Procedure, Attribute
+
+from .models import Attribute, Procedure
 
 
 def procedure_detail(request, slug):

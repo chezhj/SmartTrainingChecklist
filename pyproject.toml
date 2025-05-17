@@ -1,0 +1,44 @@
+[project]
+name = "smarttrainingchecklist"
+version = "0.13.1"
+description = "Webapplication to assist flight procedure"
+authors = [
+    {name = "Hendrik-Jan",email = "h@vdwaal.net"}
+]
+readme = "README.md"
+requires-python = ">=3.10, <4.0"
+dependencies = [
+    "django (>=5.2.1,<6.0.0)",
+    "python-decouple (>=3.8,<4.0)",
+    "django-colorfield (>=0.14.0,<0.15.0)",
+    "requests (>=2.32.3,<3.0.0)",
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.group.dev.dependencies]
+factory-boy = "^3.3.3"
+pylint-django = "^2.6.1"
+pytest = "^8.3.5"
+pytest-cov = "^6.1.1"
+pytest-django = "^4.11.1"
+commitizen = "^4.7.1"
+
+
+[tool.commitizen]
+name = "cz_conventional_commits"
+tag_format = "v$version"
+version_scheme = "semver"
+version_provider = "pep621"
+update_changelog_on_bump = true
+major_version_zero = true
+version_files = [
+    
+    "smart_training_checklist/__init__.py",
+]
+post_bump_hooks=[
+  "build\\push_all.cmd"
+]

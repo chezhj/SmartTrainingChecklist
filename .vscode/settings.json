@@ -22,4 +22,9 @@
             "packageManager": "ms-python.python:pip"
         }
     ],
+    "python.poetryPath": "poetry",
+    "python.venvFolders": [
+        "C:\\Users\\hvdwa\\AppData\\Local\\pypoetry\\Cache\\virtualenvs"
+    ],
+    "python.defaultInterpreterPath": "C:\\Users\\hvdwa\\AppData\\Local\\pypoetry\\Cache\\virtualenvs\\smarttrainingchecklist-MPTSbPSo-py3.11\\Scripts\\python.exe"
 }
