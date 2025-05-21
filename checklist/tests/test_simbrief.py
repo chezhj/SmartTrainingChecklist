@@ -1,16 +1,19 @@
 import unittest
+import xml.etree.ElementTree as ET
 from unittest.mock import patch
 
 from requests import RequestException
+
 from checklist.simbrief import SimBrief
-import xml.etree.ElementTree as ET
 
 
 class TestSimBriefInit(unittest.TestCase):
     def setUp(self):
         # Load the dummy XML file
         with open(
-            "c:\\Code\\SmartTrainingChecklist\\checklist\\tests\\dummy.xml", "r"
+            "c:\\Code\\SmartTrainingChecklist\\checklist\\tests\\dummy.xml",
+            "r",
+            encoding="utf-8",
         ) as file:
             self.dummy_xml = file.read()
 
@@ -176,9 +179,7 @@ class TestSimBriefHeaders(unittest.TestCase):
     @patch("checklist.simbrief.requests.get")
     @patch.object(SimBrief, "parse_xml")  # Mock parse_xml
     @patch.object(SimBrief, "xml_url")  # Mock xml_url
-    def test_headers_are_empty_if_no_token(
-        self, mock_xml_url, mock_parse_xml, mock_requests_get
-    ):
+    def test_headers_are_empty_if_no_token(self, mock_xml_url, _, mock_requests_get):
         """
         Test that the headers are empty if no mock_token is provided.
         """
@@ -198,9 +199,7 @@ class TestSimBriefHeaders(unittest.TestCase):
     @patch("checklist.simbrief.requests.get")
     @patch.object(SimBrief, "parse_xml")  # Mock parse_xml
     @patch.object(SimBrief, "xml_url")  # Mock xml_url
-    def test_headers_include_token_if_given(
-        self, mock_xml_url, mock_parse_xml, mock_requests_get
-    ):
+    def test_headers_include_token_if_given(self, mock_xml_url, _, mock_requests_get):
         """
         Test that the headers include the mock_token if it is provided.
         """

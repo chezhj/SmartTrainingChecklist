@@ -13,7 +13,8 @@
     ],
     "pylint.args": [
         "--load-plugins=pylint_django",
-        "--generated-members=objects"
+        "--generated-members=objects",
+        "--django-settings-module=smart_training_checklist.settings.dev",
     ],
     "python-envs.pythonProjects": [
         {

@@ -26,6 +26,7 @@ pytest = "^8.3.5"
 pytest-cov = "^6.1.1"
 pytest-django = "^4.11.1"
 commitizen = "^4.7.1"
+djlint = "^1.36.4"
 
 
 [tool.commitizen]
@@ -36,9 +37,11 @@ version_provider = "pep621"
 update_changelog_on_bump = true
 major_version_zero = true
 version_files = [
-    
     "smart_training_checklist/__init__.py",
 ]
 post_bump_hooks=[
   "build\\push_all.cmd"
 ]
+
+[tool.poetry.requires-plugins]
+poetry-plugin-export = ">=1.8"
