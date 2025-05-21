@@ -1,6 +1,21 @@
-import requests
-import xml.etree.ElementTree as ET
+"""
+This module provides the SimBrief class for fetching and parsing SimBrief flight plan data in
+XML format.
+Classes:
+    SimBrief: Handles retrieval and parsing of SimBrief XML data for a given pilot ID,
+    extracting relevant flight information such as origin, elevation, runway, temperature,
+    altimeter, flap setting, and bleed setting.
+Dependencies:
+    - xml.etree.ElementTree for XML parsing
+    - requests for HTTP requests
+    - django.conf.settings for configuration
+Usage:
+    Instantiate the SimBrief class with a pilot ID, then call fetch_data() to retrieve and
+    parse the flight plan data. Extracted information is available as instance attributes.
+"""
 
+import xml.etree.ElementTree as ET
+import requests
 from django.conf import settings as conf_settings
 
 

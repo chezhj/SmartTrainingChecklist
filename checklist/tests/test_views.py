@@ -4,21 +4,18 @@
 # pylint: disable=missing-class-docstring
 # pylint: disable=missing-function-docstring
 import random
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import MagicMock, Mock, patch
 
 from django.db.models.query import QuerySet
 from django.http import QueryDict
-from checklist.tests.ViewTestCase import ViewTestCase
-
-from django.test import TestCase, RequestFactory
-from django.http import JsonResponse
-
+from django.test import RequestFactory, TestCase
 
 from checklist.tests.testFactories import (
     AttributeFactory,
     CheckItemFactory,
     ProcedureFactory,
 )
+from checklist.tests.ViewTestCase import ViewTestCase
 from checklist.views import (
     IndexView,
     procedure_detail,
@@ -63,7 +60,7 @@ class TestProfileView(ViewTestCase):
         qs.assert_called_once()
 
     @patch("checklist.views.Attribute.objects.order_by")
-    def test_profile_view_updates_session_attrib(self, mock_order_by):
+    def test_profile_view_updates_session_attrib(self, _):
         """
         Test that the profile_view updates the session['attrib'] key correctly.
         """
@@ -101,7 +98,9 @@ class TestProfileView(ViewTestCase):
 
         # Add a mock flush method to the session
         class MockSession(dict):
-            self.called = False
+            def __init__(self, *args, **kwargs):
+                self.called = False
+                super().__init__(*args, **kwargs)
 
             def flush(self):
                 self.called = True
@@ -373,7 +372,7 @@ class TestProcedureDetailView(ViewTestCase):
         check_item = CheckItemFactory(attributes=[atrib_one])
         ProcedureFactory(step=check_item.procedure.step - 1)
 
-        proc_two = ProcedureFactory(step=check_item.procedure.step + 1)
+        ProcedureFactory(step=check_item.procedure.step + 1)
 
         request = self.create_request_with_session(
             "/", session_data={"attrib": [atrib_one.id]}

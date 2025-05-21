@@ -22,6 +22,6 @@ WWW_DIR = os.path.join(Path(BASE_DIR).resolve(), "public_html")
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 STATIC_ROOT = os.path.join(WWW_DIR, "static")
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
 
 SIMBRIEF_URL = "https://www.simbrief.com/api/xml.fetcher.php?userid="

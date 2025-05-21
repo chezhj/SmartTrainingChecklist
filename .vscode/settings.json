@@ -13,7 +13,8 @@
     ],
     "pylint.args": [
         "--load-plugins=pylint_django",
-        "--generated-members=objects"
+        "--generated-members=objects",
+        "--django-settings-module=smart_training_checklist.settings.dev",
     ],
     "python-envs.pythonProjects": [
         {
@@ -22,4 +23,9 @@
             "packageManager": "ms-python.python:pip"
         }
     ],
+    "python.poetryPath": "poetry",
+    "python.venvFolders": [
+        "C:\\Users\\hvdwa\\AppData\\Local\\pypoetry\\Cache\\virtualenvs"
+    ],
+    "python.defaultInterpreterPath": "C:\\Users\\hvdwa\\AppData\\Local\\pypoetry\\Cache\\virtualenvs\\smarttrainingchecklist-MPTSbPSo-py3.11\\Scripts\\python.exe"
 }
