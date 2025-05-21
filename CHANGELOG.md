@@ -1,3 +1,9 @@
+## v0.14.0 (2025-05-21)
+
+### Refactor
+
+- Upgrade Django and Poetry
+
 ## v0.13.1 (2025-05-10)
 
 ### Fix
