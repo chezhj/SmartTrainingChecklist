@@ -1,149 +1,302 @@
 {% extends "checklist/base.html" %}
 {% load static %}
 {% load environment_tags %}
-{% block title %}
-    Smart Checklist
-{% endblock title %}
-{% block script %}
+
+{% block title %}{{ procedure.title }} — fly.vdwaal.net{% endblock title %}
+
+{% block page_class %}page-checklist{% endblock page_class %}
+
+{% block head %}
     <script src="{% static 'checklist/toggle_switches.js' %}"></script>
-    <script>
-    function GetSelected() {
-        // Reference the Table.
-        var grid = document.getElementById("Table1");
+{% endblock head %}
 
-        // Reference the CheckBoxes in Table.
-        var checkBoxes = grid.getElementsByClassName("clCheckBox");
-
-        // Loop through the CheckBoxes.
-        for (var i = 0; i < checkBoxes.length; i++) {
-            var row = checkBoxes[i].parentElement.parentElement;
-
-            row.classList.remove("active-row"); 
-
-            // Check if the checkbox is checked.
-            if (checkBoxes[i].checked) {
-                row.classList.add("checked-row");
-                
-                var lastChecked = i;
-            } else {
-                row.classList.remove("checked-row");
-
-             
-            }
-        }
-
-        // Highlight the next row as active-row.
-        if ((lastChecked + 1) < checkBoxes.length) {
-            checkBoxes[lastChecked + 1].parentElement.parentElement.classList.add("active-row");
-        }
-    }
-
-    function switchCheckbox(id) {
-        var checkbox = document.getElementById(id)
-        checkbox.checked=!checkbox.checked
-        GetSelected(); 
-            
-    }
-
-
-    </script>
-{% endblock script %}
 {% block content %}
-    <div class="fit-content">
-        <legend>
-            {% csrf_token %}
-            <h1>{{ procedure.title }}</h1>
-            {% if request.session.dual_mode %}
-                {% include "checklist/toggle_switches.html" %}
-            {% endif %}
-        </legend>
-        <div class="table-div">
-            <table id="Table1" class="styled-table">
-                <thead>
-                    <tr>
-                        <th>Done</th>
-                        <th>Item</th>
-                        {% if request.session.dual_mode %}<th>Role</th>{% endif %}
-                        <th>Check</th>
-                        <th class="attributes-column">attributes</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in check_items %}
-                        {% if forloop.counter == 1 %}
-                            <tr id="row{{ forloop.counter }}"
-                                class="active-row {% if item.lowlight %}lowlight{% endif %}"
-                                data-role="{{ item.role }}">
-                            {% else %}
-                                <tr id="row{{ forloop.counter }}"
-                                    {% if item.lowlight %}class="lowlight"{% endif %}
-                                    data-role="{{ item.role }}">
-                                {% endif %}
-                                <td>
-                                    <input type="checkbox"
-                                           id="name{{ item.id }}"
-                                           name="name{{ item.id }}"
-                                           class="clCheckBox"
-                                           onclick="GetSelected()">
-                                </td>
-                                <td class="text-cel" onclick="switchCheckbox('name{{ item.id }}')">{{ item.item }}</td>
-                                {% if request.session.dual_mode %}
-                                    <td class="text-cel"  onclick="switchCheckbox('name{{ item.id }}')">{{ item.role }}</td>
-                                {% endif %}
-                                <td class="text-cel descrip"
-                                    onclick="switchCheckbox('name{{ item.id }}')">{{ item.setting }}</td>
-                                <td class="attributes-column"
-                                    onclick="switchCheckbox('name{{ item.id }}')">
-                                    <ul class="cl-taglist">
-                                        {% for attrib in item.attributes.all %}
-                                            {% include "checklist/attrib_detail.html" %}
-                                        {% endfor %}
-                                    </ul>
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                <div class="btn-bar">
-                    {% if prevproc %}
-                        <a class="btn btn-left"
-                           href="{% url 'checklist:detail' prevproc.slug %} ">Prev</a>
-                    {% endif %}
-                    {% if nextproc %}
-                        <a class="btn btn-right"
-                           href=" {% url 'checklist:detail' nextproc.slug %} ">Next</a>
-                    {% endif %}
+<div class="proc-layout">
+
+    <nav class="proc-sidebar" aria-label="Procedures">
+        <div class="proc-sidebar-header">
+            <div class="proc-sidebar-title">Procedures</div>
+            <div class="proc-sidebar-sub">Boeing 737-800 · Zibo mod</div>
+        </div>
+
+        <div class="flight-info">
+            <div class="flight-info-card">
+                <div class="flight-info-label">Origin</div>
+                <div class="flight-info-value">{{ request.session.sb_origin|default:"—" }}</div>
+            </div>
+            <div class="flight-info-card">
+                <div class="flight-info-label">Runway</div>
+                <div class="flight-info-value">{{ request.session.sb_runway|default:"—" }}</div>
+            </div>
+            <div class="flight-info-card">
+                <div class="flight-info-label">Temp</div>
+                <div class="flight-info-value">{{ request.session.sb_temp|default:"—" }}</div>
+            </div>
+            <div class="flight-info-card">
+                <div class="flight-info-label">Flaps</div>
+                <div class="flight-info-value">{{ request.session.sb_flaps|default:"—" }}</div>
+            </div>
+        </div>
+
+        <div class="proc-sidebar-list">
+            {% for proc in all_procedures %}
+                <a class="proc-sidebar-item {% if proc.slug == procedure.slug %}active{% endif %}"
+                   href="{% url 'checklist:detail' proc.slug %}">
+                    <span class="proc-sidebar-name">{{ proc.title }}</span>
+                    <span class="proc-sidebar-badge">{{ proc.step }}</span>
+                </a>
+            {% endfor %}
+        </div>
+    </nav>
+
+    <div class="proc-main">
+
+        <div class="proc-header">
+            <div class="proc-header-left">
+                <div class="proc-phase">Step {{ procedure.step }} of {{ all_procedures|length }}</div>
+                <div class="proc-title">{{ procedure.title }}</div>
+                <div class="proc-meta">
+                    <span class="proc-count" id="proc-count">0 of {{ check_items|length }}</span>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress-fill"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="proc-header-right">
+                <div class="proc-stats">
+                    <div class="proc-stats-primary" id="proc-stats-primary"> </div>
+                    <div class="proc-stats-secondary" id="proc-stats-secondary">0 of {{ check_items|length }} complete</div>
+                </div>
+                <div class="progress-ring" role="img" aria-label="Progress">
+                    <svg width="46" height="46" viewBox="0 0 46 46">
+                        <circle class="progress-ring-bg" cx="23" cy="23" r="19"/>
+                        <circle class="progress-ring-fill" id="ring-fill"
+                                cx="23" cy="23" r="19"
+                                stroke-dasharray="119.4"
+                                stroke-dashoffset="119.4"/>
+                    </svg>
+                    <div class="progress-ring-label" id="ring-label">0%</div>
                 </div>
             </div>
         </div>
-    {% endblock content %}
-    {% block footer %}
-        query time: {{ proctime }} s
-        {% if 'DEBUG'|setting == True %}{{ request.session.attrib }}{% endif %}
-    {% endblock footer %}
-    {% block end-script %}
-        <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            // Call GetSelected() on page load
-            GetSelected();
 
-            // Override the updateSessionRoles callback to include a page reload
-            const pilotRoleSwitch = document.getElementById("pilot_role");
-            const captainRoleSwitch = document.getElementById("captain_role");
+        <div class="checklist-scroll" id="checklist-scroll">
+            {% csrf_token %}
 
-            if (pilotRoleSwitch && captainRoleSwitch) {
-                pilotRoleSwitch.addEventListener("change", () => {
-                    updateSessionRoles(() => {
-                        location.reload(); // Reload the page after updating the session
-                    });
-                });
+            <div class="section-label js-hidden" id="label-completed">Completed</div>
 
-                captainRoleSwitch.addEventListener("change", () => {
-                    updateSessionRoles(() => {
-                        location.reload(); // Reload the page after updating the session
-                    });
-                });
+            {% for item in check_items %}
+                <div class="ci {% if item.lowlight %}lowlight{% endif %}"
+                     data-item-id="{{ item.id }}"
+                     role="button"
+                     tabindex="0"
+                     aria-label="{{ item.item }}">
+                    <div class="ci-inner">
+
+                        <div class="check-box"></div>
+
+                        <div class="ci-content">
+                            <div class="ci-name">{{ item.item }}</div>
+                            {% if item.setting %}
+                                <div class="ci-setting">{{ item.setting }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="ci-badges">
+                            {% if request.session.dual_mode %}
+                                {% if item.role != "BOTH" %}
+                                    <span class="badge badge-role">{{ item.role }}</span>
+                                {% endif %}
+                            {% endif %}
+                            {% for attrib in item.attributes.all %}
+                                {% include "checklist/attrib_detail.html" %}
+                            {% endfor %}
+                        </div>
+
+                    </div>
+                </div>
+            {% endfor %}
+
+            <div class="scroll-end-spacer"></div>
+        </div>
+
+        <div class="nav-bar">
+            {% if prevproc %}
+                <a class="nav-btn" href="{% url 'checklist:detail' prevproc.slug %}">← Prev</a>
+            {% else %}
+                <span> </span>
+            {% endif %}
+
+            <span class="nav-label">{{ procedure.step }} / {{ all_procedures|length }}</span>
+
+            {% if nextproc %}
+                <a class="nav-btn nav-btn-primary nav-btn-next"
+                   href="{% url 'checklist:detail' nextproc.slug %}">Next →</a>
+            {% else %}
+                <span> </span>
+            {% endif %}
+        </div>
+
+    </div>
+</div>
+{% endblock content %}
+
+{% block end_script %}
+<script>
+(function () {
+    'use strict';
+
+    /* ── Tick SVG injected into .check-box for manual checks ── */
+    var TICK_SVG = '<svg width="11" height="8" viewBox="0 0 11 8" fill="none" aria-hidden="true">'
+        + '<path d="M1 3.5L4 6.5L10 1" stroke="white" stroke-width="1.8"'
+        + ' stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+    var totalItems   = document.querySelectorAll('.ci').length;
+    var checkedCount = 0;
+    var autoCount    = 0;
+    var manualCount  = 0;
+    var CIRCUMFERENCE = 119.4;
+
+    function updateProgress() {
+        var pct = totalItems > 0 ? checkedCount / totalItems : 0;
+
+        /* Mobile: count text + linear bar */
+        var countEl = document.getElementById('proc-count');
+        var fillEl  = document.getElementById('progress-fill');
+        if (countEl) countEl.textContent = checkedCount + ' of ' + totalItems;
+        if (fillEl)  fillEl.style.width  = (pct * 100).toFixed(1) + '%';
+
+        /* Tablet+: ring */
+        var ringFill  = document.getElementById('ring-fill');
+        var ringLabel = document.getElementById('ring-label');
+        if (ringFill)  ringFill.style.strokeDashoffset =
+                           (CIRCUMFERENCE * (1 - pct)).toFixed(1);
+        if (ringLabel) ringLabel.textContent = Math.round(pct * 100) + '%';
+
+        /* Tablet+: stats text */
+        var statsPrimary   = document.getElementById('proc-stats-primary');
+        var statsSecondary = document.getElementById('proc-stats-secondary');
+        if (statsPrimary) {
+            var parts = [];
+            if (autoCount)   parts.push(autoCount   + ' auto');
+            if (manualCount) parts.push(manualCount + ' manual');
+            statsPrimary.textContent = parts.length ? parts.join(' · ') + ' confirmed' : ' ';
+        }
+        if (statsSecondary)
+            statsSecondary.textContent = checkedCount + ' of ' + totalItems + ' complete';
+
+        /* Completed label */
+        var labelEl = document.getElementById('label-completed');
+        if (labelEl) labelEl.classList.toggle('js-hidden', checkedCount === 0);
+    }
+
+    /* ── Toggle a row between unchecked and ci-manual ── */
+    function toggleItem(row) {
+        var box = row.querySelector('.check-box');
+
+        if (row.classList.contains('ci-manual')) {
+            row.classList.remove('ci-manual');
+            box.innerHTML = '';
+            checkedCount = Math.max(0, checkedCount - 1);
+            manualCount  = Math.max(0, manualCount  - 1);
+        } else if (!row.classList.contains('ci-auto')) {
+            row.classList.add('ci-manual');
+            box.innerHTML = TICK_SVG;
+            checkedCount += 1;
+            manualCount  += 1;
+        }
+
+        updateProgress();
+    }
+
+    /* ── Wire up click / keyboard handlers ── */
+    document.querySelectorAll('.ci').forEach(function (row) {
+        row.addEventListener('click', function () {
+            toggleItem(row);
+        });
+
+        row.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                toggleItem(row);
             }
         });
-        </script>
-    {% endblock end-script %}
+    });
+
+    /* ── markItem: called by polling JS (Phase 1 Step 7) ── */
+    window.markItem = function (id, source) {
+        var row = document.querySelector('[data-item-id="' + id + '"]');
+        if (!row) return;
+
+        var alreadyCounted = row.classList.contains('ci-manual') || row.classList.contains('ci-auto');
+
+        row.classList.remove('ci-manual', 'ci-auto');
+        var box = row.querySelector('.check-box');
+        box.innerHTML = '';
+
+        if (source === 'MANUAL') {
+            row.classList.add('ci-manual');
+            box.innerHTML = TICK_SVG;
+        } else {
+            row.classList.add('ci-auto');
+            /* dot is rendered by states.css ::after */
+        }
+
+        if (!alreadyCounted) {
+            checkedCount += 1;
+            if (source === 'AUTO') { autoCount += 1; } else { manualCount += 1; }
+            updateProgress();
+        }
+    };
+
+    /* ── updateConnectionBadge: called by polling JS ── */
+    window.updateConnectionBadge = function (simConnected, aircraft, reconnecting) {
+        var dot    = document.getElementById('sim-dot');
+        var status = document.getElementById('conn-status');
+        var route  = (document.querySelector('.conn-bar') || {}).dataset
+                     ? document.querySelector('.conn-bar').dataset.route : '';
+
+        dot.classList.remove('sim-connected', 'sim-reconnecting');
+        status.classList.remove('sim-connected', 'sim-reconnecting');
+
+        if (simConnected) {
+            dot.classList.add('sim-connected');
+            status.classList.add('sim-connected');
+            /* Route is always shown in the static .conn-route element */
+            var parts = ['X-Plane Live'];
+            if (aircraft) parts.push(aircraft);
+            parts.push('1 Hz');
+            status.textContent = parts.join(' · ');
+        } else if (reconnecting) {
+            dot.classList.add('sim-reconnecting');
+            status.classList.add('sim-reconnecting');
+            status.textContent = 'Reconnecting\u2026';
+        } else {
+            status.textContent = 'Manual only';
+        }
+    };
+
+    /* Initial progress render */
+    updateProgress();
+
+    /* ── Role toggle reload (preserves existing behaviour) ── */
+    var pilotSwitch   = document.getElementById('pilot_role');
+    var captainSwitch = document.getElementById('captain_role');
+
+    if (pilotSwitch) {
+        pilotSwitch.addEventListener('change', function () {
+            updateSessionRoles(function () { location.reload(); });
+        });
+    }
+    if (captainSwitch) {
+        captainSwitch.addEventListener('change', function () {
+            updateSessionRoles(function () { location.reload(); });
+        });
+    }
+
+}());
+</script>
+{% if 'DEBUG'|setting == True %}
+<!-- debug: proc={{ procedure.slug }} attribs={{ request.session.attrib }} proctime={{ proctime }}s -->
+{% endif %}
+{% endblock end_script %}

@@ -1,0 +1,122 @@
+/* ─── STATES ─────────────────────────────────────────────────────────────────
+   Dynamic state overrides applied by JS (polling loop, sim badge).
+   Also covers the lowlight / role-dimmed state and the pulse animation.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+
+/* ── Simulator connection badge ─────────────────────────────────── */
+
+@keyframes sim-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+/* No simulator (default) */
+/* .sim-dot inherits grey from components.css */
+
+/* Live — teal pulsing dot */
+.sim-dot.sim-connected {
+  background: var(--color-teal-bright);
+  box-shadow: 0 0 7px var(--color-teal-bright);
+  animation: sim-pulse 2.2s ease-in-out infinite;
+}
+
+.conn-status-text.sim-connected {
+  color: var(--color-teal-bright);
+}
+
+/* Reconnecting — amber static dot */
+.sim-dot.sim-reconnecting {
+  background: var(--color-amber);
+}
+
+.conn-status-text.sim-reconnecting {
+  color: var(--color-amber);
+}
+
+/* Disconnected — same as default grey, no change needed */
+
+
+/* ── Checklist item: manually checked ───────────────────────────── */
+
+.ci.ci-manual {
+  background: var(--color-checked-bg);
+  border-color: rgba(15, 107, 84, 0.16);
+  border-left: 3px solid var(--color-teal-dark);
+}
+
+.ci.ci-manual .check-box {
+  background: var(--color-teal-dark);
+  border-color: var(--color-teal-dark);
+}
+
+.ci.ci-manual .ci-name {
+  color: var(--color-ink-muted);
+  text-decoration: line-through;
+  text-decoration-color: var(--color-ink-faint);
+}
+
+.ci.ci-manual .ci-setting {
+  color: var(--color-ink-faint);
+}
+
+
+/* ── Checklist item: auto-checked by simulator ──────────────────── */
+
+.ci.ci-auto {
+  background: var(--color-checked-bg);
+  border-color: rgba(15, 107, 84, 0.16);
+  /* No left border — distinguishes auto from manual */
+}
+
+.ci.ci-auto .check-box {
+  background: var(--color-teal-dark);
+  border-color: var(--color-teal-dark);
+}
+
+/* White dot rendered via pseudo-element; no SVG tick */
+.ci.ci-auto .check-box::after {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  position: absolute;
+}
+
+.ci.ci-auto .ci-name {
+  color: var(--color-ink-muted);
+  text-decoration: line-through;
+  text-decoration-color: var(--color-ink-faint);
+}
+
+.ci.ci-auto .ci-setting {
+  color: var(--color-ink-faint);
+}
+
+
+/* ── Lowlight: item not applicable to current role ──────────────── */
+
+.ci.lowlight {
+  opacity: 0.38;
+}
+
+
+/* ── Utility ────────────────────────────────────────────────────── */
+
+/* Hidden until JS makes it visible */
+.js-hidden {
+  display: none;
+}
+
+/* Vertical rhythm spacer at the bottom of checklist-scroll */
+.scroll-end-spacer {
+  height: 8px;
+}
+
+
+/* ── Live session indicator in info panel ───────────────────────── */
+
+.info-row-value.value-live {
+  color: var(--color-teal-bright);
+}

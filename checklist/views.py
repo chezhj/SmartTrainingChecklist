@@ -86,6 +86,7 @@ def procedure_detail(request, slug):
         "nextproc": nextproc,
         "prevproc": prevproc,
         "proctime": query_time,
+        "all_procedures": Procedure.objects.order_by("step"),
     }
     return TemplateResponse(
         request,
@@ -210,6 +211,12 @@ def profile_view(request):
         # Update the session['attrib'] list based on SimBrief data
         update_profile_with_simbrief(request, simbrief)
         request.session["simbrief_pilot_id"] = simbrief_pilot_id
+        # Cache flight data for sidebar display on checklist pages
+        request.session["sb_origin"]      = getattr(simbrief, "origin",      "")
+        request.session["sb_destination"] = getattr(simbrief, "destination", "")
+        request.session["sb_runway"]      = getattr(simbrief, "runway",      "")
+        request.session["sb_temp"]        = getattr(simbrief, "temperature", "")
+        request.session["sb_flaps"]       = getattr(simbrief, "flap_setting", "")
 
     # Build the context using the extracted function
     context = {

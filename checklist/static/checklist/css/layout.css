@@ -1,0 +1,249 @@
+/* ─── LAYOUT ─────────────────────────────────────────────────────────────────
+   Mobile-first. Base styles target narrow screens (≥320px).
+   @media blocks expand behaviour for tablet (≥600px) and desktop (≥900px).
+   ──────────────────────────────────────────────────────────────────────────── */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--color-bg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;       /* scroll is handled by inner containers */
+}
+
+/* ── Connection bar ─────────────────────────────────────────────── */
+/* Dark strip pinned to the top; never scrolls away */
+.conn-bar {
+  flex-shrink: 0;
+  background: var(--color-dark);
+  padding: 9px 14px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  position: relative;
+  z-index: 10;
+}
+
+/* ── Info panel ─────────────────────────────────────────────────── */
+/* Overlays entire viewport, slides in from the right */
+.info-panel {
+  position: fixed;
+  inset: 0;
+  background: var(--color-dark);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform var(--transition-panel);
+  overflow-y: auto;
+}
+
+.info-panel.open {
+  transform: translateX(0);
+}
+
+/* ── Page wrapper ───────────────────────────────────────────────── */
+/* Fills the remaining viewport below the connection bar */
+.page {
+  flex: 1;
+  overflow-y: auto;       /* default: simple scroll for non-checklist pages */
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* Checklist-specific layout: inner components own their own scroll */
+.page-checklist {
+  overflow: hidden;
+}
+
+.proc-header {
+  flex-shrink: 0;
+  background: var(--color-card);
+  border-bottom: 1px solid var(--color-border);
+  padding: 13px 16px 11px;
+}
+
+/* Ring + stats: mobile hidden, shown at tablet+ */
+.proc-header-right {
+  display: none;
+}
+
+.proc-header-left {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Two-column wrapper (used inside .page-checklist) */
+.proc-layout {
+  flex: 1;
+  display: flex;
+  flex-direction: column;  /* mobile: sidebar hidden, column layout */
+  overflow: hidden;
+}
+
+/* Sidebar: hidden on mobile, shown tablet+ via media query below */
+.proc-sidebar {
+  display: none;
+  width: 270px;
+  flex-shrink: 0;
+  flex-direction: column;
+  background: var(--color-dark);
+  border-right: 1px solid rgba(255, 255, 255, 0.04);
+  overflow: hidden;
+}
+
+/* Main content column */
+.proc-main {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex: 1;
+}
+
+.checklist-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px 0;
+  background: var(--color-bg);
+}
+
+.checklist-scroll::-webkit-scrollbar {
+  width: 3px;
+}
+
+.checklist-scroll::-webkit-scrollbar-thumb {
+  background: var(--color-border-mid);
+  border-radius: 3px;
+}
+
+.nav-bar {
+  flex-shrink: 0;
+  background: var(--color-card);
+  border-top: 1px solid var(--color-border);
+  padding: 10px 16px 20px;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+}
+
+/* ── Tablet (≥600px) ────────────────────────────────────────────── */
+@media (min-width: 600px) {
+  .info-panel {
+    width: 360px;
+    left: auto;             /* slide from right edge only */
+  }
+
+  /* Two-column layout: sidebar + main */
+  .proc-layout {
+    flex-direction: row;
+    overflow: hidden;
+  }
+
+  .proc-sidebar {
+    display: flex;          /* show sidebar from tablet up */
+  }
+
+  /* Main area fills remaining width */
+  .proc-main {
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* Proc header: two-section row on tablet+ */
+  .proc-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px 12px;
+  }
+
+  .proc-header-left {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .proc-header-right {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-shrink: 0;
+    margin-left: 16px;
+  }
+
+  /* Hide mobile progress bar, show ring + stats */
+  .proc-meta {
+    display: none;
+  }
+
+  .proc-header-right {
+    display: flex;
+  }
+}
+
+/* ── Desktop (≥900px) ───────────────────────────────────────────── */
+@media (min-width: 900px) {
+  .conn-bar {
+    display: flex;
+    align-items: center;
+    padding: 10px 24px 8px;
+  }
+
+  .conn-brand {
+    display: block;
+    flex-shrink: 0;
+  }
+
+  /* Status group expands to fill space and centres its content */
+  .conn-status-group {
+    flex: 1;
+    justify-content: center;
+  }
+
+  /* Info button always at the right edge, no margin needed */
+  .conn-actions {
+    flex-shrink: 0;
+    margin-left: 0;
+  }
+
+  .page {
+    background: var(--color-bg);
+  }
+
+  .proc-sidebar {
+    width: 300px;           /* wider sidebar on desktop, matching mockup */
+  }
+
+  .proc-sidebar-header,
+  .proc-sidebar-item {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  .flight-info {
+    padding: 10px 18px;
+  }
+
+  .proc-header {
+    padding: 16px 24px 14px;
+  }
+
+  .checklist-scroll {
+    padding: 12px 4px;
+  }
+
+  .nav-bar {
+    padding: 12px 20px;
+  }
+}

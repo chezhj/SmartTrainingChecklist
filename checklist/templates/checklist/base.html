@@ -1,61 +1,160 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="description"
-              content="Training Checklist for 737 for simulation">
-        <meta name="keywords" content="HTML, CSS, JavaScript">
-        <meta name="author" content="ChezHJ">
-        <title>
-            {% block title %}
-                geen titel
-            {% endblock title %}
-        </title>
-        {% load static %}
-        {% load environment_tags %}
-        <link rel="stylesheet"
-              type="text/css"
-              href="{% static 'checklist/style.css' %}">
-        {% block script %}
-        {% endblock script %}
-    </head>
-    <body class="body">
-        <div class="content" id="content">
-            {% block content %}
-            {% endblock content %}
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Smart Training Checklist for 737 simulation">
+    <meta name="keywords" content="737, checklist, simulation, X-Plane, training">
+    <title>{% block title %}fly.vdwaal.net{% endblock title %}</title>
+    {% load static %}
+    {% load environment_tags %}
+    <link rel="stylesheet" href="{% static 'checklist/css/tokens.css' %}">
+    <link rel="stylesheet" href="{% static 'checklist/css/layout.css' %}">
+    <link rel="stylesheet" href="{% static 'checklist/css/components.css' %}">
+    <link rel="stylesheet" href="{% static 'checklist/css/states.css' %}">
+    {% block head %}{% endblock head %}
+</head>
+<body>
+
+    <!-- ── Connection bar ──────────────────────────────────────────── -->
+    <div class="conn-bar"
+         data-route="{% if request.session.sb_origin %}{{ request.session.sb_origin }}{% if request.session.sb_destination %} → {{ request.session.sb_destination }}{% endif %}{% endif %}">
+        <!-- Brand: hidden on mobile, shown on desktop -->
+        <span class="conn-brand">FLY.VDWAAL.NET</span>
+
+        <!-- Status group: sim dot + status text + always-visible route -->
+        <div class="conn-status-group">
+            <div class="sim-dot" id="sim-dot"></div>
+            <span class="conn-status-text" id="conn-status">Manual only</span>
+            <span class="conn-sep" aria-hidden="true">·</span>
+            <span class="conn-route">{{ request.session.sb_origin|default:"ORIG" }} → {{ request.session.sb_destination|default:"DEST" }}</span>
         </div>
-        <div class="footer">
-            <div class="column footer-left">
-                <a class="btn btn-left btn-mid" href="{% url 'checklist:profile' %} ">Profile</a>
-                Version:  {{ 'VERSION'|setting }}
-                <a class="btn btn-right btn-mid"
+
+        <!-- Actions: info button (+ placeholder for user/time at desktop) -->
+        <div class="conn-actions">
+            <button class="info-btn" id="info-open-btn" aria-label="Open info panel">i</button>
+        </div>
+    </div>
+
+    <!-- ── Info panel ──────────────────────────────────────────────── -->
+    <div class="info-panel" id="info-panel" role="dialog" aria-modal="true" aria-label="Info panel">
+
+        <div class="info-panel-header">
+            <span class="info-panel-title">fly.vdwaal.net</span>
+            <button class="info-panel-close" id="info-close-btn" aria-label="Close info panel">✕</button>
+        </div>
+
+        <!-- Session (placeholder until auth is wired in Phase 1 Step 1) -->
+        <div class="info-section">
+            <div class="info-section-title">Session</div>
+            <div class="info-row">
+                <span class="info-row-label">Status</span>
+                <span class="info-row-value" id="ip-status">Manual mode</span>
+            </div>
+            <div class="info-row">
+                <span class="info-row-label">Live sync</span>
+                <span class="info-row-value">Sign in to enable</span>
+            </div>
+        </div>
+
+        <!-- Role toggles (moved from main content per design decision) -->
+        {% if request.session.dual_mode %}
+        <div class="toggle-section">
+            <div class="toggle-section-title">Crew roles</div>
+            {% include "checklist/toggle_switches.html" %}
+        </div>
+        {% endif %}
+
+        <!-- Check item legend -->
+        <div class="legend-section">
+            <div class="legend-section-title">Check item legend</div>
+
+            <div class="legend-row">
+                <div class="legend-box legend-box-empty"></div>
+                <div>
+                    <div class="legend-text">Not yet checked</div>
+                </div>
+            </div>
+
+            <div class="legend-row">
+                <div class="legend-box legend-box-manual">
+                    <svg width="11" height="8" viewBox="0 0 11 8" fill="none" aria-hidden="true">
+                        <path d="M1 3.5L4 6.5L10 1" stroke="white" stroke-width="1.8"
+                              stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="legend-text">Manually confirmed</div>
+                    <div class="legend-sub">Tap item · or yoke binding</div>
+                </div>
+            </div>
+
+            <div class="legend-row">
+                <div class="legend-box legend-box-auto"></div>
+                <div>
+                    <div class="legend-text">Confirmed by simulator</div>
+                    <div class="legend-sub">X-Plane state matched</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- About -->
+        <div class="info-section">
+            <div class="info-section-title">About</div>
+            <div class="info-row">
+                <span class="info-row-label">Version</span>
+                <span class="info-row-value">{{ 'VERSION'|setting }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-row-label">Checklist</span>
+                <span class="info-row-value">Skymatix 737</span>
+            </div>
+            <div class="info-row">
+                <span class="info-row-label">Profile</span>
+                <a class="info-row-value info-link" href="{% url 'checklist:profile' %}">Open →</a>
+            </div>
+            <div class="info-row">
+                <span class="info-row-label">Help</span>
+                <a class="info-row-value info-link"
                    href="https://github.com/chezhj/SmartTrainingChecklist/wiki/Smart-training-checklist-wiki"
-                   target="_blank">Help</a>
-                <br>
-                simulation only
-            </div>
-            <div class="column footer-center">
-                Made by: ChezHJ
-                <br>
-                By using this site you agree to the use of cookies
-                <br>
-                {% block footer %}
-                {% endblock footer %}
-            </div>
-            <div class="column footer-right">
-                Based on checklist by
-                <br>
-                <a href="https://forums.x-plane.org/index.php?/profile/136100-skymatix/"
-                   target="_blank">
-                    <img src="{% static 'checklist/VA_logo.png' %}"
-                         width="124"
-                         height="30"
-                         alt="Skymatix logo"
-                         class="footer-img">
-                </a>
+                   target="_blank" rel="noopener">Wiki ↗</a>
             </div>
         </div>
-        {% block end-script %}
-        {% endblock end-script %}
-    </body>
+
+        <div class="info-footer">
+            fly.vdwaal.net · Made by CheZHJ · Based on Skymatix checklist
+        </div>
+    </div>
+
+    <!-- ── Page content ────────────────────────────────────────────── -->
+    <div class="page {% block page_class %}{% endblock page_class %}" id="page">
+        {% block content %}{% endblock content %}
+    </div>
+
+    <!-- ── Info panel toggle script ───────────────────────────────── -->
+    <script>
+    (function () {
+        var panel    = document.getElementById('info-panel');
+        var btnOpen  = document.getElementById('info-open-btn');
+        var btnClose = document.getElementById('info-close-btn');
+
+        btnOpen.addEventListener('click', function () {
+            panel.classList.add('open');
+        });
+
+        btnClose.addEventListener('click', function () {
+            panel.classList.remove('open');
+        });
+
+        panel.addEventListener('click', function (e) {
+            if (e.target === panel) {
+                panel.classList.remove('open');
+            }
+        });
+    }());
+    </script>
+
+    {% block end_script %}{% endblock end_script %}
+
+</body>
 </html>

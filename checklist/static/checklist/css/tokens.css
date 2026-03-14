@@ -1,0 +1,55 @@
+/* ─── DESIGN TOKENS ─────────────────────────────────────────────────────────
+   Single source of truth for all custom properties.
+   Nothing layout- or component-specific lives here.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+:root {
+
+  /* Typography */
+  --font-sans: -apple-system, 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'SF Mono', 'Cascadia Mono', 'Fira Mono', 'Consolas', 'Liberation Mono', monospace;
+
+  /* Brand / teal palette */
+  --color-teal-dark:   #0F6B54;
+  --color-teal-mid:    #1A8A6C;
+  --color-teal-bright: #22C9A0;
+
+  /* Surface */
+  --color-bg:   #F4F5F3;
+  --color-card: #FFFFFF;
+  --color-dark: #0D1512;
+
+  /* Ink scale */
+  --color-ink:       #111714;
+  --color-ink-mid:   #3D4842;
+  --color-ink-muted: #7A8882;
+  --color-ink-faint: #B8C0BC;
+
+  /* Border */
+  --color-border:     #E2E6E4;
+  --color-border-mid: #C8D0CC;
+
+  /* Checked-row background */
+  --color-checked-bg: #F0FAF6;
+
+  /* Status colours */
+  --color-amber: #F5A623;
+  --color-red:   #C94040;
+
+  /* Spacing scale */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+
+  /* Border-radius scale */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+
+  /* Transition */
+  --transition-fast: 0.18s ease;
+  --transition-panel: 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}

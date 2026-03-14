@@ -87,7 +87,8 @@ class SimBrief:
         """
         root = ET.fromstring(xml_data)
 
-        self.origin = root.findtext("origin/icao_code")  # Departure airport
+        self.origin = root.findtext("origin/icao_code")       # Departure airport
+        self.destination = root.findtext("destination/icao_code")  # Arrival airport
         self.elevation = root.findtext("origin/elevation") + " ft"
         self.runway = root.findtext("origin/plan_rwy")  # Departure runway
         self.temperature = (
