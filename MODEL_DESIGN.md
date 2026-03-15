@@ -20,7 +20,7 @@
 ## Model Overview
 
 ```
-Attribute  (admin-maintained, semi-fixed)
+Attribute  (admin-maintained, semi-fixed, existing model — do not modify)
     │
 UserProfile
     │  (default attribute values via UserAttributeDefault)
@@ -41,21 +41,53 @@ UserProfile
 
 ---
 
-## Models
+## Existing Model: `Attribute`
 
-### `Attribute`
+**Do not modify this model.** It is used by the existing xChecklist export feature.
 
-Admin-maintained. Defines the full set of possible flight profile attributes.
-New attributes require an admin action — they cannot be added from the session UI.
+```python
+class Attribute(models.Model):
+    title = models.CharField(max_length=30)
+    order = models.PositiveIntegerField()
+    description = models.TextField(blank=True)
+    show = models.BooleanField(default=True)
+    over_ruled_by = models.ForeignKey(
+        "self", on_delete=models.SET_NULL, blank=True, null=True
+    )
+    btn_color = ColorField(default="#194D33")
+```
 
-| Field | Type | Notes |
-|---|---|---|
-| `name` | CharField, unique | e.g. `optional`, `anti_ice_normal`, `no_pushback`, `short_runway` |
-| `label` | CharField | Display name shown to user |
-| `description` | TextField | Explanation shown on profile screen |
-| `default_value` | BooleanField | System-wide fallback if no user preference exists |
+### Overrule Logic
+
+Attributes form a mutual-exclusion group via `over_ruled_by`. Examples:
+
+| Attribute | `show` | `over_ruled_by` | Meaning |
+|---|---|---|---|
+| `above_10` | False | — | Hidden normal-condition default |
+| `zero_to_ten` | True | — | Temp 0–10°C |
+| `below_zero` | True | — | Temp below 0°C |
+| `long_runway` | False | — | Hidden normal-condition default |
+| `short_runway` | True | — | Short runway / above 10,000ft |
+
+When `below_zero` is active, `zero_to_ten` is implicitly deactivated (overruled).
+When `short_runway` is active, `long_runway` (hidden) is deactivated.
+
+### Toggle Rules for `FlightSessionAttribute`
+
+When a pilot activates attribute X in a `FlightSession`:
+
+1. Set `FlightSessionAttribute.is_active = True` for X
+2. Find all attributes where `over_ruled_by = X` → set their rows to `is_active = False`
+3. **UI must prevent** reactivating an attribute that is overruled by a currently
+   active attribute — do not expose the toggle if the overruling attribute is on
+
+This logic runs on every toggle (both activation and deactivation). Deactivating X
+does **not** automatically reactivate overruled attributes — the pilot must
+explicitly enable them.
 
 ---
+
+## New Models
 
 ### `UserProfile`
 
@@ -88,7 +120,7 @@ Created when user clicks "Start Live Session".
 | `session_key` | CharField, unique | Short code entered into X-Plane plugin (e.g. ABCD-1234) |
 | `user_profile` | FK → UserProfile, nullable | Null for anonymous sessions |
 | `role` | CharField | `PF` / `PM` / `SOLO` |
-| `active_phase` | CharField | Current checklist phase |
+| `active_phase` | CharField | Current checklist phase slug |
 | `created_at` | DateTimeField | auto_now_add |
 | `last_plugin_contact` | DateTimeField, nullable | Updated on each plugin POST |
 | `is_active` | BooleanField | False on session end or timeout |
@@ -119,10 +151,10 @@ but **mutable** — real conditions often differ from planned ones.
 | `ofp_loaded` | BooleanField | True if seeded from SimBrief OFP |
 
 **Notes:**
-- Changes to `FlightInfo` (e.g. pilot updates actual OAT) trigger **attribute
-  suggestions** surfaced in the UI — not automatic changes
-- Pilot confirms or ignores each suggestion
-- Confirmed suggestion → updates `FlightSessionAttribute` → partial checklist rebuild
+- Changes to `FlightInfo` trigger **attribute suggestions** surfaced in the UI —
+  not automatic changes. Pilot confirms or ignores each suggestion.
+- Confirmed suggestion → updates `FlightSessionAttribute` (respecting overrule logic)
+  → partial checklist rebuild
 
 ---
 
@@ -141,13 +173,10 @@ created **eagerly** on session start.
 **Seeding sequence on session creation:**
 1. One row created per `Attribute` in the table
 2. `is_active` seeded from `UserAttributeDefault` (or `Attribute.default_value` for anonymous)
-3. After OFP load: rows updated where OFP implies a different value; `source` = `ofp_derived`
-4. Pilot toggle at any time: `is_active` flipped, `source` = `pilot_override`
-
-**On attribute change:**
-- Checklist item list recalculated fresh
-- Existing `FlightItemState` rows overlaid — checked items preserved, orphaned rows ignored
-- `pending` rows cleared (re-evaluated on next plugin push cycle)
+3. After OFP load: rows updated where OFP implies a different value; `source` = `ofp_derived`;
+   overrule logic applied
+4. Pilot toggle at any time: `is_active` flipped, `source` = `pilot_override`;
+   overrule logic applied; checklist rebuilt
 
 ---
 
@@ -159,7 +188,7 @@ are stored. Absence of a row = item is `unchecked`.
 | Field | Type | Notes |
 |---|---|---|
 | `flight_session` | FK → FlightSession | |
-| `checklist_item` | FK → ChecklistItem | Existing model, untouched |
+| `checklist_item` | FK → ChecklistItem | Existing model — untouched |
 | `status` | CharField | See Status Values below |
 | `source` | CharField, nullable | `manual` / `auto` — only when status is `checked` |
 | `checked_at` | DateTimeField, nullable | Timestamp of state change |
@@ -184,7 +213,8 @@ are stored. Absence of a row = item is `unchecked`.
 ### When an auto-check fires on item N:
 
 1. **Optional unchecked items above N** → `skipped`
-2. **Required unchecked items above N** → remain `unchecked`, surface visually, **block progression**
+2. **Required unchecked items above N** → remain `unchecked`, surface visually,
+   **block progression**
 3. **Items below N** → evaluated sequentially from watch list data
 
 ### Blocking:
@@ -210,8 +240,7 @@ are stored. Absence of a row = item is `unchecked`.
 Django responds to each plugin POST with a watch list — the set of datarefs to monitor.
 
 - Includes **all pending auto-checkable items in the current phase**, not just the next one
-- Ensures cascade items (e.g. NoActionNeed following an auto-check) resolve within
-  one poll cycle (2–3 seconds) — no active reads needed
+- Ensures cascade items resolve within one poll cycle (2–3 seconds) — no active reads needed
 - Auto-check rules live in `ChecklistItem.auto_check_rule` (JSONField, v2.0 addition)
 - `dataref_expression` / `show_expression` on `ChecklistItem` are **never modified**
 
@@ -241,6 +270,7 @@ Django responds to each plugin POST with a watch list — the set of datarefs to
    → FlightSession created, session_key generated
    → FlightSessionAttribute rows created eagerly (one per Attribute)
      → seeded from UserProfile defaults or Attribute.default_value for anon
+     → overrule logic applied to initial set
    → Django session stores session_key reference only
 
 2. Optional: SimBrief OFP loaded
@@ -248,6 +278,7 @@ Django responds to each plugin POST with a watch list — the set of datarefs to
    → Attribute suggestions surfaced in UI (e.g. OAT → anti-ice recommendation)
    → Pilot confirms or ignores each suggestion
    → Confirmed → FlightSessionAttribute updated (source=ofp_derived)
+     → overrule logic applied
 
 3. User enters session_key into X-Plane plugin
    → Plugin begins POSTing to /api/plugin/push/
@@ -256,6 +287,7 @@ Django responds to each plugin POST with a watch list — the set of datarefs to
 
 4. Mid-flight attribute change
    → FlightSessionAttribute updated (source=pilot_override)
+   → Overrule logic applied
    → Checklist rebuilt: item list recalculated, FlightItemState overlaid,
      pending rows cleared
 
@@ -270,7 +302,7 @@ Django responds to each plugin POST with a watch list — the set of datarefs to
 
 | v1.x | v2.0 |
 |---|---|
-| Flight attributes in Django session | `FlightSessionAttribute` rows (proper M2M) |
+| Flight attributes in Django session | `FlightSessionAttribute` rows (proper FK) |
 | Checklist item state in frontend JS | `FlightItemState` rows (lazy, server-side) |
 | No session concept | `FlightSession` with session_key |
 | No user persistence | `UserProfile` with `UserAttributeDefault` |
