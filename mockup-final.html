@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>fly.vdwaal.net v2.0 — Design v3 Final</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --fs: -apple-system,'Segoe UI',system-ui,sans-serif;
+  --fm: 'SF Mono','Cascadia Mono','Fira Mono','Consolas','Liberation Mono',monospace;
+  --td: #0F6B54; --tm: #1A8A6C; --tb: #22C9A0;
+  --bg: #F4F5F3; --card: #FFF; --dark: #0D1512;
+  --ink: #111714; --im: #3D4842; --imuted: #7A8882; --if: #B8C0BC;
+  --bdr: #E2E6E4; --bdrm: #C8D0CC;
+  --chk: #F0FAF6;
+}
+body { font-family: var(--fs); background: #E8EAE8; min-height:100vh; padding:40px 20px 80px; }
+
+/* header */
+.ph { text-align:center; margin-bottom:30px; }
+.ph h1 { font-family:var(--fm); font-size:12px; letter-spacing:.18em; color:var(--td); text-transform:uppercase; margin-bottom:4px; }
+.ph p { font-size:11px; color:var(--imuted); font-family:var(--fm); }
+
+/* tabs */
+.tabs { display:flex; justify-content:center; gap:4px; margin-bottom:34px; flex-wrap:wrap; }
+.tab { padding:7px 15px; border-radius:6px; font-size:11px; font-family:var(--fm); letter-spacing:.07em; cursor:pointer; border:1.5px solid var(--bdrm); background:var(--card); color:var(--imuted); transition:all .18s; }
+.tab.on { background:var(--td); border-color:var(--td); color:#fff; }
+
+/* showcase */
+.sc { display:flex; gap:34px; justify-content:center; align-items:flex-start; flex-wrap:wrap; }
+.dw { display:flex; flex-direction:column; align-items:center; gap:12px; }
+.dl { font-family:var(--fm); font-size:10px; letter-spacing:.12em; color:var(--imuted); text-transform:uppercase; }
+
+/* phone */
+.pf { width:375px; height:760px; background:var(--bg); border-radius:36px; box-shadow:0 0 0 10px #1C1C1E,0 0 0 12px #3A3A3C,0 40px 80px rgba(0,0,0,.22); overflow:hidden; position:relative; display:flex; flex-direction:column; }
+.notch { position:absolute; top:0; left:50%; transform:translateX(-50%); width:120px; height:28px; background:#1C1C1E; border-radius:0 0 18px 18px; z-index:10; }
+
+/* tablet */
+.tf { width:960px; height:680px; background:var(--bg); border-radius:20px; box-shadow:0 0 0 12px #1C1C1E,0 0 0 14px #3A3A3C,0 40px 80px rgba(0,0,0,.22); overflow:hidden; display:flex; flex-direction:column; }
+
+/* laptop */
+.lw { display:flex; flex-direction:column; align-items:center; }
+.lid { width:1100px; height:650px; background:var(--bg); border-radius:12px 12px 0 0; box-shadow:0 0 0 10px #2A2A2C,0 0 0 12px #1A1A1C; overflow:hidden; display:flex; flex-direction:column; }
+.cambar { background:#1A1A1C; height:26px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.cam { width:7px; height:7px; border-radius:50%; background:#333336; }
+.base { width:1180px; height:20px; background:#2A2A2C; border-radius:0 0 10px 10px; box-shadow:0 8px 24px rgba(0,0,0,.35); display:flex; align-items:center; justify-content:center; }
+.trackpad { width:140px; height:9px; background:#222224; border-radius:3px; }
+
+/* status bars */
+.sb { background:var(--dark); color:rgba(255,255,255,.4); font-family:var(--fm); font-size:11px; padding:36px 18px 6px; display:flex; justify-content:space-between; align-items:center; flex-shrink:0; }
+.tsb { background:var(--dark); color:rgba(255,255,255,.35); font-family:var(--fm); font-size:11px; padding:11px 20px 9px; display:flex; justify-content:space-between; align-items:center; flex-shrink:0; border-bottom:1px solid rgba(255,255,255,.04); }
+
+/* conn bar */
+.cb { background:var(--dark); padding:9px 14px 10px; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; border-bottom:1px solid rgba(255,255,255,.05); }
+.cl { display:flex; align-items:center; gap:8px; }
+.dot { width:7px; height:7px; border-radius:50%; background:var(--imuted); flex-shrink:0; }
+.dot.live { background:var(--tb); box-shadow:0 0 7px var(--tb); animation:p 2.2s ease-in-out infinite; }
+@keyframes p { 0%,100%{opacity:1} 50%{opacity:.4} }
+.ct { font-family:var(--fm); font-size:10.5px; color:rgba(255,255,255,.4); }
+.ct.live { color:var(--tb); }
+.cr { display:flex; align-items:center; gap:10px; }
+.ca { font-family:var(--fm); font-size:10px; color:rgba(255,255,255,.22); letter-spacing:.08em; }
+.ib { width:22px; height:22px; border-radius:50%; border:1.5px solid rgba(255,255,255,.15); display:flex; align-items:center; justify-content:center; cursor:pointer; color:rgba(255,255,255,.35); font-size:11px; font-weight:600; transition:all .2s; user-select:none; flex-shrink:0; }
+.ib:hover { border-color:rgba(255,255,255,.4); color:rgba(255,255,255,.7); }
+
+/* info panel */
+.ip { position:absolute; top:0; left:0; right:0; bottom:0; background:var(--dark); z-index:20; display:flex; flex-direction:column; transform:translateX(100%); transition:transform .28s cubic-bezier(.4,0,.2,1); overflow-y:auto; }
+.ip.open { transform:translateX(0); }
+.iph { padding:48px 20px 18px; border-bottom:1px solid rgba(255,255,255,.06); display:flex; align-items:flex-start; justify-content:space-between; }
+.ipt { font-family:var(--fm); font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--tb); }
+.ipc { color:rgba(255,255,255,.4); cursor:pointer; font-size:18px; line-height:1; padding:2px 4px; }
+.is { padding:18px 20px 0; }
+.ist { font-family:var(--fm); font-size:9px; letter-spacing:.16em; text-transform:uppercase; color:rgba(255,255,255,.22); margin-bottom:10px; }
+.ir { display:flex; align-items:center; justify-content:space-between; padding:9px 0; border-bottom:1px solid rgba(255,255,255,.05); }
+.ir:last-child { border-bottom:none; }
+.irl { font-size:13px; color:rgba(255,255,255,.62); }
+.irv { font-family:var(--fm); font-size:11px; color:rgba(255,255,255,.32); }
+.irv.g { color:var(--tb); }
+.il { padding:18px 20px; }
+.ilt { font-family:var(--fm); font-size:9px; letter-spacing:.16em; text-transform:uppercase; color:rgba(255,255,255,.22); margin-bottom:12px; }
+.ilr { display:flex; align-items:center; gap:12px; padding:8px 0; border-bottom:1px solid rgba(255,255,255,.04); }
+.ilr:last-child { border-bottom:none; }
+/* legend boxes match real checkboxes */
+.lb { width:22px; height:22px; border-radius:6px; flex-shrink:0; display:flex; align-items:center; justify-content:center; position:relative; }
+.lb.e { border:2px solid rgba(255,255,255,.2); }
+.lb.m { background:var(--td); border:2px solid var(--td); }
+.lb.a { background:var(--td); border:2px solid var(--td); }
+.lb.a::after { content:''; width:8px; height:8px; border-radius:50%; background:rgba(255,255,255,.9); position:absolute; }
+.lt { color:rgba(255,255,255,.55); font-size:13px; }
+.ls { font-size:11px; color:rgba(255,255,255,.25); margin-top:1px; font-family:var(--fm); }
+.iv { padding:20px; font-family:var(--fm); font-size:10px; color:rgba(255,255,255,.16); text-align:center; margin-top:auto; }
+
+/* proc header */
+.proch { background:var(--card); padding:13px 16px 11px; border-bottom:1px solid var(--bdr); flex-shrink:0; }
+.procp { font-family:var(--fm); font-size:9.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--tm); margin-bottom:3px; }
+.proct { font-size:17px; font-weight:600; color:var(--ink); letter-spacing:-.01em; }
+.procm { display:flex; align-items:center; gap:10px; margin-top:7px; }
+.procc { font-family:var(--fm); font-size:10px; color:var(--imuted); flex-shrink:0; }
+.bar { flex:1; height:2px; background:var(--bdr); border-radius:2px; overflow:hidden; }
+.barf { height:100%; background:var(--tb); border-radius:2px; }
+
+/* scroll */
+.cs { flex:1; overflow-y:auto; padding:6px 0; background:var(--bg); }
+.cs::-webkit-scrollbar { width:3px; }
+.cs::-webkit-scrollbar-thumb { background:var(--bdrm); border-radius:3px; }
+.sl { padding:10px 20px 4px; font-family:var(--fm); font-size:9px; letter-spacing:.16em; text-transform:uppercase; color:var(--if); }
+
+/* ── CHECK ITEM ──
+   Key design:
+   - Both checked states: same --chk background, same border
+   - Manual ONLY: dark green left border (3px solid --td)
+   - Checkbox: manual=tick, auto=dot, both dark green fill
+*/
+.ci { background:var(--card); margin:3px 10px; border-radius:10px; border:1.5px solid var(--bdr); overflow:hidden; cursor:pointer; transition:border-color .2s,background .2s; }
+.ci:hover { border-color:var(--bdrm); }
+.ci.cm, .ci.ca { background:var(--chk); border-color:rgba(15,107,84,.16); }
+.ci.cm { border-left:3px solid var(--td); }
+.ci.low { opacity:.38; }
+.cii { display:flex; align-items:center; min-height:52px; padding:10px 12px 10px 13px; }
+
+/* checkboxes */
+.cb2 { width:22px; height:22px; border-radius:6px; flex-shrink:0; margin-right:12px; display:flex; align-items:center; justify-content:center; transition:all .2s; position:relative; }
+.cb2.e { border:2px solid var(--bdrm); background:white; }
+.cb2.m { background:var(--td); border:2px solid var(--td); }
+.cb2.a { background:var(--td); border:2px solid var(--td); }
+.cb2.a::after { content:''; width:8px; height:8px; border-radius:50%; background:rgba(255,255,255,.9); position:absolute; }
+
+/* text */
+.cc { flex:1; min-width:0; }
+.cn { font-size:14px; font-weight:500; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ci.cm .cn, .ci.ca .cn { color:var(--imuted); text-decoration:line-through; text-decoration-color:var(--if); }
+.cset { font-family:var(--fm); font-size:11px; color:var(--imuted); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ci.cm .cset, .ci.ca .cset { color:var(--if); }
+.crr { display:flex; flex-direction:column; align-items:flex-end; gap:3px; flex-shrink:0; margin-left:8px; }
+.pill { display:inline-flex; padding:2px 7px; border-radius:4px; font-family:var(--fm); font-size:9px; letter-spacing:.04em; font-weight:500; }
+
+/* nav */
+.nav { background:var(--card); border-top:1px solid var(--bdr); padding:10px 16px 22px; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
+.nb { display:flex; align-items:center; gap:5px; padding:10px 18px; border-radius:8px; font-size:13px; font-weight:500; cursor:pointer; border:1.5px solid var(--bdrm); background:transparent; color:var(--im); font-family:var(--fs); }
+.nb.p { background:var(--td); border-color:var(--td); color:white; }
+.ni { font-family:var(--fm); font-size:10px; color:var(--if); text-align:center; }
+
+/* profile */
+.ps { flex:1; overflow-y:auto; padding:10px; background:var(--bg); }
+.ps::-webkit-scrollbar { width:3px; }
+.ps::-webkit-scrollbar-thumb { background:var(--bdrm); border-radius:3px; }
+.sbc { background:var(--card); border:1.5px solid var(--bdr); border-radius:12px; padding:13px; margin-bottom:8px; }
+.ct2 { font-family:var(--fm); font-size:9.5px; letter-spacing:.15em; text-transform:uppercase; color:var(--tm); margin-bottom:10px; }
+.sbrow { display:flex; gap:7px; margin-bottom:8px; }
+.sbi { flex:1; padding:9px 11px; border-radius:7px; border:1.5px solid var(--bdrm); font-family:var(--fm); font-size:13px; color:var(--ink); background:var(--bg); }
+.sbb { padding:9px 13px; border-radius:7px; background:var(--td); color:white; border:none; font-size:12px; font-weight:600; font-family:var(--fs); white-space:nowrap; cursor:pointer; }
+.sbd { display:grid; grid-template-columns:1fr 1fr; gap:5px; margin-top:8px; }
+.sdd { background:var(--bg); border-radius:7px; padding:8px 10px; }
+.sdl { font-family:var(--fm); font-size:9px; letter-spacing:.1em; text-transform:uppercase; color:var(--imuted); margin-bottom:2px; }
+.sdv { font-family:var(--fm); font-size:14px; font-weight:500; color:var(--ink); }
+.ac { background:var(--card); border:1.5px solid var(--bdr); border-radius:12px; overflow:hidden; margin-bottom:8px; }
+.ach { padding:11px 13px 9px; border-bottom:1px solid var(--bdr); }
+.ar { display:flex; align-items:center; padding:11px 13px; border-bottom:1px solid var(--bdr); gap:11px; cursor:pointer; }
+.ar:last-child { border-bottom:none; }
+.atg { width:36px; height:20px; border-radius:10px; background:var(--bdrm); position:relative; flex-shrink:0; transition:background .2s; }
+.atg.on { background:var(--tm); }
+.atg::after { content:''; position:absolute; width:14px; height:14px; border-radius:50%; background:white; top:3px; left:3px; transition:left .2s; box-shadow:0 1px 3px rgba(0,0,0,.2); }
+.atg.on::after { left:19px; }
+.ai { flex:1; }
+.an { font-size:13px; font-weight:500; color:var(--ink); }
+.ad { font-size:11px; color:var(--imuted); margin-top:1px; }
+.atag { font-family:var(--fm); font-size:9px; color:var(--tm); background:rgba(26,138,108,.1); padding:2px 6px; border-radius:3px; }
+.lc { background:var(--card); border:1.5px solid var(--bdr); border-left:3px solid var(--tb); border-radius:12px; padding:13px; margin-bottom:8px; }
+.lct { font-size:13px; font-weight:600; color:var(--ink); margin-bottom:4px; }
+.lcd { font-size:12px; color:var(--imuted); line-height:1.5; margin-bottom:10px; }
+.lca { display:flex; gap:7px; }
+.lcb { flex:1; padding:9px; border-radius:7px; font-size:12px; font-weight:500; cursor:pointer; font-family:var(--fs); text-align:center; border:1.5px solid var(--bdrm); color:var(--im); background:transparent; }
+.lcb.p { background:var(--td); border-color:var(--td); color:white; }
+.pa { display:flex; gap:7px; margin-top:2px; }
+.pb { flex:1; padding:11px; border-radius:8px; border:1.5px solid var(--bdrm); font-size:13px; font-weight:500; cursor:pointer; font-family:var(--fs); background:transparent; color:var(--im); text-align:center; }
+.pb.p { background:var(--td); border-color:var(--td); color:white; }
+
+/* tablet/laptop layout */
+.tl { display:flex; flex:1; overflow:hidden; }
+.tsi { width:270px; background:var(--dark); display:flex; flex-direction:column; flex-shrink:0; overflow:hidden; border-right:1px solid rgba(255,255,255,.04); }
+.sto { padding:14px 16px 10px; border-bottom:1px solid rgba(255,255,255,.05); }
+.slo { font-family:var(--fm); font-size:11px; letter-spacing:.18em; color:var(--tb); text-transform:uppercase; margin-bottom:2px; }
+.ssu { font-family:var(--fm); font-size:9.5px; color:rgba(255,255,255,.22); }
+.pl { flex:1; overflow-y:auto; padding:6px 0; }
+.pl::-webkit-scrollbar { width:2px; }
+.pl::-webkit-scrollbar-thumb { background:rgba(255,255,255,.08); }
+.pi { padding:10px 16px; cursor:pointer; border-left:3px solid transparent; display:flex; align-items:center; justify-content:space-between; transition:all .14s; }
+.pi:hover { background:rgba(255,255,255,.03); }
+.pi.on { background:rgba(34,201,160,.07); border-left-color:var(--tb); }
+.pi.dn { opacity:.42; }
+.pn { font-size:13px; font-weight:500; color:rgba(255,255,255,.6); }
+.pi.on .pn { color:white; }
+.pbg { font-family:var(--fm); font-size:10px; color:rgba(255,255,255,.22); background:rgba(255,255,255,.05); padding:1px 6px; border-radius:3px; }
+.pi.on .pbg { color:var(--tb); background:rgba(34,201,160,.12); }
+.tm2 { flex:1; display:flex; flex-direction:column; overflow:hidden; background:var(--bg); }
+.tph { background:var(--card); padding:14px 20px 12px; border-bottom:1px solid var(--bdr); flex-shrink:0; display:flex; align-items:center; justify-content:space-between; }
+.tpp { font-family:var(--fm); font-size:9.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--tm); margin-bottom:2px; }
+.tpt { font-size:19px; font-weight:600; color:var(--ink); }
+.ring { position:relative; width:46px; height:46px; }
+.ring svg { transform:rotate(-90deg); }
+.rb { fill:none; stroke:var(--bdr); stroke-width:3; }
+.rf { fill:none; stroke:var(--tb); stroke-width:3; stroke-linecap:round; }
+.rl { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:var(--fm); font-size:11px; font-weight:500; color:var(--ink); }
+.tc { flex:1; overflow-y:auto; padding:10px 20px; }
+.tc::-webkit-scrollbar { width:3px; }
+.tc::-webkit-scrollbar-thumb { background:var(--bdrm); border-radius:3px; }
+/* tablet check items — same rules as phone */
+.tci { background:var(--card); border:1.5px solid var(--bdr); border-radius:9px; margin-bottom:5px; display:flex; align-items:center; min-height:52px; padding:10px 16px; cursor:pointer; transition:all .18s; }
+.tci:hover { border-color:var(--bdrm); }
+.tci.cm, .tci.ca { background:var(--chk); border-color:rgba(15,107,84,.16); }
+.tci.cm { border-left:3px solid var(--td); }
+.tci.low { opacity:.38; }
+.tb2 { width:22px; height:22px; border-radius:6px; flex-shrink:0; margin-right:14px; display:flex; align-items:center; justify-content:center; position:relative; }
+.tb2.e { border:2px solid var(--bdrm); background:white; }
+.tb2.m { background:var(--td); border:2px solid var(--td); }
+.tb2.a { background:var(--td); border:2px solid var(--td); }
+.tb2.a::after { content:''; width:8px; height:8px; border-radius:50%; background:rgba(255,255,255,.9); position:absolute; }
+.tcn { font-size:13.5px; font-weight:500; color:var(--ink); width:200px; flex-shrink:0; }
+.tci.cm .tcn, .tci.ca .tcn { color:var(--imuted); text-decoration:line-through; text-decoration-color:var(--if); }
+.sep { width:1px; height:26px; background:var(--bdr); margin:0 14px; flex-shrink:0; }
+.tcs { font-family:var(--fm); font-size:12px; color:var(--im); flex:1; }
+.tci.cm .tcs, .tci.ca .tcs { color:var(--if); }
+.tcr { display:flex; align-items:center; gap:8px; margin-left:12px; flex-shrink:0; }
+.tnav { background:var(--card); border-top:1px solid var(--bdr); padding:12px 20px; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
+
+/* legend bottom */
+.leg { margin-top:22px; display:flex; flex-wrap:wrap; gap:18px; justify-content:center; }
+.li { display:flex; align-items:center; gap:8px; font-family:var(--fm); font-size:10px; color:var(--imuted); }
+.lbx { width:20px; height:20px; border-radius:5px; flex-shrink:0; display:flex; align-items:center; justify-content:center; position:relative; }
+.lbx.e { border:2px solid #C8D0CC; background:white; }
+.lbx.m { background:var(--td); border:2px solid var(--td); }
+.lbx.a { background:var(--td); border:2px solid var(--td); }
+.lbx.a::after { content:''; width:7px; height:7px; border-radius:50%; background:rgba(255,255,255,.9); position:absolute; }
+.lstrip { width:4px; height:20px; background:var(--td); border-radius:2px; }
+
+/* view toggle */
+.vs { display:none; }
+.vs.on { display:contents; }
+</style>
+</head>
+<body>
+
+<div class="ph"><h1>fly.vdwaal.net — v2.0 Design · Final</h1><p>Unified checkbox · Manual border · Phone · Tablet · Laptop</p></div>
+
+<div class="tabs">
+  <div class="tab on"  onclick="sv('cl',this)">Phone · Checklist</div>
+  <div class="tab" onclick="sv('inf',this)">Phone · Info Panel</div>
+  <div class="tab" onclick="sv('pr',this)">Phone · Profile</div>
+  <div class="tab" onclick="sv('tab',this)">Tablet</div>
+  <div class="tab" onclick="sv('lap',this)">Laptop</div>
+</div>
+
+<!-- ═══ CHECKLIST ═══ -->
+<div id="view-cl" class="vs on"><div class="sc">
+
+  <!-- LIVE -->
+  <div class="dw">
+    <div class="dl">Phone · Live · X-Plane Connected</div>
+    <div class="pf">
+      <div class="notch"></div>
+      <div class="sb"><span>19:24</span><span>fly.vdwaal.net</span><span>87%</span></div>
+      <div class="cb">
+        <div class="cl"><div class="dot live"></div><span class="ct live">X-Plane · ZIBO 738</span></div>
+        <div class="cr"><span class="ca">EHAM → LFPG</span><div class="ib" onclick="oi('a')">i</div></div>
+      </div>
+      <div class="proch"><div class="procp">Before Start</div><div class="proct">Aircraft Preparation</div><div class="procm"><span class="procc">5 of 7</span><div class="bar"><div class="barf" style="width:71%"></div></div></div></div>
+      <div class="cs">
+        <div class="sl">Completed</div>
+
+        <!-- MANUAL: green fill + tick + LEFT BORDER on row -->
+        <div class="ci cm"><div class="cii">
+          <div class="cb2 m"><svg width="11" height="8" viewBox="0 0 11 8" fill="none"><path d="M1 3.5L4 6.5L10 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <div class="cc"><div class="cn">Doors</div><div class="cset">OPEN</div></div>
+          <div class="crr"><span class="pill" style="background:#F0F4F2;color:#7A8882">Optional</span></div>
+        </div></div>
+
+        <!-- AUTO: green fill + white DOT, no left border on row -->
+        <div class="ci ca"><div class="cii">
+          <div class="cb2 a"></div>
+          <div class="cc"><div class="cn">Parking Brake</div><div class="cset">SET</div></div>
+        </div></div>
+
+        <div class="ci cm"><div class="cii">
+          <div class="cb2 m"><svg width="11" height="8" viewBox="0 0 11 8" fill="none"><path d="M1 3.5L4 6.5L10 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <div class="cc"><div class="cn">Airstairs</div><div class="cset">AS REQUIRED</div></div>
+          <div class="crr"><span class="pill" style="background:#F0F4F2;color:#7A8882">Optional</span></div>
+        </div></div>
+
+        <div class="ci ca"><div class="cii">
+          <div class="cb2 a"></div>
+          <div class="cc"><div class="cn">Chocks</div><div class="cset">SET</div></div>
+          <div class="crr"><span class="pill" style="background:rgba(17,23,20,.07);color:#3D4842">NoAction</span></div>
+        </div></div>
+
+        <div class="sl">Remaining</div>
+
+        <div class="ci"><div class="cii"><div class="cb2 e"></div><div class="cc"><div class="cn">Ground Power</div><div class="cset">AS REQUIRED (IF NO GND AVAIL)</div></div></div></div>
+        <div class="ci"><div class="cii"><div class="cb2 e"></div><div class="cc"><div class="cn">Fuel &amp; Weight Balance</div><div class="cset">SET REQ. FUEL · CG 26.4%</div></div></div></div>
+        <div class="ci low"><div class="cii">
+          <div class="cb2 e"></div>
+          <div class="cc"><div class="cn">Fuel Truck</div><div class="cset">CALL</div></div>
+          <div class="crr"><span class="pill" style="background:#FFF3E0;color:#B07020">PM</span></div>
+        </div></div>
+        <div style="height:8px"></div>
+      </div>
+      <div class="nav"><button class="nb">← Prev</button><div class="ni">2 / 8</div><button class="nb p">Next →</button></div>
+
+      <!-- Info panel -->
+      <div class="ip" id="ip-a">
+        <div class="iph"><div class="ipt">fly.vdwaal.net</div><div class="ipc" onclick="ci2('a')">✕</div></div>
+        <div class="is"><div class="ist">Session</div>
+          <div class="ir"><span class="irl">Status</span><span class="irv g">X-Plane Live</span></div>
+          <div class="ir"><span class="irl">Aircraft</span><span class="irv">ZIBO 738</span></div>
+          <div class="ir"><span class="irl">Route</span><span class="irv">EHAM → LFPG</span></div>
+          <div class="ir"><span class="irl">Update rate</span><span class="irv">1 Hz</span></div>
+        </div>
+        <div class="il"><div class="ilt">Check item legend</div>
+          <div class="ilr"><div class="lb e"></div><div><div class="lt">Not yet checked</div></div></div>
+          <div class="ilr">
+            <div class="lb m"><svg width="11" height="8" viewBox="0 0 11 8" fill="none"><path d="M1 3.5L4 6.5L10 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <div><div class="lt">Manually confirmed</div><div class="ls">You tapped · or yoke binding</div></div>
+          </div>
+          <div class="ilr"><div class="lb a"></div><div><div class="lt">Confirmed by simulator</div><div class="ls">X-Plane state matched</div></div></div>
+        </div>
+        <div class="is"><div class="ist">About</div>
+          <div class="ir"><span class="irl">Version</span><span class="irv">2.0.0</span></div>
+          <div class="ir"><span class="irl">Checklist</span><span class="irv">Skymatix 737</span></div>
+          <div class="ir" style="cursor:pointer"><span class="irl">Documentation</span><span class="irv" style="color:var(--tb)">→</span></div>
+          <div class="ir" style="cursor:pointer"><span class="irl">Reset flight session</span><span class="irv" style="color:#C94040">Reset</span></div>
+        </div>
+        <div class="iv">fly.vdwaal.net · Made by CheZHJ · Skymatix checklist</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MANUAL ONLY -->
+  <div class="dw">
+    <div class="dl">Phone · Manual Mode · No Simulator</div>
+    <div class="pf">
+      <div class="notch"></div>
+      <div class="sb"><span>19:24</span><span>fly.vdwaal.net</span><span>87%</span></div>
+      <div class="cb">
+        <div class="cl"><div class="dot"></div><span class="ct">Manual only</span></div>
+        <div class="cr"><div class="ib" onclick="oi('b')">i</div></div>
+      </div>
+      <div class="proch"><div class="procp">Before Start</div><div class="proct">Aircraft Preparation</div><div class="procm"><span class="procc">2 of 7</span><div class="bar"><div class="barf" style="width:29%"></div></div></div></div>
+      <div class="cs">
+        <div class="sl">Completed</div>
+        <div class="ci cm"><div class="cii"><div class="cb2 m"><svg width="11" height="8" viewBox="0 0 11 8" fill="none"><path d="M1 3.5L4 6.5L10 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="cc"><div class="cn">Doors</div><div class="cset">OPEN</div></div></div></div>
+        <div class="ci cm"><div class="cii"><div class="cb2 m"><svg width="11" height="8" viewBox="0 0 11 8" fill="none"><path d="M1 3.5L4 6.5L10 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="cc"><div class="cn">Airstairs</div><div class="cset">AS REQUIRED</div></div></div></div>
+        <div class="sl">Remaining</div>
+        <div class="ci"><div class="cii"><div class="cb2 e"></div><div class="cc"><div class="cn">Service Crew</div><div class="cset">START LOADING</div></div></div></div>
+        <div class="ci"><div class="cii"><div class="cb2 e"></div><div class="cc"><div class="cn">Chocks</div><div class="cset">SET</div></div></div></div>
+        <div class="ci"><div class="cii"><div class="cb2 e"></div><div class="cc"><div class="cn">Ground Power</div><div class="cset">AS REQUIRED</div></div></div></div>
+        <div class="ci"><div class="cii"><div class="cb2 e"></div><div class="cc"><div class="cn">Fuel &amp; Weight Balance</div><div class="cset">SET REQ. FUEL</div></div></div></div>
+        <div class="ci"><div class="cii"><div class="cb2 e"></div><div class="cc"><div class="cn">Fuel Truck</div><div class="cset">CALL</div></div></div></div>
+        <div style="height:8px"></div>
+      </div>
+      <div class="nav"><button class="nb">← Prev</button><div class="ni">2 / 8</div><button class="nb p">Next →</button></div>
+      <div class="ip" id="ip-b">
+        <div class="iph"><div class="ipt">fly.vdwaal.net</div><div class="ipc" onclick="ci2('b')">✕</div></div>
+        <div class="is"><div class="ist">Session</div>
+          <div class="ir"><span class="irl">Status</span><span class="irv">Manual mode</span></div>
+          <div class="ir"><span class="irl">Live sync</span><span class="irv" style="color:var(--tb);cursor:pointer">Sign in →</span></div>
+        </div>
+        <div class="il"><div class="ilt">Check item legend</div>
+          <div class="ilr"><div class="lb e"></div><div><div class="lt">Not yet checked</div></div></div>
+          <div class="ilr"><div class="lb m"><svg width="11" height="8" viewBox="0 0 11 8" fill="none"><path d="M1 3.5L4 6.5L10 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div><div class="lt">Confirmed</div></div></div>
+        </div>
+        <div class="is"><div class="ist">About</div>
+          <div class="ir"><span class="irl">Version</span><span class="irv">2.0.0</span></div>
+          <div class="ir" style="cursor:pointer"><span class="irl">Reset flight session</span><span class="irv" style="color:#C94040">Reset</span></div>
+        </div>
+        <div class="iv">fly.vdwaal.net · Made by CheZHJ</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+<!-- bottom legend -->
+<div class="leg">
+  <div class="li"><div class="lbx e"></div>Unchecked</div>
+  <div class="li"><div style="display:flex;align-items:center;gap:4px;"><div class="lstrip"></div><div class="lbx m"><svg width="10" height="7" viewBox="0 0 11 8" fill="none"><path d="M1 3.5L4 6.5L10 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>Manual — tick + left border</div>
+  <div class="li"><div class="lbx a"></div>Auto by X-Plane — dot, no border</div>
+</div>
+</div>
+
+<!-- ═══ INFO PANEL STANDALONE ═══ -->
+<div id="view-inf" class="vs"><div class="sc">
+  <div class="dw">
+    <div class="dl">Info Panel · Open State</div>
+    <div class="pf" style="background:var(--dark);">
+      <div class="notch"></div>
+      <div style="flex:1;overflow-y:auto;">
+        <div style="padding:48px 20px 18px;border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:flex-start;justify-content:space-between;"><div class="ipt">fly.vdwaal.net</div><div class="ipc">✕</div></div>
+        <div class="is"><div class="ist">Session</div>
+          <div class="ir"><span class="irl">Status</span><span class="irv g">X-Plane Live</span></div>
+          <div class="ir"><span class="irl">Aircraft</span><span class="irv">ZIBO 738</span></div>
+          <div class="ir"><span class="irl">Route</span><span class="irv">EHAM → LFPG</span></div>
+          <div class="ir"><span class="irl">Update rate</span><span class="irv">1 Hz</span></div>
+        </div>
+        <div class="il"><div class="ilt">Check item legend</div>
+          <div class="ilr"><div class="lb e"></div><div><div class="lt">Not yet checked</div></div></div>
+          <div class="ilr"><div class="lb m"><svg width="11" height="8" viewBox="0 0 11 8" fill="none"><path d="M1 3.5L4 6.5L10 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div><div class="lt">Manually confirmed</div><div class="ls">You tapped · or yoke binding</div></div></div>
+          <div class="ilr"><div class="lb a"></div><div><div class="lt">Confirmed by simulator</div><div class="ls">X-Plane state matched</div></div></div>
+        </div>
+        <div class="is"><div class="ist">About</div>
+          <div class="ir"><span class="irl">Version</span><span class="irv">2.0.0</span></div>
+          <div class="ir"><span class="irl">Checklist</span><span class="irv">Skymatix 737</span></div>
+          <div class="ir" style="cursor:pointer"><span class="irl">Documentation</span><span class="irv" style="color:var(--tb)">→</span></div>
+          <div class="ir" style="cursor:pointer"><span class="irl">Reset flight session</span><span class="irv" style="color:#C94040">Reset</span></div>
+        </div>
+        <div class="iv">fly.vdwaal.net · Made by CheZHJ · Based on Skymatix checklist</div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- ═══ PROFILE ═══ -->
+<div id="view-pr" class="vs"><div class="sc">
+  <div class="dw">
+    <div class="dl">Profile · Anonymous · No Login Required</div>
+    <div class="pf">
+      <div class="notch"></div>
+      <div class="sb"><span>19:19</span><span>fly.vdwaal.net</span><span>87%</span></div>
+      <div class="cb"><div class="cl"><div class="dot"></div><span class="ct">Session setup</span></div><div class="cr"><div class="ib">i</div></div></div>
+      <div class="ps">
+        <div class="lc">
+          <div class="lct">X-Plane live sync available</div>
+          <div class="lcd">Sign in to connect your simulator. The checklist works fully without an account — auto-checking requires login.</div>
+          <div class="lca"><div class="lcb">Continue manually</div><div class="lcb p">Sign in →</div></div>
+        </div>
+        <div class="sbc">
+          <div class="ct2">SimBrief</div>
+          <div class="sbrow"><input class="sbi" type="text" value="CHEZHJ" placeholder="Pilot ID"><button class="sbb">Get Plan</button></div>
+          <div class="sbd">
+            <div class="sdd"><div class="sdl">Origin</div><div class="sdv">EHAM</div></div>
+            <div class="sdd"><div class="sdl">Runway</div><div class="sdv">18R</div></div>
+            <div class="sdd"><div class="sdl">Temp</div><div class="sdv">+4°C</div></div>
+            <div class="sdd"><div class="sdl">Flaps</div><div class="sdv">Flap 5</div></div>
+          </div>
+        </div>
+        <div class="ac">
+          <div class="ach"><div class="ct2" style="margin-bottom:0">Flight Profile</div></div>
+          <div class="ar"><div class="atg on"></div><div class="ai"><div class="an">Optional Items</div><div class="ad">Show optional checklist items</div></div></div>
+          <div class="ar"><div class="atg"></div><div class="ai"><div class="an">Two Pilots</div><div class="ad">Enable PF/PM indicators</div></div></div>
+          <div class="ar"><div class="atg"></div><div class="ai"><div class="an">Online (ATC)</div><div class="ad">IVAO / VATSIM items</div></div></div>
+          <div class="ar"><div class="atg on"></div><div class="ai"><div class="an">No-Action Items</div><div class="ad">Show verify-only items</div></div></div>
+          <div class="ar"><div class="atg on"></div><div class="ai"><div class="an">ZeroToTen <span class="atag">auto</span></div><div class="ad">Temp 0°C–10°C · from SimBrief</div></div></div>
+          <div class="ar"><div class="atg"></div><div class="ai"><div class="an">Short Runway</div><div class="ad">Short runway or above 10,000ft</div></div></div>
+        </div>
+        <div class="pa"><button class="pb">Clear</button><button class="pb p">Start Checklist →</button></div>
+        <div style="height:8px"></div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- ═══ TABLET ═══ -->
+<div id="view-tab" class="vs"><div class="sc" style="justify-content:center;">
+  <div class="dw" style="width:100%;max-width:1020px;">
+    <div class="dl">Tablet · 960px · Landscape</div>
+    <div class="tf">
+      <div class="tsb">
+        <span style="font-family:var(--fm);font-size:12px;letter-spacing:.15em;color:var(--tb)">FLY.VDWAAL.NET</span>
+        <div style="display:flex;align-items:center;gap:7px"><div class="dot live" style="width:6px;height:6px"></div><span style="font-family:var(--fm);font-size:10px;color:var(--tb)">X-Plane Live · ZIBO 738 · EHAM → LFPG</span></div>
+        <div style="display:flex;align-items:center;gap:12px"><span>19:24</span><div class="ib">i</div></div>
+      </div>
+      <div class="tl">
+        <div class="tsi">
+          <div class="sto"><div class="slo">Procedures</div><div class="ssu">Boeing 737-800 · Zibo mod</div></div>
+          <div class="pl">
+            <div class="pi dn"><span class="pn">Preflight</span><span class="pbg">✓</span></div>
+            <div class="pi on"><span class="pn">Aircraft Preparation</span><span class="pbg">5/7</span></div>
+            <div class="pi"><span class="pn">Before Start</span><span class="pbg">12</span></div>
+            <div class="pi"><span class="pn">Engine Start</span><span class="pbg">9</span></div>
+            <div class="pi"><span class="pn">Before Taxi</span><span class="pbg">7</span></div>
+            <div class="pi"><span class="pn">Taxi</span><span class="pbg">4</span></div>
+            <div class="pi"><span class="pn">Before Takeoff</span><span class="pbg">11</span></div>
+            <div class="pi"><span class="pn">After Takeoff</span><span class="pbg">6</span></div>
+          </div>
+        </div>
+        <div class="tm2">
+          <div class="tph">
+            <div><div class="tpp">Before Start · Step 2 of 8</div><div class="tpt">Aircraft Preparation</div></div>
+            <div style="display:flex;align-items:center;gap:14px">
+              <div style="text-align:right"><div style="font-family:var(--fm);font-size:9px;color:var(--imuted);margin-bottom:2px">2 auto · 3 manual</div><div style="font-family:var(--fm);font-size:9px;color:var(--if)">5 of 7 complete</div></div>
+              <div class="ring"><svg width="46" height="46" viewBox="0 0 46 46"><circle class="rb" cx="23" cy="23" r="19"/><circle class="rf" cx="23" cy="23" r="19" stroke-dasharray="119.4" stroke-dashoffset="34.6"/></svg><div class="rl">71%</div></div>
+            </div>
+          </div>
+          <div class="tc">
+            <div class="sl" style="padding:2px 0 8px">Completed</div>
+            <div class="tci cm"><div class="tb2 m"><svg width="11" height="8" viewBox="0 0 11 8" fill="none"><path d="M1 3.5L4 6.5L10 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="tcn">Doors</div><div class="sep"></div><div class="tcs">OPEN</div><div class="tcr"><span class="pill" style="background:#F0F4F2;color:#7A8882">Optional</span></div></div>
+            <div class="tci ca"><div class="tb2 a"></div><div class="tcn">Parking Brake</div><div class="sep"></div><div class="tcs">SET</div><div class="tcr"></div></div>
+            <div class="tci cm"><div class="tb2 m"><svg width="11" height="8" viewBox="0 0 11 8" fill="none"><path d="M1 3.5L4 6.5L10 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="tcn">Airstairs</div><div class="sep"></div><div class="tcs">AS REQUIRED</div><div class="tcr"><span class="pill" style="background:#F0F4F2;color:#7A8882">Optional</span></div></div>
+            <div class="tci ca"><div class="tb2 a"></div><div class="tcn">Chocks</div><div class="sep"></div><div class="tcs">SET</div><div class="tcr"><span class="pill" style="background:rgba(17,23,20,.07);color:#3D4842">NoAction</span></div></div>
+            <div class="sl" style="padding:10px 0 8px">Remaining</div>
+            <div class="tci"><div class="tb2 e"></div><div class="tcn">Ground Power</div><div class="sep"></div><div class="tcs">AS REQUIRED (IF NO GND POWER AVAIL)</div></div>
+            <div class="tci"><div class="tb2 e"></div><div class="tcn">Fuel &amp; Weight Balance</div><div class="sep"></div><div class="tcs">SET REQ. FUEL · CG 26.4%</div></div>
+            <div class="tci low"><div class="tb2 e"></div><div class="tcn">Fuel Truck</div><div class="sep"></div><div class="tcs">CALL</div><div class="tcr"><span class="pill" style="background:#FFF3E0;color:#B07020">PM</span></div></div>
+          </div>
+          <div class="tnav"><button class="nb">← Aircraft Acceptance</button><button class="nb p">Before Start →</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- ═══ LAPTOP ═══ -->
+<div id="view-lap" class="vs"><div class="sc" style="justify-content:center;">
+  <div class="dw" style="width:100%;max-width:1240px;">
+    <div class="dl">Laptop · 1100px · Wider sidebar + SimBrief summary</div>
+    <div class="lw">
+      <div class="lid">
+        <div class="cambar"><div class="cam"></div></div>
+        <div class="tsb" style="padding:10px 24px 8px">
+          <span style="font-family:var(--fm);font-size:12px;letter-spacing:.15em;color:var(--tb)">FLY.VDWAAL.NET</span>
+          <div style="display:flex;align-items:center;gap:7px"><div class="dot live" style="width:6px;height:6px"></div><span style="font-family:var(--fm);font-size:10px;color:var(--tb)">X-Plane Live · ZIBO 738 · EHAM → LFPG · 1 Hz</span></div>
+          <div style="display:flex;align-items:center;gap:14px;font-family:var(--fm);font-size:10px;color:rgba(255,255,255,.3)"><span>CheZHJ</span><span>19:24</span><div class="ib">i</div></div>
+        </div>
+        <div style="display:flex;flex:1;overflow:hidden">
+          <!-- wider sidebar with SimBrief data -->
+          <div style="width:300px;background:var(--dark);display:flex;flex-direction:column;flex-shrink:0;border-right:1px solid rgba(255,255,255,.04);overflow:hidden">
+            <div style="padding:14px 18px 12px;border-bottom:1px solid rgba(255,255,255,.05)">
+              <div class="slo">Procedures</div>
+              <div class="ssu" style="margin-top:2px">Boeing 737-800 · Zibo mod · EHAM dep.</div>
+            </div>
+            <!-- simbrief mini summary -->
+            <div style="padding:10px 18px;border-bottom:1px solid rgba(255,255,255,.04);display:grid;grid-template-columns:1fr 1fr;gap:5px">
+              <div style="background:rgba(255,255,255,.03);border-radius:6px;padding:7px 9px"><div style="font-family:var(--fm);font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.2);margin-bottom:2px">Origin</div><div style="font-family:var(--fm);font-size:13px;color:rgba(255,255,255,.7)">EHAM</div></div>
+              <div style="background:rgba(255,255,255,.03);border-radius:6px;padding:7px 9px"><div style="font-family:var(--fm);font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.2);margin-bottom:2px">Runway</div><div style="font-family:var(--fm);font-size:13px;color:rgba(255,255,255,.7)">18R</div></div>
+              <div style="background:rgba(255,255,255,.03);border-radius:6px;padding:7px 9px"><div style="font-family:var(--fm);font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.2);margin-bottom:2px">Temp</div><div style="font-family:var(--fm);font-size:13px;color:rgba(255,255,255,.7)">+4°C</div></div>
+              <div style="background:rgba(255,255,255,.03);border-radius:6px;padding:7px 9px"><div style="font-family:var(--fm);font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.2);margin-bottom:2px">Flaps</div><div style="font-family:var(--fm);font-size:13px;color:rgba(255,255,255,.7)">Flap 5</div></div>
+            </div>
+            <div class="pl" style="flex:1">
+              <div class="pi dn" style="padding:9px 18px"><span class="pn">Preflight</span><span class="pbg">✓</span></div>
+              <div class="pi on" style="padding:9px 18px"><span class="pn">Aircraft Preparation</span><span class="pbg">5/7</span></div>
+              <div class="pi" style="padding:9px 18px"><span class="pn">Before Start</span><span class="pbg">12</span></div>
+              <div class="pi" style="padding:9px 18px"><span class="pn">Engine Start</span><span class="pbg">9</span></div>
+              <div class="pi" style="padding:9px 18px"><span class="pn">Before Taxi</span><span class="pbg">7</span></div>
+              <div class="pi" style="padding:9px 18px"><span class="pn">Taxi</span><span class="pbg">4</span></div>
+              <div class="pi" style="padding:9px 18px"><span class="pn">Before Takeoff</span><span class="pbg">11</span></div>
+              <div class="pi" style="padding:9px 18px"><span class="pn">After Takeoff</span><span class="pbg">6</span></div>
+            </div>
+          </div>
+          <!-- main -->
+          <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--bg)">
+            <div style="background:var(--card);padding:16px 24px 14px;border-bottom:1px solid var(--bdr);flex-shrink:0;display:flex;align-items:center;justify-content:space-between">
+              <div><div style="font-family:var(--fm);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--tm);margin-bottom:3px">Before Start · Step 2 of 8</div><div style="font-size:20px;font-weight:600;color:var(--ink)">Aircraft Preparation</div></div>
+              <div style="display:flex;align-items:center;gap:16px">
+                <div style="text-align:right"><div style="font-family:var(--fm);font-size:9px;color:var(--imuted);margin-bottom:4px">2 auto · 3 manual confirmed</div><div style="height:3px;width:200px;background:var(--bdr);border-radius:3px;overflow:hidden"><div style="height:100%;width:71%;background:var(--tb);border-radius:3px"></div></div></div>
+                <div class="ring"><svg width="46" height="46" viewBox="0 0 46 46"><circle class="rb" cx="23" cy="23" r="19"/><circle class="rf" cx="23" cy="23" r="19" stroke-dasharray="119.4" stroke-dashoffset="34.6"/></svg><div class="rl">71%</div></div>
+              </div>
+            </div>
+            <div style="flex:1;overflow-y:auto;padding:12px 24px">
+              <div class="sl" style="padding:2px 0 8px">Completed</div>
+              <div class="tci cm" style="padding:11px 18px;margin-bottom:5px"><div class="tb2 m" style="margin-right:16px"><svg width="11" height="8" viewBox="0 0 11 8" fill="none"><path d="M1 3.5L4 6.5L10 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div style="font-size:14px;font-weight:500;color:var(--imuted);text-decoration:line-through;text-decoration-color:var(--if);width:230px;flex-shrink:0">Doors</div><div class="sep"></div><div style="font-family:var(--fm);font-size:12px;color:var(--if);flex:1">OPEN</div><div class="tcr"><span class="pill" style="background:#F0F4F2;color:#7A8882">Optional</span></div></div>
+              <div class="tci ca" style="padding:11px 18px;margin-bottom:5px"><div class="tb2 a" style="margin-right:16px"></div><div style="font-size:14px;font-weight:500;color:var(--imuted);text-decoration:line-through;text-decoration-color:var(--if);width:230px;flex-shrink:0">Parking Brake</div><div class="sep"></div><div style="font-family:var(--fm);font-size:12px;color:var(--if);flex:1">SET</div></div>
+              <div class="tci cm" style="padding:11px 18px;margin-bottom:5px"><div class="tb2 m" style="margin-right:16px"><svg width="11" height="8" viewBox="0 0 11 8" fill="none"><path d="M1 3.5L4 6.5L10 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div style="font-size:14px;font-weight:500;color:var(--imuted);text-decoration:line-through;text-decoration-color:var(--if);width:230px;flex-shrink:0">Airstairs</div><div class="sep"></div><div style="font-family:var(--fm);font-size:12px;color:var(--if);flex:1">AS REQUIRED</div><div class="tcr"><span class="pill" style="background:#F0F4F2;color:#7A8882">Optional</span></div></div>
+              <div class="tci ca" style="padding:11px 18px;margin-bottom:5px"><div class="tb2 a" style="margin-right:16px"></div><div style="font-size:14px;font-weight:500;color:var(--imuted);text-decoration:line-through;text-decoration-color:var(--if);width:230px;flex-shrink:0">Chocks</div><div class="sep"></div><div style="font-family:var(--fm);font-size:12px;color:var(--if);flex:1">SET</div><div class="tcr"><span class="pill" style="background:rgba(17,23,20,.07);color:#3D4842">NoAction</span></div></div>
+              <div class="sl" style="padding:10px 0 8px">Remaining</div>
+              <div class="tci" style="padding:11px 18px;margin-bottom:5px"><div class="tb2 e" style="margin-right:16px"></div><div style="font-size:14px;font-weight:500;color:var(--ink);width:230px;flex-shrink:0">Ground Power</div><div class="sep"></div><div style="font-family:var(--fm);font-size:12px;color:var(--im);flex:1">AS REQUIRED (IF NO GND POWER AVAIL)</div></div>
+              <div class="tci" style="padding:11px 18px;margin-bottom:5px"><div class="tb2 e" style="margin-right:16px"></div><div style="font-size:14px;font-weight:500;color:var(--ink);width:230px;flex-shrink:0">Fuel &amp; Weight Balance</div><div class="sep"></div><div style="font-family:var(--fm);font-size:12px;color:var(--im);flex:1">SET REQ. FUEL · CG 26.4%</div></div>
+              <div class="tci low" style="padding:11px 18px;margin-bottom:5px"><div class="tb2 e" style="margin-right:16px"></div><div style="font-size:14px;font-weight:500;color:var(--ink);width:230px;flex-shrink:0">Fuel Truck</div><div class="sep"></div><div style="font-family:var(--fm);font-size:12px;color:var(--im);flex:1">CALL</div><div class="tcr"><span class="pill" style="background:#FFF3E0;color:#B07020">PM</span></div></div>
+            </div>
+            <div style="background:var(--card);border-top:1px solid var(--bdr);padding:13px 24px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+              <button class="nb">← Aircraft Acceptance</button>
+              <button class="nb p">Before Start →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="base"><div class="trackpad"></div></div>
+    </div>
+  </div>
+</div></div>
+
+<script>
+function sv(n,el){document.querySelectorAll('.vs').forEach(s=>s.classList.remove('on'));document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));document.getElementById('view-'+n).classList.add('on');el.classList.add('on');}
+function oi(id){document.getElementById('ip-'+id).classList.add('open');}
+function ci2(id){document.getElementById('ip-'+id).classList.remove('open');}
+</script>
+</body>
+</html>
