@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(python3 -c \":*)"
+      "Bash(python3 -c \":*)",
+      "Bash(ls -la \"c:\\\\Users\\\\h\\\\Code\\\\SmartTrainingChecklist\\\\docs\"\" 2>/dev/null || echo \"docs directory check failed \")"
     ]
   }
 }
