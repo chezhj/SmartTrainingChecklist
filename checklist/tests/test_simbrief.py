@@ -1,5 +1,6 @@
 import unittest
 import xml.etree.ElementTree as ET
+from pathlib import Path
 from unittest.mock import patch
 
 from requests import RequestException
@@ -10,11 +11,8 @@ from checklist.simbrief import SimBrief
 class TestSimBriefInit(unittest.TestCase):
     def setUp(self):
         # Load the dummy XML file
-        with open(
-            "c:\\Code\\SmartTrainingChecklist\\checklist\\tests\\dummy.xml",
-            "r",
-            encoding="utf-8",
-        ) as file:
+        dummy_path = Path(__file__).parent / "dummy.xml"
+        with open(dummy_path, "r", encoding="utf-8") as file:
             self.dummy_xml = file.read()
 
     @patch("checklist.simbrief.SimBrief.parse_xml")
