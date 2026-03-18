@@ -30,8 +30,13 @@
             <span class="conn-route">{{ request.session.sb_origin|default:"ORIG" }} → {{ request.session.sb_destination|default:"DEST" }}</span>
         </div>
 
-        <!-- Actions: info button (+ placeholder for user/time at desktop) -->
+        <!-- Actions: auth link + info button -->
         <div class="conn-actions">
+            {% if user.is_authenticated %}
+            <a href="{% url 'logout_confirm' %}" class="conn-auth-link">{{ user.username }}</a>
+            {% else %}
+            <a href="{% url 'login' %}" class="conn-auth-link">Sign in</a>
+            {% endif %}
             <button class="info-btn" id="info-open-btn" aria-label="Open info panel">i</button>
         </div>
     </div>
@@ -44,7 +49,7 @@
             <button class="info-panel-close" id="info-close-btn" aria-label="Close info panel">✕</button>
         </div>
 
-        <!-- Session (placeholder until auth is wired in Phase 1 Step 1) -->
+        <!-- Session -->
         <div class="info-section">
             <div class="info-section-title">Session</div>
             <div class="info-row">
@@ -52,8 +57,13 @@
                 <span class="info-row-value" id="ip-status">Manual mode</span>
             </div>
             <div class="info-row">
+                {% if user.is_authenticated %}
+                <span class="info-row-label">Account</span>
+                <span class="info-row-value">{{ user.username }}</span>
+                {% else %}
                 <span class="info-row-label">Live sync</span>
-                <span class="info-row-value">Sign in to enable</span>
+                <a class="info-row-value info-link" href="{% url 'login' %}">Sign in →</a>
+                {% endif %}
             </div>
         </div>
 

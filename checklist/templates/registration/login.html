@@ -1,0 +1,63 @@
+{% extends "checklist/base.html" %}
+{% block title %}Sign in · fly.vdwaal.net{% endblock %}
+
+{% block content %}
+<div class="auth-shell">
+
+    <div class="proc-header">
+        <div class="proc-phase">Account</div>
+        <h1 class="proc-title">Sign in</h1>
+    </div>
+
+    <form method="post" novalidate>
+        {% csrf_token %}
+
+        <div class="auth-card">
+            <div class="auth-card-section">
+                <div class="auth-section-label">Credentials</div>
+
+                {% if form.non_field_errors %}
+                <ul class="auth-errors">
+                    {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+
+                <label class="auth-label" for="{{ form.username.id_for_label }}">Username</label>
+                {{ form.username }}
+                {% if form.username.errors %}
+                <ul class="auth-errors">
+                    {% for e in form.username.errors %}<li>{{ e }}</li>{% endfor %}
+                </ul>
+                {% endif %}
+
+                <label class="auth-label" for="{{ form.password.id_for_label }}">Password</label>
+                {{ form.password }}
+                {% if form.password.errors %}
+                <ul class="auth-errors">
+                    {% for e in form.password.errors %}<li>{{ e }}</li>{% endfor %}
+                </ul>
+                {% endif %}
+
+                <div class="auth-check-row">
+                    <input type="checkbox" name="remember" id="remember">
+                    <label for="remember">Remember me (uses cookies)</label>
+                </div>
+
+                <button class="auth-btn" type="submit">Sign in</button>
+                <div class="auth-link-row"><a href="{% url 'password_reset' %}">Forgot password?</a></div>
+            </div>
+        </div>
+
+        <div class="auth-card">
+            <div class="auth-card-section">
+                <div class="auth-divider"><hr><span>or</span><hr></div>
+                <a class="auth-btn auth-btn--outline" href="{% url 'register' %}">Create account</a>
+                <a class="auth-btn auth-btn--outline" href="{% url 'checklist:start' %}">Continue without account</a>
+            </div>
+        </div>
+
+    </form>
+</div>
+{% endblock %}

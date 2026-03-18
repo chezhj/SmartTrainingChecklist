@@ -12,7 +12,7 @@ SECRET_KEY = "django-insecure-ky_2(^&n3xfwf-jadnm(m^ti9ybjb43%k6%m!&ek9(_s!gx^m_
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["espresso", "localhost"]
+ALLOWED_HOSTS = ["espresso", "localhost", "cortado"]
 
 
 # Static files (CSS, JavaScript, Images)
@@ -28,3 +28,5 @@ STATICFILES_DIRS = [
 SIMBRIEF_URL = (
     "https://my-simbrief-mock.wiremockapi.cloud//simbrief/get_plan.php?userid="
 )
+
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"

@@ -114,3 +114,8 @@ USE_TZ = True
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 MOCK_TOKEN = config("X-Auth-Token", default=None)
+
+# Auth redirects
+LOGIN_URL = "/login/"
+LOGIN_REDIRECT_URL = "checklist:start"
+LOGOUT_REDIRECT_URL = "checklist:start"

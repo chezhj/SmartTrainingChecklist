@@ -36,6 +36,10 @@
   --color-amber: #F5A623;
   --color-red:   #C94040;
 
+  /* Danger (auth / destructive actions) */
+  --color-danger:    #C0392B;
+  --color-danger-bg: #FDF2F1;
+
   /* Spacing scale */
   --space-1: 4px;
   --space-2: 8px;
