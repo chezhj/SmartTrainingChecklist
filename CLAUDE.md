@@ -122,7 +122,7 @@ The inline IIFE tracks `checkedCount`, `autoCount`, `manualCount`. It exposes tw
 
 ## v2.0 Roadmap (SPEC.md)
 
-The `SPEC.md` file is the canonical implementation plan. Steps 1–7 follow Phase 1 Step 0 (frontend redesign, already done):
+The `docs/SPEC.md` file is the canonical implementation plan. Steps 1–7 follow Phase 1 Step 0 (frontend redesign, already done):
 
 1. Django auth (registration/login/logout)
 2. UserProfile model — saves/loads attribute selections per user account

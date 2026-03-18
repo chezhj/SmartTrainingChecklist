@@ -61,13 +61,13 @@ class Attribute(models.Model):
 
 Attributes form a mutual-exclusion group via `over_ruled_by`. Examples:
 
-| Attribute | `show` | `over_ruled_by` | Meaning |
-|---|---|---|---|
-| `above_10` | False | — | Hidden normal-condition default |
-| `zero_to_ten` | True | — | Temp 0–10°C |
-| `below_zero` | True | — | Temp below 0°C |
-| `long_runway` | False | — | Hidden normal-condition default |
-| `short_runway` | True | — | Short runway / above 10,000ft |
+| Attribute      | `show` | `over_ruled_by` | Meaning                         |
+| -------------- | ------ | --------------- | ------------------------------- |
+| `above_10`     | False  | `zero_to_ten`   | Hidden normal-condition default |
+| `zero_to_ten`  | True   | `below_zero`    | Temp 0–10°C                     |
+| `below_zero`   | True   | —               | Temp below 0°C                  |
+| `long_runway`  | False  | `short_runway`  | Hidden normal-condition default |
+| `short_runway` | True   | —               | Short runway / above 10,000ft   |
 
 When `below_zero` is active, `zero_to_ten` is implicitly deactivated (overruled).
 When `short_runway` is active, `long_runway` (hidden) is deactivated.
@@ -93,20 +93,20 @@ explicitly enable them.
 
 Persistent user-level data. Optional — anonymous sessions are valid.
 
-| Field | Type | Notes |
-|---|---|---|
-| `user` | OneToOne → User | Django auth user |
-| `simbrief_id` | CharField | User's SimBrief pilot ID (not OFP-specific) |
+| Field         | Type            | Notes                                       |
+| ------------- | --------------- | ------------------------------------------- |
+| `user`        | OneToOne → User | Django auth user                            |
+| `simbrief_id` | CharField       | User's SimBrief pilot ID (not OFP-specific) |
 
 ### `UserAttributeDefault` (through table)
 
 One row per Attribute per user, storing the user's preferred default.
 
-| Field | Type | Notes |
-|---|---|---|
-| `user_profile` | FK → UserProfile | |
-| `attribute` | FK → Attribute | |
-| `is_active` | BooleanField | User's preferred default for this attribute |
+| Field          | Type             | Notes                                       |
+| -------------- | ---------------- | ------------------------------------------- |
+| `user_profile` | FK → UserProfile |                                             |
+| `attribute`    | FK → Attribute   |                                             |
+| `is_active`    | BooleanField     | User's preferred default for this attribute |
 
 ---
 
@@ -115,19 +115,21 @@ One row per Attribute per user, storing the user's preferred default.
 Central session model. Replaces Django session storage for all flight state.
 Created when user clicks "Start Live Session".
 
-| Field | Type | Notes |
-|---|---|---|
-| `session_key` | CharField, unique | Short code entered into X-Plane plugin (e.g. ABCD-1234) |
-| `user_profile` | FK → UserProfile, nullable | Null for anonymous sessions |
-| `role` | CharField | `PF` / `PM` / `SOLO` |
-| `active_phase` | CharField | Current checklist phase slug |
-| `created_at` | DateTimeField | auto_now_add |
-| `last_plugin_contact` | DateTimeField, nullable | Updated on each plugin POST |
-| `is_active` | BooleanField | False on session end or timeout |
+| Field                 | Type                       | Notes                                                   |
+| --------------------- | -------------------------- | ------------------------------------------------------- |
+| `session_key`         | CharField, unique          | Short code entered into X-Plane plugin (e.g. ABCD-1234) |
+| `user_profile`        | FK → UserProfile, nullable | Null for anonymous sessions                             |
+| `pilot_role`          | CharField                  | `PF` / `PM` / `SOLO`                                    |
+| `pilot_function`      | CharField                  | `C` / `FO` / `BOTH`                                     |
+| `active_phase`        | CharField                  | Current checklist phase slug                            |
+| `created_at`          | DateTimeField              | auto_now_add                                            |
+| `last_plugin_contact` | DateTimeField, nullable    | Updated on each plugin POST                             |
+| `is_active`           | BooleanField               | False on session end or timeout                         |
 
 **Notes:**
+
 - Django session stores only the `session_key` reference — no flight state in session
-- `role` can be changed mid-session (pilot confirms, page reloads)
+- `pilot_role` and `pilot_function` can be changed mid-session (pilot confirms, page reloads)
 - Sessions are throw-away — no save/resume in v2.0
 - Stale sessions expired via background task using `last_plugin_contact`
 
@@ -138,19 +140,20 @@ Created when user clicks "Start Live Session".
 Current flight conditions for this session. Initially seeded from SimBrief OFP
 but **mutable** — real conditions often differ from planned ones.
 
-| Field | Type | Notes |
-|---|---|---|
-| `flight_session` | OneToOne → FlightSession | |
-| `origin_icao` | CharField | |
-| `destination_icao` | CharField | |
-| `alternate_icao` | CharField, nullable | |
-| `oat` | IntegerField, nullable | Outside air temp °C — drives anti-ice suggestion |
-| `departure_runway` | CharField, nullable | e.g. `18R` |
-| `departure_stand` | CharField, nullable | Drives pushback suggestion |
-| `fuel_on_board` | IntegerField, nullable | kg |
-| `ofp_loaded` | BooleanField | True if seeded from SimBrief OFP |
+| Field              | Type                     | Notes                                            |
+| ------------------ | ------------------------ | ------------------------------------------------ |
+| `flight_session`   | OneToOne → FlightSession |                                                  |
+| `origin_icao`      | CharField                |                                                  |
+| `destination_icao` | CharField                |                                                  |
+| `alternate_icao`   | CharField, nullable      |                                                  |
+| `oat`              | IntegerField, nullable   | Outside air temp °C — drives anti-ice suggestion |
+| `departure_runway` | CharField, nullable      | e.g. `18R`                                       |
+| `departure_stand`  | CharField, nullable      | Drives pushback suggestion                       |
+| `fuel_on_board`    | IntegerField, nullable   | kg                                               |
+| `ofp_loaded`       | BooleanField             | True if seeded from SimBrief OFP                 |
 
 **Notes:**
+
 - Changes to `FlightInfo` trigger **attribute suggestions** surfaced in the UI —
   not automatic changes. Pilot confirms or ignores each suggestion.
 - Confirmed suggestion → updates `FlightSessionAttribute` (respecting overrule logic)
@@ -163,18 +166,19 @@ but **mutable** — real conditions often differ from planned ones.
 Active attribute set for this flight. One row per `Attribute` per session,
 created **eagerly** on session start.
 
-| Field | Type | Notes |
-|---|---|---|
-| `flight_session` | FK → FlightSession | |
-| `attribute` | FK → Attribute | |
-| `is_active` | BooleanField | Current active state for this flight |
-| `source` | CharField | `user_default` / `ofp_derived` / `pilot_override` |
+| Field            | Type               | Notes                                             |
+| ---------------- | ------------------ | ------------------------------------------------- |
+| `flight_session` | FK → FlightSession |                                                   |
+| `attribute`      | FK → Attribute     |                                                   |
+| `is_active`      | BooleanField       | Current active state for this flight              |
+| `source`         | CharField          | `user_default` / `ofp_derived` / `pilot_override` |
 
 **Seeding sequence on session creation:**
+
 1. One row created per `Attribute` in the table
 2. `is_active` seeded from `UserAttributeDefault` (or `Attribute.default_value` for anonymous)
 3. After OFP load: rows updated where OFP implies a different value; `source` = `ofp_derived`;
-   overrule logic applied
+   overrule logic applied. Not sure `source` is needed
 4. Pilot toggle at any time: `is_active` flipped, `source` = `pilot_override`;
    overrule logic applied; checklist rebuilt
 
@@ -185,23 +189,24 @@ created **eagerly** on session start.
 Runtime state per checklist item. **Lazy** — only rows that differ from `unchecked`
 are stored. Absence of a row = item is `unchecked`.
 
-| Field | Type | Notes |
-|---|---|---|
-| `flight_session` | FK → FlightSession | |
-| `checklist_item` | FK → ChecklistItem | Existing model — untouched |
-| `status` | CharField | See Status Values below |
-| `source` | CharField, nullable | `manual` / `auto` — only when status is `checked` |
-| `checked_at` | DateTimeField, nullable | Timestamp of state change |
+| Field            | Type                    | Notes                                             |
+| ---------------- | ----------------------- | ------------------------------------------------- |
+| `flight_session` | FK → FlightSession      |                                                   |
+| `checklist_item` | FK → ChecklistItem      | Existing model — untouched                        |
+| `status`         | CharField               | See Status Values below                           |
+| `source`         | CharField, nullable     | `manual` / `auto` — only when status is `checked` |
+| `checked_at`     | DateTimeField, nullable | Timestamp of state change                         |
 
 **Status Values:**
 
-| Value | Meaning |
-|---|---|
-| `checked` | Completed. `source` distinguishes manual vs auto. |
-| `skipped` | Bypassed by downstream auto-check. Optional items only — required items can never be skipped. |
+| Value     | Meaning                                                                                                                                                               |
+| --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `checked` | Completed. `source` distinguishes manual vs auto.                                                                                                                     |
+| `skipped` | Bypassed by downstream auto-check. Optional items only — required items can never be skipped.                                                                         |
 | `pending` | Sim state satisfies rule but a required item above is unresolved. Becomes `checked` when blocker clears (if sim state still valid), otherwise reverts to `unchecked`. |
 
 **Notes:**
+
 - Item order is stable — no need to snapshot order on the state row
 - `pending` is transitional — cleared on any attribute-driven rebuild
 - Pilot can always manually check any item (including pending/blocked) via web UI or plugin command
@@ -210,7 +215,7 @@ are stored. Absence of a row = item is `unchecked`.
 
 ## Cascade & Blocking Rules
 
-### When an auto-check fires on item N:
+### When an auto-check fires on item N (same for manual check):
 
 1. **Optional unchecked items above N** → `skipped`
 2. **Required unchecked items above N** → remain `unchecked`, surface visually,
@@ -225,13 +230,13 @@ are stored. Absence of a row = item is `unchecked`.
   - Sim state changed → `pending` → `unchecked`
 - Pilot can always manually override via web interface or plugin command
 
-### NoActionNeed items:
+### NoActionNeed and Required items:
 
-| Has dataref | Behaviour |
-|---|---|
-| No | Filtered by user preference, never evaluated |
-| Yes, correct state | Auto-checked silently via watch list |
-| Yes, wrong state | Surfaces as visible unchecked required item, blocks progression |
+| Has dataref        | Behaviour                                                       |
+| ------------------ | --------------------------------------------------------------- |
+| No                 | Filtered by user preference, never evaluated                    |
+| Yes, correct state | Auto-checked, ignored, silently via watch list                  |
+| Yes, wrong state   | Surfaces as visible unchecked required item, blocks progression |
 
 ---
 
@@ -249,11 +254,13 @@ Django responds to each plugin POST with a watch list — the set of datarefs to
 ## Plugin Responsibilities (v2.0)
 
 ### 1. Dataref state push
+
 - Read watch list datarefs at 1–2 Hz
 - POST minimal state to `/api/plugin/push/`
 - Receive updated watch list in response
 
 ### 2. Manual check command
+
 - Register X-Plane command: `fly.vdwaal/check_item`
 - Joystick/keyboard bindable by pilot in X-Plane joystick settings
 - On trigger: POST `{"session_key": "...", "action": "manual_check_next"}` to Django
@@ -284,6 +291,7 @@ Django responds to each plugin POST with a watch list — the set of datarefs to
    → Plugin begins POSTing to /api/plugin/push/
    → FlightSession.last_plugin_contact updated on each POST
    → Django returns current watch list in response
+   → Alternative, key is stable for a user across sessions, just add key once
 
 4. Mid-flight attribute change
    → FlightSessionAttribute updated (source=pilot_override)
@@ -300,14 +308,14 @@ Django responds to each plugin POST with a watch list — the set of datarefs to
 
 ## What This Replaces
 
-| v1.x | v2.0 |
-|---|---|
-| Flight attributes in Django session | `FlightSessionAttribute` rows (proper FK) |
+| v1.x                                | v2.0                                       |
+| ----------------------------------- | ------------------------------------------ |
+| Flight attributes in Django session | `FlightSessionAttribute` rows (proper FK)  |
 | Checklist item state in frontend JS | `FlightItemState` rows (lazy, server-side) |
-| No session concept | `FlightSession` with session_key |
-| No user persistence | `UserProfile` with `UserAttributeDefault` |
-| Manual-only checklist | Auto-check via plugin + watch list |
-| No hardware input | Plugin command `fly.vdwaal/check_item` |
+| No session concept                  | `FlightSession` with session_key           |
+| No user persistence                 | `UserProfile` with `UserAttributeDefault`  |
+| Manual-only checklist               | Auto-check via plugin + watch list         |
+| No hardware input                   | Plugin command `fly.vdwaal/check_item`     |
 
 ---
 
@@ -321,4 +329,4 @@ Django responds to each plugin POST with a watch list — the set of datarefs to
 
 ---
 
-*End of document*
+_End of document_

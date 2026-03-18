@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>fly.vdwaal.net v2.0 — Auth Screens Design</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --fs: -apple-system,'Segoe UI',system-ui,sans-serif;
+  --fm: 'SF Mono','Cascadia Mono','Fira Mono','Consolas','Liberation Mono',monospace;
+  --td: #0F6B54; --tm: #1A8A6C; --tb: #22C9A0;
+  --bg: #F4F5F3; --card: #FFF; --dark: #0D1512;
+  --ink: #111714; --im: #3D4842; --imuted: #7A8882; --if: #B8C0BC;
+  --bdr: #E2E6E4; --bdrm: #C8D0CC;
+  --danger: #C0392B; --dangerbg: #FDF2F1;
+}
+body { font-family: var(--fs); background: #E8EAE8; min-height:100vh; padding:40px 20px 80px; }
+.ph { text-align:center; margin-bottom:30px; }
+.ph h1 { font-family:var(--fm); font-size:12px; letter-spacing:.18em; color:var(--td); text-transform:uppercase; margin-bottom:4px; }
+.ph p { font-size:11px; color:var(--imuted); font-family:var(--fm); }
+.tabs { display:flex; justify-content:center; gap:4px; margin-bottom:34px; flex-wrap:wrap; }
+.tab { padding:7px 15px; border-radius:6px; font-size:11px; font-family:var(--fm); letter-spacing:.07em; cursor:pointer; border:1.5px solid var(--bdrm); background:var(--card); color:var(--imuted); transition:all .18s; }
+.tab.on { background:var(--td); border-color:var(--td); color:#fff; }
+.sc { display:flex; gap:34px; justify-content:center; align-items:flex-start; flex-wrap:wrap; }
+.dw { display:flex; flex-direction:column; align-items:center; gap:12px; }
+.dl { font-family:var(--fm); font-size:10px; letter-spacing:.12em; color:var(--imuted); text-transform:uppercase; }
+.pf { width:375px; height:760px; background:var(--bg); border-radius:36px; box-shadow:0 0 0 10px #1C1C1E,0 0 0 12px #3A3A3C,0 40px 80px rgba(0,0,0,.22); overflow:hidden; position:relative; display:flex; flex-direction:column; }
+.notch { position:absolute; top:0; left:50%; transform:translateX(-50%); width:120px; height:28px; background:#1C1C1E; border-radius:0 0 18px 18px; z-index:10; }
+.lw { display:flex; flex-direction:column; align-items:center; }
+.lid { width:1100px; height:680px; background:var(--bg); border-radius:12px 12px 0 0; box-shadow:0 0 0 10px #2A2A2C,0 0 0 12px #1A1A1C; overflow:hidden; display:flex; flex-direction:column; }
+.cambar { background:#1A1A1C; height:26px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.cam { width:7px; height:7px; border-radius:50%; background:#333336; }
+.base { width:1180px; height:20px; background:#2A2A2C; border-radius:0 0 10px 10px; box-shadow:0 8px 24px rgba(0,0,0,.35); display:flex; align-items:center; justify-content:center; }
+.trackpad { width:140px; height:9px; background:#222224; border-radius:3px; }
+.sb { background:var(--dark); color:rgba(255,255,255,.4); font-family:var(--fm); font-size:11px; padding:36px 18px 6px; display:flex; justify-content:space-between; align-items:center; flex-shrink:0; }
+.tsb { background:var(--dark); color:rgba(255,255,255,.35); font-family:var(--fm); font-size:11px; padding:11px 20px 9px; display:flex; justify-content:space-between; align-items:center; flex-shrink:0; border-bottom:1px solid rgba(255,255,255,.04); }
+.topbar { background:var(--dark); padding:9px 14px 10px; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; border-bottom:1px solid rgba(255,255,255,.05); }
+.brand { font-family:var(--fm); font-size:11px; letter-spacing:.18em; color:var(--tb); text-transform:uppercase; }
+.topbar-right { font-family:var(--fm); font-size:10px; color:rgba(255,255,255,.3); }
+.pghead { background:var(--card); padding:14px 16px 12px; border-bottom:1px solid var(--bdr); flex-shrink:0; }
+.pgsub { font-family:var(--fm); font-size:9.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--tm); margin-bottom:3px; }
+.pgtitle { font-size:17px; font-weight:600; color:var(--ink); letter-spacing:-.01em; }
+.ps { flex:1; overflow-y:auto; padding:0; background:var(--bg); }
+.ps::-webkit-scrollbar { width:3px; }
+.ps::-webkit-scrollbar-thumb { background:var(--bdrm); border-radius:3px; }
+.sbc { background:var(--card); border:1.5px solid var(--bdr); border-radius:12px; padding:14px; margin:10px; }
+.sbc + .sbc { margin-top:0; }
+.ct2 { font-family:var(--fm); font-size:9.5px; letter-spacing:.15em; text-transform:uppercase; color:var(--tm); margin-bottom:10px; }
+.flabel { font-family:var(--fm); font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--imuted); margin-bottom:5px; display:block; }
+.sbi { width:100%; padding:9px 11px; border-radius:7px; border:1.5px solid var(--bdrm); font-family:var(--fm); font-size:13px; color:var(--ink); background:var(--bg); outline:none; }
+.sbi:focus { border-color:var(--td); }
+.sbi::placeholder { color:var(--if); }
+.hint { font-size:11px; color:var(--imuted); margin-top:4px; font-family:var(--fm); }
+.sbb { display:block; width:100%; padding:10px 13px; border-radius:7px; background:var(--td); color:white; border:none; font-size:13px; font-weight:600; font-family:var(--fs); cursor:pointer; text-align:center; }
+.sbb.outline { background:transparent; color:var(--im); border:1.5px solid var(--bdrm); font-weight:500; }
+.sbb.danger { background:var(--danger); border:none; }
+.sbb + .sbb { margin-top:8px; }
+.chkrow { display:flex; align-items:center; gap:8px; padding:4px 0; }
+.chkrow input[type=checkbox] { accent-color:var(--td); width:14px; height:14px; flex-shrink:0; }
+.chkrow label { font-size:12px; color:var(--im); font-family:var(--fm); }
+.linkrow { text-align:center; padding:10px 0 4px; font-size:12px; color:var(--imuted); font-family:var(--fm); }
+.linkrow a { color:var(--td); text-decoration:none; }
+.divrow { display:flex; align-items:center; gap:10px; margin:8px 0; }
+.divrow hr { flex:1; border:none; border-top:1px solid var(--bdr); }
+.divrow span { font-family:var(--fm); font-size:9px; color:var(--if); letter-spacing:.08em; text-transform:uppercase; }
+.avatar { width:52px; height:52px; border-radius:50%; background:var(--td); display:flex; align-items:center; justify-content:center; color:#fff; font-size:18px; font-weight:600; margin:0 auto 8px; font-family:var(--fm); }
+.avatar-name { text-align:center; font-size:15px; font-weight:600; color:var(--ink); }
+.avatar-email { text-align:center; font-size:11px; color:var(--imuted); font-family:var(--fm); }
+.ir { display:flex; align-items:center; justify-content:space-between; padding:9px 0; border-bottom:1px solid var(--bdr); }
+.ir:last-child { border-bottom:none; }
+.irl { font-size:13px; font-weight:500; color:var(--ink); }
+.irv { font-family:var(--fm); font-size:11px; color:var(--imuted); }
+.ira { font-family:var(--fm); font-size:10px; color:var(--td); cursor:pointer; }
+.notice { background:rgba(34,201,160,.08); border:1.5px solid rgba(34,201,160,.25); border-left:3px solid var(--tb); border-radius:8px; padding:10px 12px; font-size:12px; color:var(--tm); font-family:var(--fm); margin-bottom:12px; line-height:1.6; }
+.notice.warn { background:var(--dangerbg); border-color:rgba(192,57,43,.2); border-left-color:var(--danger); color:var(--danger); margin-bottom:0; }
+.confirm-card { background:var(--dangerbg); border:1.5px solid rgba(192,57,43,.18); border-radius:10px; padding:18px 14px; text-align:center; }
+.confirm-card .icon { width:40px; height:40px; border-radius:50%; background:rgba(192,57,43,.1); display:flex; align-items:center; justify-content:center; margin:0 auto 12px; }
+.confirm-card p { font-size:13px; color:var(--im); line-height:1.55; margin-bottom:16px; }
+.confirm-card strong { color:var(--ink); }
+.vs { display:none; }
+.vs.on { display:contents; }
+.lap-shell { display:flex; flex:1; overflow:hidden; }
+.lap-sidebar { width:240px; background:var(--dark); flex-shrink:0; border-right:1px solid rgba(255,255,255,.04); }
+.lap-main { flex:1; display:flex; align-items:center; justify-content:center; background:var(--bg); padding:40px; overflow-y:auto; }
+.lap-form { background:var(--card); border:1.5px solid var(--bdr); border-radius:16px; width:100%; max-width:440px; overflow:hidden; }
+.lap-form-head { padding:20px 24px 18px; border-bottom:1px solid var(--bdr); }
+.lap-form-body { padding:24px; }
+.lap-notice { background:rgba(34,201,160,.07); border-left:3px solid var(--tb); border-radius:0 8px 8px 0; padding:10px 14px; font-family:var(--fm); font-size:11px; color:var(--tm); margin-top:16px; line-height:1.55; }
+.lap-btn-row { display:flex; gap:8px; margin-top:8px; }
+.lap-btn-row .sbb { flex:1; font-weight:500; font-size:12px; padding:10px; }
+</style>
+</head>
+<body>
+
+<div class="ph">
+  <h1>fly.vdwaal.net — Auth Screens Design</h1>
+  <p>Login · Register · Logout · Profile · Password Reset · PC view</p>
+</div>
+
+<div class="tabs">
+  <div class="tab on"  onclick="sv('login',this)">Phone · Login</div>
+  <div class="tab" onclick="sv('register',this)">Phone · Register</div>
+  <div class="tab" onclick="sv('logout',this)">Phone · Logout</div>
+  <div class="tab" onclick="sv('profile',this)">Phone · Profile</div>
+  <div class="tab" onclick="sv('reset-req',this)">Phone · Reset</div>
+  <div class="tab" onclick="sv('reset-new',this)">Phone · New password</div>
+  <div class="tab" onclick="sv('pc',this)">PC · Login</div>
+</div>
+
+<!-- LOGIN -->
+<div id="view-login" class="vs on"><div class="sc">
+  <div class="dw">
+    <div class="dl">Phone · Login</div>
+    <div class="pf">
+      <div class="notch"></div>
+      <div class="sb"><span>19:24</span><span>fly.vdwaal.net</span><span>87%</span></div>
+      <div class="topbar"><span class="brand">FLY.VDWAAL.NET</span><span class="topbar-right">v0.14.0</span></div>
+      <div class="pghead"><div class="pgsub">Account</div><div class="pgtitle">Sign in</div></div>
+      <div class="ps">
+        <div class="sbc">
+          <div class="ct2">Credentials</div>
+          <label class="flabel">Username or email</label>
+          <input class="sbi" type="email" placeholder="you@example.com" style="margin-bottom:10px">
+          <label class="flabel">Password</label>
+          <input class="sbi" type="password" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" style="margin-bottom:10px">
+          <div class="chkrow" style="margin-bottom:14px">
+            <input type="checkbox" id="rm"><label for="rm">Remember me (uses cookies)</label>
+          </div>
+          <button class="sbb">Sign in</button>
+          <div class="linkrow"><a href="#">Forgot password?</a></div>
+        </div>
+        <div class="sbc" style="margin-top:0">
+          <div class="divrow"><hr><span>or</span><hr></div>
+          <button class="sbb outline">Create account</button>
+          <button class="sbb outline">Continue without account</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- REGISTER -->
+<div id="view-register" class="vs"><div class="sc">
+  <div class="dw">
+    <div class="dl">Phone · Register</div>
+    <div class="pf">
+      <div class="notch"></div>
+      <div class="sb"><span>19:24</span><span>fly.vdwaal.net</span><span>87%</span></div>
+      <div class="topbar"><span class="brand">FLY.VDWAAL.NET</span><span class="topbar-right">v0.14.0</span></div>
+      <div class="pghead"><div class="pgsub">Account</div><div class="pgtitle">Create account</div></div>
+      <div class="ps">
+        <div class="sbc">
+          <div class="ct2">Identity</div>
+          <label class="flabel">Username</label>
+          <input class="sbi" type="text" placeholder="CaptainHenk" style="margin-bottom:10px">
+          <label class="flabel">Email</label>
+          <input class="sbi" type="email" placeholder="you@example.com">
+        </div>
+        <div class="sbc" style="margin-top:0">
+          <div class="ct2">Security</div>
+          <label class="flabel">Password</label>
+          <input class="sbi" type="password" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;">
+          <div class="hint" style="margin-bottom:10px">Minimum 8 characters</div>
+          <label class="flabel">Confirm password</label>
+          <input class="sbi" type="password" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;">
+        </div>
+        <div class="sbc" style="margin-top:0">
+          <div class="ct2">Optional</div>
+          <label class="flabel">SimBrief ID</label>
+          <input class="sbi" type="text" placeholder="e.g. 784213">
+          <div class="hint">Can be added later in profile</div>
+        </div>
+        <div class="sbc" style="margin-top:0">
+          <button class="sbb">Create account</button>
+          <div class="linkrow">Already have an account? <a href="#">Sign in</a></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- LOGOUT -->
+<div id="view-logout" class="vs"><div class="sc">
+  <div class="dw">
+    <div class="dl">Phone · Logout confirmation</div>
+    <div class="pf">
+      <div class="notch"></div>
+      <div class="sb"><span>19:24</span><span>fly.vdwaal.net</span><span>87%</span></div>
+      <div class="topbar"><span class="brand">FLY.VDWAAL.NET</span><span class="topbar-right">CaptainHenk</span></div>
+      <div class="pghead"><div class="pgsub">Account</div><div class="pgtitle">Sign out</div></div>
+      <div class="ps">
+        <div class="sbc">
+          <div class="confirm-card">
+            <div class="icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C0392B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                <polyline points="16 17 21 12 16 7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+              </svg>
+            </div>
+            <p>You are signed in as <strong>CaptainHenk</strong>. Sign out and return to the home screen?</p>
+            <button class="sbb danger" style="margin-bottom:8px">Yes, sign out</button>
+            <button class="sbb outline">Cancel</button>
+          </div>
+        </div>
+        <div class="sbc" style="margin-top:0">
+          <div class="notice warn">Any open live session will be disconnected. Manual check progress is not saved.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- PROFILE -->
+<div id="view-profile" class="vs"><div class="sc">
+  <div class="dw">
+    <div class="dl">Phone · Profile</div>
+    <div class="pf">
+      <div class="notch"></div>
+      <div class="sb"><span>19:24</span><span>fly.vdwaal.net</span><span>87%</span></div>
+      <div class="topbar"><span class="brand">FLY.VDWAAL.NET</span><span class="topbar-right">CaptainHenk</span></div>
+      <div class="pghead"><div class="pgsub">Account</div><div class="pgtitle">My profile</div></div>
+      <div class="ps">
+        <div class="sbc" style="text-align:center;padding-top:18px;padding-bottom:18px">
+          <div class="avatar">CH</div>
+          <div class="avatar-name">CaptainHenk</div>
+          <div class="avatar-email">henk@vdwaal.net</div>
+        </div>
+        <div class="sbc" style="margin-top:0">
+          <div class="ct2">Account details</div>
+          <div class="ir"><span class="irl">Username</span><span class="irv">CaptainHenk</span></div>
+          <div class="ir"><span class="irl">Email</span><span class="irv">henk@vdwaal.net</span></div>
+          <div class="ir">
+            <span class="irl">SimBrief ID</span>
+            <div style="display:flex;align-items:center;gap:8px"><span class="irv">784213</span><span class="ira">edit</span></div>
+          </div>
+          <div class="ir"><span class="irl">Password</span><span class="ira">Change password</span></div>
+        </div>
+        <div class="sbc" style="margin-top:0">
+          <button class="sbb outline" style="color:var(--danger);border-color:rgba(192,57,43,.3);font-size:12px">Delete account</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- RESET REQUEST -->
+<div id="view-reset-req" class="vs"><div class="sc">
+  <div class="dw">
+    <div class="dl">Phone · Password reset request</div>
+    <div class="pf">
+      <div class="notch"></div>
+      <div class="sb"><span>19:24</span><span>fly.vdwaal.net</span><span>87%</span></div>
+      <div class="topbar"><span class="brand">FLY.VDWAAL.NET</span><span class="topbar-right">v0.14.0</span></div>
+      <div class="pghead"><div class="pgsub">Account</div><div class="pgtitle">Reset password</div></div>
+      <div class="ps">
+        <div class="sbc">
+          <div class="ct2">Send reset link</div>
+          <p style="font-size:12px;color:var(--imuted);font-family:var(--fm);line-height:1.6;margin-bottom:14px">Enter your registered email address. If it matches an account, a reset link will be sent.</p>
+          <label class="flabel">Email address</label>
+          <input class="sbi" type="email" placeholder="you@example.com" style="margin-bottom:14px">
+          <button class="sbb">Send reset link</button>
+        </div>
+        <div class="sbc" style="margin-top:0">
+          <button class="sbb outline">&#8592; Back to sign in</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- RESET NEW PASSWORD -->
+<div id="view-reset-new" class="vs"><div class="sc">
+  <div class="dw">
+    <div class="dl">Phone · Set new password</div>
+    <div class="pf">
+      <div class="notch"></div>
+      <div class="sb"><span>19:24</span><span>fly.vdwaal.net</span><span>87%</span></div>
+      <div class="topbar"><span class="brand">FLY.VDWAAL.NET</span><span class="topbar-right">v0.14.0</span></div>
+      <div class="pghead"><div class="pgsub">Account</div><div class="pgtitle">Set new password</div></div>
+      <div class="ps">
+        <div class="sbc">
+          <div class="notice">Link verified. Set your new password below.</div>
+          <label class="flabel">New password</label>
+          <input class="sbi" type="password" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;">
+          <div class="hint" style="margin-bottom:10px">Minimum 8 characters</div>
+          <label class="flabel">Confirm new password</label>
+          <input class="sbi" type="password" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" style="margin-bottom:14px">
+          <button class="sbb">Save new password</button>
+          <div class="linkrow"><a href="#">Back to sign in</a></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- PC LOGIN -->
+<div id="view-pc" class="vs"><div class="sc" style="justify-content:center;">
+  <div class="dw" style="width:100%;max-width:1240px;">
+    <div class="dl">PC · 1100px · Login — empty sidebar</div>
+    <div class="lw">
+      <div class="lid">
+        <div class="cambar"><div class="cam"></div></div>
+        <div class="tsb" style="padding:10px 24px 8px">
+          <span style="font-family:var(--fm);font-size:12px;letter-spacing:.15em;color:var(--tb)">FLY.VDWAAL.NET</span>
+          <div style="font-family:var(--fm);font-size:10px;color:rgba(255,255,255,.3)">19:24</div>
+        </div>
+        <div class="lap-shell">
+          <div class="lap-sidebar"></div>
+          <div class="lap-main">
+            <div class="lap-form">
+              <div class="lap-form-head">
+                <div style="font-family:var(--fm);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--tm);margin-bottom:4px">Account</div>
+                <div style="font-size:22px;font-weight:600;color:var(--ink);letter-spacing:-.01em">Sign in</div>
+              </div>
+              <div class="lap-form-body">
+                <label class="flabel">Username or email</label>
+                <input class="sbi" type="email" placeholder="you@example.com" style="margin-bottom:10px">
+                <label class="flabel">Password</label>
+                <input class="sbi" type="password" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" style="margin-bottom:10px">
+                <div class="chkrow" style="margin-bottom:18px">
+                  <input type="checkbox" id="rm2"><label for="rm2">Remember me (uses cookies)</label>
+                </div>
+                <button class="sbb">Sign in</button>
+                <div class="linkrow" style="padding-top:12px"><a href="#">Forgot password?</a></div>
+                <div class="divrow" style="margin-top:8px"><hr><span>or</span><hr></div>
+                <div class="lap-btn-row">
+                  <button class="sbb outline">Create account</button>
+                  <button class="sbb outline">Without account</button>
+                </div>
+                <div class="lap-notice">Profiles and SimBrief data are saved when signed in. Anonymous sessions work but are not persisted.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="base"><div class="trackpad"></div></div>
+    </div>
+  </div>
+</div></div>
+
+<script>
+function sv(n,el){
+  document.querySelectorAll('.vs').forEach(s=>s.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  document.getElementById('view-'+n).classList.add('on');
+  el.classList.add('on');
+}
+</script>
+</body>
+</html>
