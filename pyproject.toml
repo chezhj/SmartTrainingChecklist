@@ -44,7 +44,7 @@ version_files = [
     "smart_training_checklist/__init__.py",
 ]
 post_bump_hooks=[
-  "build\\push_all.cmd"
+  "push_all"
 ]
 
 [tool.poetry.requires-plugins]
