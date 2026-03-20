@@ -11,9 +11,12 @@ from django.test import TestCase
 from django.utils.text import slugify
 
 # Create your tests here.
+from django.contrib.auth.models import User
+
+from checklist.models import Attribute
 from checklist.models import CheckItem
 from checklist.models import Procedure
-from checklist.models import Attribute
+from checklist.models import UserProfile
 
 
 class TestCheckItem(TestCase):
@@ -136,3 +139,24 @@ class TestAttribute(TestCase):
     def test_default_color(self):
         att = Attribute.objects.create(title="dummy", order=2)
         self.assertEqual(att.btn_color, "#194D33")
+
+
+class TestUserProfile(TestCase):
+
+    def test_profile_auto_created_on_user_creation(self):
+        user = User.objects.create_user(username="pilot", password="pass123!")
+        self.assertTrue(UserProfile.objects.filter(user=user).exists())
+
+    def test_profile_simbrief_id_defaults_to_empty(self):
+        user = User.objects.create_user(username="pilot", password="pass123!")
+        self.assertEqual(user.profile.simbrief_id, "")
+
+    def test_profile_str(self):
+        user = User.objects.create_user(username="henk", password="pass123!")
+        self.assertEqual(str(user.profile), "Profile(henk)")
+
+    def test_profile_not_duplicated_on_subsequent_saves(self):
+        user = User.objects.create_user(username="pilot", password="pass123!")
+        user.first_name = "Test"
+        user.save()  # triggers post_save again
+        self.assertEqual(UserProfile.objects.filter(user=user).count(), 1)

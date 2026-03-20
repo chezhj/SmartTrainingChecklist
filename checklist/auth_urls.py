@@ -5,6 +5,7 @@ from django.urls import path
 
 from .auth_views import (
     StyledAuthenticationForm,
+    StyledPasswordChangeForm,
     StyledPasswordResetForm,
     StyledSetPasswordForm,
     logout_confirm_view,
@@ -41,5 +42,15 @@ urlpatterns = [
         "password-reset/complete/",
         auth_views.PasswordResetCompleteView.as_view(),
         name="password_reset_complete",
+    ),
+    path(
+        "password-change/",
+        auth_views.PasswordChangeView.as_view(form_class=StyledPasswordChangeForm),
+        name="password_change",
+    ),
+    path(
+        "password-change/done/",
+        auth_views.PasswordChangeDoneView.as_view(),
+        name="password_change_done",
     ),
 ]

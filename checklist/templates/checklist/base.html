@@ -19,8 +19,8 @@
     <!-- ── Connection bar ──────────────────────────────────────────── -->
     <div class="conn-bar"
          data-route="{% if request.session.sb_origin %}{{ request.session.sb_origin }}{% if request.session.sb_destination %} → {{ request.session.sb_destination }}{% endif %}{% endif %}">
-        <!-- Brand: hidden on mobile, shown on desktop -->
-        <span class="conn-brand">FLY.VDWAAL.NET</span>
+        <!-- Brand: hidden on mobile, shown tablet+; links to checklist home -->
+        <a href="{% url 'checklist:start' %}" class="conn-brand">FLY.VDWAAL.NET</a>
 
         <!-- Status group: sim dot + status text + always-visible route -->
         <div class="conn-status-group">
@@ -33,7 +33,7 @@
         <!-- Actions: auth link + info button -->
         <div class="conn-actions">
             {% if user.is_authenticated %}
-            <a href="{% url 'logout_confirm' %}" class="conn-auth-link">{{ user.username }}</a>
+            <a href="{% url 'checklist:account' %}" class="conn-auth-link">{{ user.username }}</a>
             {% else %}
             <a href="{% url 'login' %}" class="conn-auth-link">Sign in</a>
             {% endif %}

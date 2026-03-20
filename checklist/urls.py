@@ -3,6 +3,7 @@ from django.urls import path
 from checklist.export_view import ExportChecklistView
 
 from . import views
+from .auth_views import account_profile_view, delete_account_view
 
 app_name = "checklist"
 urlpatterns = [
@@ -14,4 +15,6 @@ urlpatterns = [
     path("update_profile/", views.update_profile, name="update_profile"),
     path("export/", ExportChecklistView.as_view(), name="export"),
     path("update-session-role/", views.update_session_role, name="update_session_role"),
+    path("account/", account_profile_view, name="account"),
+    path("account/delete/", delete_account_view, name="delete_account"),
 ]

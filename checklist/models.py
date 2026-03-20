@@ -5,8 +5,11 @@ Main models module for al database objects
 # pylint: disable=no-member
 
 from colorfield.fields import ColorField
-from django.urls import reverse
+from django.conf import settings
 from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.urls import reverse
 
 
 class Procedure(models.Model):
@@ -72,6 +75,24 @@ class CheckItem(models.Model):
 
     class Meta:
         ordering = ["step"]
+
+
+class UserProfile(models.Model):
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="profile",
+    )
+    simbrief_id = models.CharField(max_length=20, blank=True)
+
+    def __str__(self) -> str:
+        return f"Profile({self.user.username})"
+
+
+@receiver(post_save, sender=settings.AUTH_USER_MODEL)
+def _create_user_profile(sender, instance, created, **kwargs):
+    if created:
+        UserProfile.objects.get_or_create(user=instance)
 
 
 class Attribute(models.Model):

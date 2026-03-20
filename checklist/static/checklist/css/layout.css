@@ -23,6 +23,13 @@ body {
 
 /* ── Connection bar ─────────────────────────────────────────────── */
 /* Dark strip pinned to the top; never scrolls away */
+
+/* Brand: hidden on mobile; display: block override is in the ≥600px block below */
+.conn-brand {
+  display: none;
+  flex-shrink: 0;
+}
+
 .conn-bar {
   flex-shrink: 0;
   background: var(--color-dark);
@@ -140,6 +147,10 @@ body {
 
 /* ── Tablet (≥600px) ────────────────────────────────────────────── */
 @media (min-width: 600px) {
+  .conn-brand {
+    display: block;
+  }
+
   .info-panel {
     width: 360px;
     left: auto;             /* slide from right edge only */
@@ -200,11 +211,6 @@ body {
     padding: 10px 24px 8px;
   }
 
-  .conn-brand {
-    display: block;
-    flex-shrink: 0;
-  }
-
   /* Status group expands to fill space and centres its content */
   .conn-status-group {
     flex: 1;
@@ -245,5 +251,42 @@ body {
 
   .nav-bar {
     padding: 12px 20px;
+  }
+}
+
+/* ── Auth pages: dark sidebar + centered form (≥600px) ─────────── */
+
+/* The sidebar div is always in the DOM; hidden on mobile */
+.auth-sidebar {
+  display: none;
+}
+
+/* Right-hand scrollable area: always flex column, fills remaining width */
+.auth-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  min-width: 0;
+}
+
+@media (min-width: 600px) {
+  .page.auth-page {
+    flex-direction: row;
+    overflow: hidden;
+  }
+
+  .auth-sidebar {
+    display: block;
+    width: 270px;
+    flex-shrink: 0;
+    background: var(--color-dark);
+    border-right: 1px solid rgba(255, 255, 255, 0.04);
+  }
+}
+
+@media (min-width: 900px) {
+  .auth-sidebar {
+    width: 300px;
   }
 }

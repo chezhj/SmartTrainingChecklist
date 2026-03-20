@@ -1,65 +1,71 @@
-{% extends "checklist/base.html" %}
-{% block title %}Create account · fly.vdwaal.net{% endblock %}
+{% extends "registration/auth_base.html" %}
+{% block title %}Create account · fly.vdwaal.net{% endblock title %}
+{% block auth_title %}Create account{% endblock auth_title %}
 
-{% block content %}
-<div class="auth-shell">
+{% block auth_content %}
+<form method="post" novalidate>
+    {% csrf_token %}
 
-    <div class="proc-header">
-        <div class="proc-phase">Account</div>
-        <h1 class="proc-title">Create account</h1>
-    </div>
+    <div class="auth-card">
+        <div class="auth-card-section">
+            <div class="auth-section-label">Identity</div>
 
-    <form method="post" novalidate>
-        {% csrf_token %}
+            <label class="auth-label" for="{{ form.username.id_for_label }}">Username</label>
+            {{ form.username }}
+            {% if form.username.errors %}
+            <ul class="auth-errors">
+                {% for e in form.username.errors %}<li>{{ e }}</li>{% endfor %}
+            </ul>
+            {% endif %}
 
-        <div class="auth-card">
-            <div class="auth-card-section">
-                <div class="auth-section-label">Identity</div>
-
-                <label class="auth-label" for="{{ form.username.id_for_label }}">Username</label>
-                {{ form.username }}
-                {% if form.username.errors %}
-                <ul class="auth-errors">
-                    {% for e in form.username.errors %}<li>{{ e }}</li>{% endfor %}
-                </ul>
-                {% endif %}
-
-                <label class="auth-label" for="{{ form.email.id_for_label }}">Email</label>
-                {{ form.email }}
-                {% if form.email.errors %}
-                <ul class="auth-errors">
-                    {% for e in form.email.errors %}<li>{{ e }}</li>{% endfor %}
-                </ul>
-                {% endif %}
-            </div>
-
-            <div class="auth-card-section">
-                <div class="auth-section-label">Security</div>
-
-                <label class="auth-label" for="{{ form.password1.id_for_label }}">Password</label>
-                {{ form.password1 }}
-                <p class="auth-hint">Minimum 8 characters</p>
-                {% if form.password1.errors %}
-                <ul class="auth-errors">
-                    {% for e in form.password1.errors %}<li>{{ e }}</li>{% endfor %}
-                </ul>
-                {% endif %}
-
-                <label class="auth-label" for="{{ form.password2.id_for_label }}">Confirm password</label>
-                {{ form.password2 }}
-                {% if form.password2.errors %}
-                <ul class="auth-errors">
-                    {% for e in form.password2.errors %}<li>{{ e }}</li>{% endfor %}
-                </ul>
-                {% endif %}
-            </div>
-
-            <div class="auth-card-section">
-                <button class="auth-btn" type="submit">Create account</button>
-                <div class="auth-link-row">Already have an account? <a href="{% url 'login' %}">Sign in</a></div>
-            </div>
+            <label class="auth-label" for="{{ form.email.id_for_label }}">Email</label>
+            {{ form.email }}
+            {% if form.email.errors %}
+            <ul class="auth-errors">
+                {% for e in form.email.errors %}<li>{{ e }}</li>{% endfor %}
+            </ul>
+            {% endif %}
         </div>
 
-    </form>
-</div>
-{% endblock %}
+        <div class="auth-card-section">
+            <div class="auth-section-label">Security</div>
+
+            <label class="auth-label" for="{{ form.password1.id_for_label }}">Password</label>
+            {{ form.password1 }}
+            <p class="auth-hint">Minimum 8 characters</p>
+            {% if form.password1.errors %}
+            <ul class="auth-errors">
+                {% for e in form.password1.errors %}<li>{{ e }}</li>{% endfor %}
+            </ul>
+            {% endif %}
+
+            <label class="auth-label" for="{{ form.password2.id_for_label }}">Confirm password</label>
+            {{ form.password2 }}
+            {% if form.password2.errors %}
+            <ul class="auth-errors">
+                {% for e in form.password2.errors %}<li>{{ e }}</li>{% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+
+        <div class="auth-card-section">
+            <div class="auth-section-label">Optional</div>
+
+            <label class="auth-label" for="{{ form.simbrief_id.id_for_label }}">SimBrief ID</label>
+            {{ form.simbrief_id }}
+            <p class="auth-hint">Can be added later in profile</p>
+            {% if form.simbrief_id.errors %}
+            <ul class="auth-errors">
+                {% for e in form.simbrief_id.errors %}<li>{{ e }}</li>{% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+
+        <div class="auth-card-section">
+            <button class="auth-btn" type="submit">Create account</button>
+            <div class="auth-link-row">Already have an account? <a href="{% url 'login' %}">Sign in</a></div>
+        </div>
+    </div>
+
+</form>
+{% endblock auth_content %}

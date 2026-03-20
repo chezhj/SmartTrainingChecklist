@@ -1,0 +1,19 @@
+{% extends "checklist/base.html" %}
+
+{% block page_class %}auth-page{% endblock page_class %}
+
+{% block content %}
+<div class="auth-sidebar"></div>
+<div class="auth-main">
+
+    <div class="proc-header">
+        <div class="proc-phase">Account</div>
+        <h1 class="proc-title">{% block auth_title %}{% endblock auth_title %}</h1>
+    </div>
+
+    <div class="auth-shell">
+        {% block auth_content %}{% endblock auth_content %}
+    </div>
+
+</div>
+{% endblock content %}

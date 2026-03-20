@@ -702,14 +702,19 @@
 }
 
 
-/* ── Conn-bar brand (desktop) ───────────────────────────────────── */
+/* ── Conn-bar brand ─────────────────────────────────────────────── */
+/* display/visibility is in layout.css (mobile-first hide + ≥600px show) */
 
 .conn-brand {
-  display: none;
   font-family: var(--font-mono);
   font-size: 12px;
   letter-spacing: 0.15em;
   color: var(--color-teal-bright);
+  text-decoration: none;
+}
+
+.conn-brand:hover {
+  color: #fff;
 }
 
 .conn-status-group {
@@ -1093,4 +1098,73 @@
   background: none;
   border: none;
   text-decoration: none;
+}
+
+/* Suppress bottom border on the last profile row (avoids double-line before card edge) */
+.profile-row--last {
+  border-bottom: none;
+}
+
+/* Avatar card: extra vertical padding + centred content */
+.auth-avatar-section {
+  text-align: center;
+  padding-top: 18px;
+  padding-bottom: 18px;
+}
+
+/* Delete account button: outline style with danger tint */
+.auth-btn--delete {
+  color: var(--color-danger);
+  border-color: rgba(192, 57, 43, 0.3);
+  font-size: 12px;
+}
+
+.auth-btn--delete:hover {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+}
+
+/* Notice with no bottom margin (last item in a card section) */
+.auth-notice--flush {
+  margin-bottom: 0;
+}
+
+/* Hint that appears above an input (reset-password description) */
+.auth-hint--top {
+  margin-top: 0;
+  margin-bottom: var(--space-4);
+}
+
+/* ── SimBrief inline edit (<details> / <summary>) ───────────────── */
+
+/* summary carries .profile-row for spacing/border — no extra border needed here */
+.auth-simbrief-edit {
+  display: block;
+}
+
+/* summary styled identically to every other profile-row */
+.auth-simbrief-edit > summary {
+  cursor: pointer;
+  user-select: none;
+}
+
+/* Hide the default disclosure triangle in all browsers */
+.auth-simbrief-edit > summary::-webkit-details-marker {
+  display: none;
+}
+
+.auth-simbrief-edit > summary::marker {
+  display: none;
+}
+
+/* Right side of summary: value + "edit" action side by side */
+.auth-simbrief-summary-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* Mini-form revealed when <details> is open */
+.auth-simbrief-form {
+  padding: var(--space-2) 0 var(--space-3);
 }

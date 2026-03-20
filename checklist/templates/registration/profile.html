@@ -1,0 +1,75 @@
+{% extends "registration/auth_base.html" %}
+{% block title %}My profile · fly.vdwaal.net{% endblock title %}
+{% block auth_title %}My profile{% endblock auth_title %}
+
+{% block auth_content %}
+
+{# Avatar card #}
+<div class="auth-card">
+    <div class="auth-card-section auth-avatar-section">
+        <div class="auth-avatar" aria-hidden="true">{{ user.username|slice:":2"|upper }}</div>
+        <div class="auth-avatar-name">{{ user.username }}</div>
+        {% if user.email %}
+        <div class="auth-avatar-email">{{ user.email }}</div>
+        {% endif %}
+    </div>
+</div>
+
+{# Account details card #}
+<div class="auth-card">
+    <div class="auth-card-section">
+        <div class="auth-section-label">Account details</div>
+
+        <div class="profile-row">
+            <span class="profile-row-label">Username</span>
+            <span class="profile-row-value">{{ user.username }}</span>
+        </div>
+
+        <div class="profile-row">
+            <span class="profile-row-label">Email</span>
+            <span class="profile-row-value">{{ user.email|default:"—" }}</span>
+        </div>
+
+        {# SimBrief ID — inline edit via <details> #}
+        <details class="auth-simbrief-edit"{% if simbrief_form.errors %} open{% endif %}>
+            <summary class="profile-row">
+                <span class="profile-row-label">SimBrief ID</span>
+                <div class="auth-simbrief-summary-right">
+                    <span class="profile-row-value">{{ profile.simbrief_id|default:"—" }}</span>
+                    <span class="profile-row-action">edit</span>
+                </div>
+            </summary>
+            <form method="post" action="{% url 'checklist:account' %}" novalidate class="auth-simbrief-form">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="update_simbrief">
+                <label class="auth-label" for="simbrief_id">Pilot ID</label>
+                {{ simbrief_form.simbrief_id }}
+                {% if simbrief_form.simbrief_id.errors %}
+                <ul class="auth-errors">
+                    {% for e in simbrief_form.simbrief_id.errors %}<li>{{ e }}</li>{% endfor %}
+                </ul>
+                {% endif %}
+                <button class="auth-btn" type="submit">Save</button>
+            </form>
+        </details>
+
+        <div class="profile-row profile-row--last">
+            <span class="profile-row-label">Password</span>
+            <a class="profile-row-action" href="{% url 'password_change' %}">Change password</a>
+        </div>
+    </div>
+</div>
+
+{# Sign out + danger zone #}
+<div class="auth-card">
+    <div class="auth-card-section">
+        <a class="auth-btn auth-btn--outline" href="{% url 'logout_confirm' %}">Sign out</a>
+    </div>
+    <div class="auth-card-section">
+        <a class="auth-btn auth-btn--danger" href="{% url 'checklist:delete_account' %}">
+            Delete account
+        </a>
+    </div>
+</div>
+
+{% endblock auth_content %}
