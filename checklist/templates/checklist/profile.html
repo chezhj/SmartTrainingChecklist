@@ -1,152 +1,122 @@
 {% extends "checklist/base.html" %}
-{% load environment_tags %}
-{% block title %}
-    Session profile
-{% endblock title %}
-{% block script %}
-    <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const clearButton = document.getElementById("clear-button");
-        const clearForm = document.getElementById("clear-form");
-        const clearCookieInput = document.getElementById("clear-cookie-input");
+{% block title %}Session setup · fly.vdwaal.net{% endblock title %}
+{% block page_class %}auth-page{% endblock page_class %}
 
-        clearButton.addEventListener("click", function (event) {
-            const cookiePresent = clearButton.dataset.cookiePresent === "true";
-
-            if (cookiePresent) {
-                // Prevent the form from submitting immediately
-                event.preventDefault();
-
-                // Show a confirmation dialog
-                const confirmClearCookie = confirm(
-                    "The SimBrief cookie is present. Do you also want to clear the cookie?"
-                );
-
-                // Update the hidden input based on the user's choice
-                clearCookieInput.value = confirmClearCookie ? "1" : "0";
-
-                // Submit the form after updating the input
-                clearForm.submit();
-            }
-        });
-    });
-    </script>
-{% endblock script %}
 {% block content %}
-    <div class="fit-content">
-        <fieldset class="no-border">
-            <legend>
-                <h1>Specify session profile</h1>
-            </legend>
-            {% if error_message %}
-                <p>
-                    <strong>{{ error_message }}</strong>
-                </p>
-            {% endif %}
-            <div class="profile-section">
-                {% if simbrief_id and error_message is None %}
-                    <p class="styled-text">
-                        Departure Airport: <strong>{{ origin }}</strong>,
-                        Alt: <strong>{{ elevation }}</strong>,
-                        RWY:<strong>{{ runway }} ({{ rwy_length }})</strong>,
-                        Temp:<strong>{{ temperature }}</strong>
-                    </br>
-                    Departure setting - Flaps: <strong>{{ flap_setting }}</strong> Bleed: <strong>{{ bleed_setting }}</strong>
-                    (based on Simbrief plan, not a proper takeoff performance calculation)
-                </p>
-            {% else %}
-                <p class="styled-text">
-                    <form action="{% url 'checklist:profile' %}"
-                          method="post"
-                          class="profile-form">
-                        {% csrf_token %}
-                        <label for="simbrief_id" class="form-label">Simbrief ID:</label>
-                        <input type="text"
-                               id="simbrief_id"
-                               name="simbrief_id"
-                               value="{{ simbrief_id }}"
-                               class="form-input">
-                        <label for="remember_me" class="form-label form-right">
-                            <input type="checkbox"
-                                   id="remember_me"
-                                   name="remember_me"
-                                   value="1"
-                                   class="form-checkbox"
-                                   {% if remember_me %}checked{% endif %}>
-                            Remember me (uses cookies)
-                        </label>
-                        <input type="submit" value="Get Plan" class="btn btn-right">
-                    </form>
-                </p>
-            {% endif %}
+<div class="auth-sidebar"></div>
+<div class="profile-scroll">
+
+    {# ── Login nudge (anonymous only) ──────────────────────────────── #}
+    {% if not user.is_authenticated %}
+    <div class="nudge-card">
+        <div class="nudge-title">X-Plane live sync available</div>
+        <div class="nudge-desc">Sign in to connect your simulator. The checklist works fully without an account — auto-checking requires login.</div>
+        <div class="nudge-actions">
+            <a class="nudge-btn" href="{% url 'checklist:start' %}">Continue manually</a>
+            <a class="nudge-btn nudge-btn--primary" href="{% url 'login' %}">Sign in →</a>
         </div>
-        <form action="{% url 'checklist:update_profile' %}" method="post">
+    </div>
+    {% endif %}
+
+    {# ── SimBrief card ─────────────────────────────────────────────── #}
+    <div class="setup-card">
+        <div class="setup-card-title">SimBrief</div>
+        <form method="post" action="{% url 'checklist:start' %}">
             {% csrf_token %}
-            <table id="Table1" class="styled-table">
-                <thead>
-                    <tr>
-                        <th>Check</th>
-                        <th>Profile attribute</th>
-                        <th>Description</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>
-                            <input type="checkbox"
-                                   name="dual_mode"
-                                   id="dual_mode"
-                                   value="True"
-                                   {% if request.session.dual_mode %}CHECKED{% endif %} />
-                        </td>
-                        <td>
-                            <label for="dual_mode">Two Pilots</label>
-                        </td>
-                        <td>
-                            <label for="dual_mode">Check this to enable PF/PM indicators</label>
-                        </td>
-                    </tr>
-                    {% for check in attributes.all %}
-                        {% if check.show %}
-                            <tr>
-                                <td>
-                                    <input type="checkbox"
-                                           name="attributes"
-                                           id="{{ forloop.counter }}"
-                                           value="{{ check.id }}"
-                                           {% if check.id in request.session.attrib %}CHECKED{% endif %} />
-                                </td>
-                                <td>
-                                    <label for="{{ forloop.counter|escape }}">{{ check.title }}</label>
-                                </td>
-                                <td>
-                                    <label for="{{ forloop.counter }}">{{ check.description }}</label>
-                                </td>
-                            </tr>
+            <input type="hidden" name="action" value="get_plan">
+            <div class="simbrief-row">
+                <input class="simbrief-input" type="text" name="simbrief_id"
+                       value="{{ simbrief_id }}" placeholder="Pilot ID">
+                <button class="simbrief-btn" type="submit">Get Plan</button>
+            </div>
+        </form>
+        {% if sb_error %}
+        <p class="simbrief-error">{{ sb_error }}</p>
+        {% endif %}
+        {% if sb_origin %}
+        <div class="simbrief-grid">
+            <div class="simbrief-cell">
+                <div class="simbrief-cell-label">Origin</div>
+                <div class="simbrief-cell-value">{{ sb_origin }}</div>
+            </div>
+            <div class="simbrief-cell">
+                <div class="simbrief-cell-label">Runway</div>
+                <div class="simbrief-cell-value">{{ sb_runway|default:"—" }}</div>
+            </div>
+            <div class="simbrief-cell">
+                <div class="simbrief-cell-label">Temp</div>
+                <div class="simbrief-cell-value">{{ sb_temp|default:"—" }}</div>
+            </div>
+            <div class="simbrief-cell">
+                <div class="simbrief-cell-label">Flaps</div>
+                <div class="simbrief-cell-value">{{ sb_flaps|default:"—" }}</div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    {# ── Flight Profile card ───────────────────────────────────────── #}
+    <form method="post" action="{% url 'checklist:start' %}" id="start-form">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="start_checklist">
+
+        <div class="setup-card">
+            <div class="setup-card-title">Flight Profile</div>
+
+            {# Dual / two-pilot toggle #}
+            <div class="attr-row">
+                <label class="attr-toggle-wrap">
+                    <input type="checkbox" name="dual_mode" class="attr-checkbox"
+                           {% if request.session.dual_mode %}checked{% endif %}>
+                    <span class="attr-toggle"></span>
+                </label>
+                <div class="attr-info">
+                    <span class="attr-name">Two Pilots</span>
+                    <span class="attr-desc">Enable PF/PM indicators</span>
+                </div>
+            </div>
+
+            {# Dynamic attribute toggles (show=True attributes only) #}
+            {% for attr in attributes %}
+            <div class="attr-row">
+                <label class="attr-toggle-wrap">
+                    <input type="checkbox" name="attributes" value="{{ attr.id }}"
+                           class="attr-checkbox"
+                           {% if attr.id in ofp_derived_ids %}checked{% endif %}>
+                    <span class="attr-toggle"></span>
+                </label>
+                <div class="attr-info">
+                    <span class="attr-name">
+                        {{ attr.title }}
+                        {% if attr.id in ofp_derived_ids %}
+                        <span class="attr-badge">auto</span>
                         {% endif %}
-                    {% endfor %}
-                </tbody>
-            </table>
-            <input class="btn btn-right" type="submit" value="Next">
-        </form>
-        <!-- Separate form for the "Clear" button -->
-        <form action="{% url 'checklist:profile' %}"
-              method="post"
-              class="inline"
-              id="clear-form">
-            {% csrf_token %}
-            <input type="hidden" name="Clean" value="1">
-            <input type="hidden" name="clear_cookie" value="0" id="clear-cookie-input">
-            <button type="submit"
-                    class="btn btn-left"
-                    id="clear-button"
-                    data-cookie-present="{% if request.COOKIES.simbrief_pilot_id %}true{% else %}false{% endif %}">
-                Clear
-            </button>
-        </form>
-    </fieldset>
+                    </span>
+                    <span class="attr-desc">{{ attr.description }}</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="profile-actions">
+            <button type="button" class="profile-btn" id="clear-btn">Clear</button>
+            <button type="submit" class="profile-btn profile-btn--primary">Start Checklist →</button>
+        </div>
+    </form>
+
+    {# Hidden clear form (submitted by JS after confirm) #}
+    <form method="post" action="{% url 'checklist:start' %}" id="clear-form">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="clear">
+    </form>
+
 </div>
+
+<script>
+document.getElementById('clear-btn').addEventListener('click', function () {
+    if (confirm('Are you sure you want to reset your flight? All progress will be lost.')) {
+        document.getElementById('clear-form').submit();
+    }
+});
+</script>
 {% endblock content %}
-{% block footer %}
-    {% if 'DEBUG'|setting == True %}{{ request.session.attrib }}{% endif %}
-{% endblock footer %}

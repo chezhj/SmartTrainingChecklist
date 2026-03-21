@@ -15,6 +15,10 @@ from django.contrib.auth.models import User
 
 from checklist.models import Attribute
 from checklist.models import CheckItem
+from checklist.models import FlightInfo
+from checklist.models import FlightItemState
+from checklist.models import FlightSession
+from checklist.models import FlightSessionAttribute
 from checklist.models import Procedure
 from checklist.models import UserProfile
 
@@ -160,3 +164,165 @@ class TestUserProfile(TestCase):
         user.first_name = "Test"
         user.save()  # triggers post_save again
         self.assertEqual(UserProfile.objects.filter(user=user).count(), 1)
+
+class TestFlightSession(TestCase):
+
+    def _make_attr(self, title="Optional", order=1):
+        return Attribute.objects.create(title=title, order=order)
+
+    def test_session_key_auto_generated(self):
+        s = FlightSession.objects.create()
+        self.assertTrue(len(s.session_key) > 0)
+
+    def test_session_key_format(self):
+        # XXXX-NNNN where X is hex and N is digit
+        s = FlightSession.objects.create()
+        parts = s.session_key.split("-")
+        self.assertEqual(len(parts), 2)
+        self.assertEqual(len(parts[0]), 4)
+        self.assertEqual(len(parts[1]), 4)
+
+    def test_session_key_unique(self):
+        s1 = FlightSession.objects.create()
+        s2 = FlightSession.objects.create()
+        self.assertNotEqual(s1.session_key, s2.session_key)
+
+    def test_is_active_default_true(self):
+        s = FlightSession.objects.create()
+        self.assertTrue(s.is_active)
+
+    def test_pilot_role_default_solo(self):
+        s = FlightSession.objects.create()
+        self.assertEqual(s.pilot_role, "SOLO")
+
+    def test_pilot_function_default_both(self):
+        s = FlightSession.objects.create()
+        self.assertEqual(s.pilot_function, "BOTH")
+
+    def test_str_anonymous(self):
+        s = FlightSession.objects.create()
+        self.assertIn("anon", str(s))
+
+    def test_str_with_user(self):
+        user = User.objects.create_user(username="henk", password="pass123!")
+        s = FlightSession.objects.create(user_profile=user.profile)
+        self.assertIn("henk", str(s))
+
+    def test_user_profile_nullable(self):
+        s = FlightSession.objects.create()
+        self.assertIsNone(s.user_profile)
+
+
+class TestFlightInfo(TestCase):
+
+    def test_create_flight_info(self):
+        session = FlightSession.objects.create()
+        info = FlightInfo.objects.create(
+            flight_session=session,
+            origin_icao="EHAM",
+            destination_icao="LFPG",
+        )
+        self.assertEqual(info.origin_icao, "EHAM")
+        self.assertFalse(info.ofp_loaded)
+
+    def test_str(self):
+        session = FlightSession.objects.create()
+        info = FlightInfo.objects.create(
+            flight_session=session,
+            origin_icao="EHAM",
+            destination_icao="LFPG",
+        )
+        self.assertIn("EHAM", str(info))
+        self.assertIn("LFPG", str(info))
+
+    def test_one_to_one_enforced(self):
+        from django.db import IntegrityError
+        session = FlightSession.objects.create()
+        FlightInfo.objects.create(
+            flight_session=session, origin_icao="EHAM", destination_icao="LFPG"
+        )
+        with self.assertRaises(Exception):
+            FlightInfo.objects.create(
+                flight_session=session, origin_icao="EGLL", destination_icao="KJFK"
+            )
+
+
+class TestFlightSessionAttribute(TestCase):
+
+    def setUp(self):
+        self.session = FlightSession.objects.create()
+        self.attr = Attribute.objects.create(title="Optional", order=1)
+
+    def test_create_attribute_row(self):
+        fsa = FlightSessionAttribute.objects.create(
+            flight_session=self.session,
+            attribute=self.attr,
+            is_active=True,
+            source="pilot_override",
+        )
+        self.assertTrue(fsa.is_active)
+        self.assertEqual(fsa.source, "pilot_override")
+
+    def test_default_is_active_false(self):
+        fsa = FlightSessionAttribute.objects.create(
+            flight_session=self.session, attribute=self.attr
+        )
+        self.assertFalse(fsa.is_active)
+
+    def test_unique_together_enforced(self):
+        FlightSessionAttribute.objects.create(
+            flight_session=self.session, attribute=self.attr
+        )
+        with self.assertRaises(Exception):
+            FlightSessionAttribute.objects.create(
+                flight_session=self.session, attribute=self.attr
+            )
+
+    def test_str(self):
+        fsa = FlightSessionAttribute.objects.create(
+            flight_session=self.session, attribute=self.attr, is_active=True
+        )
+        self.assertIn("Optional", str(fsa))
+        self.assertIn("on", str(fsa))
+
+
+class TestFlightItemState(TestCase):
+
+    def setUp(self):
+        self.session = FlightSession.objects.create()
+        proc = Procedure.objects.create(title="Before Start", step=1, slug="before-start")
+        self.item = CheckItem.objects.create(item="Parking Brake", procedure=proc, step=1)
+
+    def test_create_checked_state(self):
+        state = FlightItemState.objects.create(
+            flight_session=self.session,
+            checklist_item=self.item,
+            status="checked",
+            source="manual",
+        )
+        self.assertEqual(state.status, "checked")
+        self.assertEqual(state.source, "manual")
+
+    def test_unique_together_enforced(self):
+        FlightItemState.objects.create(
+            flight_session=self.session,
+            checklist_item=self.item,
+            status="checked",
+            source="manual",
+        )
+        with self.assertRaises(Exception):
+            FlightItemState.objects.create(
+                flight_session=self.session,
+                checklist_item=self.item,
+                status="checked",
+                source="auto",
+            )
+
+    def test_str(self):
+        state = FlightItemState.objects.create(
+            flight_session=self.session,
+            checklist_item=self.item,
+            status="skipped",
+        )
+        self.assertIn("Parking Brake", str(state))
+        self.assertIn("skipped", str(state))

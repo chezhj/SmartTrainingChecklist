@@ -290,3 +290,28 @@ body {
     width: 300px;
   }
 }
+
+/* ── Sidebar export link: desktop only ─────────────────────────── */
+.sidebar-export-link {
+  display: none;
+}
+
+@media (min-width: 900px) {
+  .sidebar-export-link {
+    display: block;
+    margin: 8px 18px 16px;
+    padding: 7px 10px;
+    font-size: 0.75rem;
+    color: var(--color-teal-bright);
+    text-decoration: none;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-sm);
+    text-align: center;
+    transition: color var(--transition-fast), border-color var(--transition-fast);
+  }
+
+  .sidebar-export-link:hover {
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+}

@@ -2,60 +2,308 @@
 Base views for checklist
 """
 
-from datetime import timedelta
 from time import time
 
 from django.http import JsonResponse
-from django.shortcuts import HttpResponseRedirect, get_object_or_404
+from django.shortcuts import HttpResponseRedirect, get_object_or_404, redirect
 from django.template.response import TemplateResponse
 from django.urls import reverse
-from django.utils.timezone import now
-
-# Create your views here.
 from django.views import generic
 
 from checklist.simbrief import SimBrief
 
-from .models import Attribute, Procedure
+from .models import (
+    Attribute,
+    FlightInfo,
+    FlightSession,
+    FlightSessionAttribute,
+    Procedure,
+    UserProfile,
+)
 
 
-def procedure_detail(request, slug):
-    """ "
-    view/function to show all checkitems and attribs for the given slug
-    based on the flight profile in the session
+# ── SimBrief helpers ──────────────────────────────────────────────────────────
+
+# Maps SimBrief-derived conditions to Attribute titles.
+# Order matters: more specific conditions first.
+_OFP_TEMP_RULES = [
+    (lambda t: t < 0, "Anti-Ice Normal"),
+    (lambda t: 0 < t < 11, "ZeroToTen"),
+]
+_OFP_BLEED_OFF_TITLE = "Short Runway"
+
+
+def _derive_ofp_attrib_ids(sb_temp: str, sb_bleed: str) -> set[int]:
     """
-    time_start = time()
-    ## get the procedure to view based on slug
-    procedure2view = get_object_or_404(Procedure.objects.all(), slug=slug)
+    Return the set of Attribute IDs that the SimBrief OFP implies should be active.
+    Looks up by title so PKs can vary across deployments.
+    """
+    derived: set[int] = set()
+    attr_by_title = {a.title: a.id for a in Attribute.objects.all()}
 
-    # get next and previous procedure to fill next and back button
-    # As step does not need to have increments of 1, get the first or last
-    # ordered by step, filtered by current step number
+    if sb_temp:
+        try:
+            temp = float(sb_temp.replace("°C", "").strip())
+            for condition, title in _OFP_TEMP_RULES:
+                if condition(temp):
+                    if title in attr_by_title:
+                        derived.add(attr_by_title[title])
+                    break  # only one temperature band can apply
+        except ValueError:
+            pass
+
+    if sb_bleed == "OFF":
+        title = _OFP_BLEED_OFF_TITLE
+        if title in attr_by_title:
+            derived.add(attr_by_title[title])
+
+    return derived
+
+
+# ── Flight session creation ───────────────────────────────────────────────────
+
+
+def _create_flight_session(
+    user_profile,
+    selected_attr_ids: list[int],
+    ofp_attr_ids: set[int],
+    simbrief_data: dict | None,
+    pilot_role: str,
+    pilot_function: str,
+    active_phase: str = "",
+) -> FlightSession:
+    """
+    Create a FlightSession with FlightSessionAttribute rows (one per Attribute)
+    and optionally a FlightInfo record.
+    """
+    # Determine initial active_phase from first procedure if not supplied
+    if not active_phase:
+        first_proc = Procedure.objects.order_by("step").first()
+        active_phase = first_proc.slug if first_proc else ""
+
+    session = FlightSession.objects.create(
+        user_profile=user_profile,
+        pilot_role=pilot_role,
+        pilot_function=pilot_function,
+        active_phase=active_phase,
+    )
+
+    # Create one row per Attribute (eager seeding)
+    all_attributes = Attribute.objects.all()
+    session_attrs = []
+    for attr in all_attributes:
+        is_active = attr.id in selected_attr_ids or attr.id in ofp_attr_ids
+        if attr.id in ofp_attr_ids:
+            source = "ofp_derived"
+        elif attr.id in selected_attr_ids:
+            source = "pilot_override"
+        else:
+            source = "user_default"
+        session_attrs.append(
+            FlightSessionAttribute(
+                flight_session=session,
+                attribute=attr,
+                is_active=is_active,
+                source=source,
+            )
+        )
+    FlightSessionAttribute.objects.bulk_create(session_attrs)
+
+    # Create FlightInfo if SimBrief data is available
+    if simbrief_data and simbrief_data.get("origin"):
+        try:
+            oat = int(
+                float(simbrief_data.get("temp", "").replace("°C", "").strip() or 0)
+            )
+        except ValueError:
+            oat = None
+        FlightInfo.objects.create(
+            flight_session=session,
+            origin_icao=simbrief_data.get("origin", ""),
+            destination_icao=simbrief_data.get("destination", ""),
+            departure_runway=simbrief_data.get("runway", ""),
+            oat=oat,
+            ofp_loaded=True,
+        )
+
+    return session
+
+
+# ── Profile / flight setup view ───────────────────────────────────────────────
+
+
+def profile_view(request):
+    """
+    Flight setup page. Handles three POST actions:
+      get_plan        — fetch SimBrief OFP, cache in session, re-render
+      start_checklist — create FlightSession + redirect to checklist index
+      clear           — deactivate current session + flush Django session
+    """
+    # ── POST: clear ──────────────────────────────────────────────────────────
+    if request.method == "POST" and request.POST.get("action") == "clear":
+        _deactivate_current_session(request)
+        request.session.flush()
+        return redirect("checklist:start")
+
+    # ── POST: get_plan ───────────────────────────────────────────────────────
+    if request.method == "POST" and request.POST.get("action") == "get_plan":
+        simbrief_id = request.POST.get("simbrief_id", "").strip()
+        if simbrief_id:
+            sb = SimBrief(simbrief_id)
+            sb.fetch_data()
+            request.session["sb_origin"] = getattr(sb, "origin", "") or ""
+            request.session["sb_destination"] = getattr(sb, "destination", "") or ""
+            request.session["sb_runway"] = getattr(sb, "runway", "") or ""
+            request.session["sb_temp"] = getattr(sb, "temperature", "") or ""
+            request.session["sb_flaps"] = getattr(sb, "flap_setting", "") or ""
+            request.session["sb_bleed"] = getattr(sb, "bleed_setting", "") or ""
+            request.session["sb_simbrief_id"] = simbrief_id
+            derived = _derive_ofp_attrib_ids(
+                request.session["sb_temp"], request.session["sb_bleed"]
+            )
+            request.session["sb_derived_attribs"] = list(derived)
+            request.session["sb_error"] = getattr(sb, "error_message", "") or ""
+        return redirect("checklist:start")
+
+    # ── POST: start_checklist ────────────────────────────────────────────────
+    if request.method == "POST" and request.POST.get("action") == "start_checklist":
+        selected_ids = [int(x) for x in request.POST.getlist("attributes")]
+        ofp_ids = set(request.session.get("sb_derived_attribs", []))
+
+        dual_mode = "dual_mode" in request.POST
+        if dual_mode:
+            pilot_role = "PF"
+            pilot_function = "C"
+        else:
+            pilot_role = "SOLO"
+            pilot_function = "BOTH"
+
+        user_profile = None
+        if request.user.is_authenticated:
+            try:
+                user_profile = request.user.profile
+            except UserProfile.DoesNotExist:
+                pass
+
+        simbrief_data = _get_simbrief_session_data(request)
+
+        # Deactivate any previous session for this browser
+        _deactivate_current_session(request)
+
+        session = _create_flight_session(
+            user_profile=user_profile,
+            selected_attr_ids=selected_ids,
+            ofp_attr_ids=ofp_ids,
+            simbrief_data=simbrief_data,
+            pilot_role=pilot_role,
+            pilot_function=pilot_function,
+        )
+
+        # Store session key — this is now the only flight-state key in Django session
+        request.session["flight_session_key"] = session.session_key
+
+        # Write role state so the existing toggle_switches.js / update_session_role
+        # endpoint continue to work until they are migrated in a later step.
+        request.session["dual_mode"] = dual_mode
+        if dual_mode:
+            request.session["pilot_role"] = "PF"
+            request.session["captain_role"] = "C"
+
+        first_proc = Procedure.objects.order_by("step").first()
+        if first_proc:
+            return redirect("checklist:detail", slug=first_proc.slug)
+        return redirect("checklist:index")
+
+    # ── GET (and unrecognised POSTs) ─────────────────────────────────────────
+    simbrief_id = ""
+    if request.user.is_authenticated:
+        try:
+            simbrief_id = request.user.profile.simbrief_id or ""
+        except UserProfile.DoesNotExist:
+            pass
+    # Session-cached SimBrief ID overrides profile (user typed a different one)
+    simbrief_id = request.session.get("sb_simbrief_id", simbrief_id)
+
+    ofp_derived_ids = set(request.session.get("sb_derived_attribs", []))
+    attributes = Attribute.objects.filter(show=True).order_by("order")
+
+    context = {
+        "attributes": attributes,
+        "simbrief_id": simbrief_id,
+        "sb_origin": request.session.get("sb_origin", ""),
+        "sb_destination": request.session.get("sb_destination", ""),
+        "sb_runway": request.session.get("sb_runway", ""),
+        "sb_temp": request.session.get("sb_temp", ""),
+        "sb_flaps": request.session.get("sb_flaps", ""),
+        "sb_error": request.session.get("sb_error", ""),
+        "ofp_derived_ids": ofp_derived_ids,
+    }
+    return TemplateResponse(request, "checklist/profile.html", context)
+
+
+def _get_simbrief_session_data(request) -> dict | None:
+    if request.session.get("sb_origin"):
+        return {
+            "origin": request.session.get("sb_origin", ""),
+            "destination": request.session.get("sb_destination", ""),
+            "runway": request.session.get("sb_runway", ""),
+            "temp": request.session.get("sb_temp", ""),
+            "flaps": request.session.get("sb_flaps", ""),
+        }
+    return None
+
+
+def _deactivate_current_session(request):
+    key = request.session.get("flight_session_key")
+    if key:
+        FlightSession.objects.filter(session_key=key).update(is_active=False)
+
+
+# ── Checklist views ───────────────────────────────────────────────────────────
+
+
+def procedure_detail(request, slug=None, pk=None):
+    """Show all check items for the given procedure slug."""
+    time_start = time()
+
+    if slug:
+        procedure2view = get_object_or_404(Procedure, slug=slug)
+    else:
+        procedure2view = get_object_or_404(Procedure, pk=pk)
+
     nextproc = (
         Procedure.objects.filter(step__gt=procedure2view.step).order_by("step").first()
     )
     prevproc = (
         Procedure.objects.filter(step__lt=procedure2view.step).order_by("step").last()
     )
-    # print(request.)
-    # Check if profile exits
-    if "attrib" not in request.session:
+
+    # Require an active flight session
+    session_key = request.session.get("flight_session_key")
+    if not session_key:
+        return HttpResponseRedirect(reverse("checklist:start"))
+    try:
+        flight_session = FlightSession.objects.get(
+            session_key=session_key, is_active=True
+        )
+    except FlightSession.DoesNotExist:
         return HttpResponseRedirect(reverse("checklist:start"))
 
+    active_attr_ids = list(
+        FlightSessionAttribute.objects.filter(
+            flight_session=flight_session, is_active=True
+        ).values_list("attribute_id", flat=True)
+    )
+
     allitems = procedure2view.checkitem_set.all()
+    query_ids = [item.id for item in allitems if item.shouldshow(active_attr_ids)]
+    filtered_check_items = procedure2view.checkitem_set.filter(id__in=query_ids)
+
+    # Roles still come from session (migrated to FlightSession in a later step)
     pilot_role = request.session.get("pilot_role", None)
     captain_role = request.session.get("captain_role", None)
     dual_mode = request.session.get("dual_mode", False)
 
-    query_ids = [
-        item.id for item in allitems if item.shouldshow(request.session["attrib"])
-    ]
-    filtered_check_items = procedure2view.checkitem_set.filter(id__in=query_ids)
-
-    time_finished = time()
-    query_time = round(time_finished - time_start, 3)
-
-    # Annotate each item with a 'lowlight' flag
     check_items = []
     for item in filtered_check_items:
         item.lowlight = (
@@ -65,15 +313,15 @@ def procedure_detail(request, slug):
         )
         check_items.append(item)
 
-    # If len(check_items) is zero and there's a next procedure, redirect to it
+    time_finished = time()
+    query_time = round(time_finished - time_start, 3)
+
     if len(check_items) == 0:
-        # Check if referrer is same as next
-        if nextproc and (nextproc.slug in request.META["HTTP_REFERER"]):
+        if nextproc and (nextproc.slug in request.META.get("HTTP_REFERER", "")):
             if prevproc:
                 return HttpResponseRedirect(
                     reverse("checklist:detail", args=[prevproc.slug])
                 )
-        ##and nextproc is not None:
         else:
             if nextproc:
                 return HttpResponseRedirect(
@@ -87,211 +335,34 @@ def procedure_detail(request, slug):
         "prevproc": prevproc,
         "proctime": query_time,
         "all_procedures": Procedure.objects.order_by("step"),
+        "flight_session": flight_session,
     }
-    return TemplateResponse(
-        request,
-        "checklist/detail.html",
-        context,
-    )
+    return TemplateResponse(request, "checklist/detail.html", context)
 
 
 class IndexView(generic.ListView):
-    """basic class view to show all procedures"""
+    """List all procedures."""
 
     template_name = "checklist/index.html"
     context_object_name = "procedure_list"
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.session.get("flight_session_key"):
+            return HttpResponseRedirect(reverse("checklist:start"))
+        return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
         return Procedure.objects.order_by("step")
 
 
-def get_simbrief_context(simbrief=None):
-    """
-    Extracts context fields related to SimBrief data.
-    If simbrief is None, default values are returned.
-    """
-    return {
-        "origin": getattr(simbrief, "origin", "Unknown"),
-        "elevation": getattr(simbrief, "elevation", "Unknown"),
-        "temperature": getattr(simbrief, "temperature", "Unknown"),
-        "runway": getattr(simbrief, "runway", "Unknown"),
-        "rwy_length": getattr(simbrief, "rwy_length", "Unknown"),
-        "altimeter": getattr(simbrief, "altimeter", "Unknown"),
-        "flap_setting": getattr(simbrief, "flap_setting", "Unknown"),
-        "bleed_setting": getattr(simbrief, "bleed_setting", "Unknown"),
-        "error_message": getattr(simbrief, "error_message", ""),
-    }
-
-
-def update_profile_with_simbrief(request, simbrief):
-    """
-    Update the session['attrib'] list based on SimBrief data.
-    """
-    # Retrieve the current attribute list from the session
-    attlist = request.session.get("attrib", [])
-
-    # Extract cleaned temperature once
-    if simbrief.temperature:
-        cleaned_temperature = float(simbrief.temperature.replace("°C", ""))
-
-        # Example condition: Add attribute ID 7 if temperature is below 0°C
-        if cleaned_temperature < 0:
-            if 7 not in attlist:
-                attlist.append(7)
-
-        # Example condition: Add attribute ID 10 if temperature is between 0°C and 10°C
-        if 0 < cleaned_temperature < 11:
-            if 9 not in attlist:
-                attlist.append(9)
-            if 7 in attlist:
-                attlist.remove(7)
-
-        # if temperature is above 10°C, remove attribute ID 9 and 7
-        if cleaned_temperature > 10:
-            if 9 in attlist:
-                attlist.remove(9)
-            if 7 in attlist:
-                attlist.remove(7)
-
-    # if bleeds are off, add attribute ID 8
-    if simbrief.bleed_setting == "OFF":
-        if 8 not in attlist:
-            attlist.append(8)
-    else:
-        if 8 in attlist:
-            attlist.remove(8)
-
-    # Update the session with the modified attribute list
-    request.session["attrib"] = attlist
-
-
-def update_dual_mode(request, clean=False):
-    """
-    Updates the 'dual_mode' value in the session based on the POST data.
-    """
-    if not clean:
-        dual_mode = request.POST.get("dual_mode", False)
-    else:
-        dual_mode = False
-
-    request.session["dual_mode"] = dual_mode
-
-
-def profile_view(request):
-
-    if request.method == "POST":
-        # Handle the "Clean" action
-        if "Clean" in request.POST:
-            print("Cleaning session")
-            request.session.flush()
-            update_dual_mode(request, clean=True)
-
-            # Check if the user wants to clear the cookie
-            if request.POST.get("clear_cookie") == "1":
-                response = HttpResponseRedirect(reverse("checklist:profile"))
-                response.delete_cookie("simbrief_pilot_id")
-                return response
-
-    # Retrieve simbrief_pilot_id from the cookie or request.POST
-    simbrief_pilot_id = None
-
-    if "simbrief_id" in request.POST:
-        simbrief_pilot_id = request.POST["simbrief_id"]
-    # POST data overrides cookie
-    elif "simbrief_pilot_id" in request.COOKIES:
-        simbrief_pilot_id = request.COOKIES.get("simbrief_pilot_id")
-    elif "simbrief_pilot_id" in request.session:
-        simbrief_pilot_id = request.session["simbrief_pilot_id"]
-
-    # Initialize simbrief object only if simbrief_pilot_id is provided
-    simbrief = None
-    if simbrief_pilot_id:
-        simbrief = SimBrief(simbrief_pilot_id)
-        simbrief.fetch_data()
-        # Update the session['attrib'] list based on SimBrief data
-        update_profile_with_simbrief(request, simbrief)
-        request.session["simbrief_pilot_id"] = simbrief_pilot_id
-        # Cache flight data for sidebar display on checklist pages
-        request.session["sb_origin"]      = getattr(simbrief, "origin",      "")
-        request.session["sb_destination"] = getattr(simbrief, "destination", "")
-        request.session["sb_runway"]      = getattr(simbrief, "runway",      "")
-        request.session["sb_temp"]        = getattr(simbrief, "temperature", "")
-        request.session["sb_flaps"]       = getattr(simbrief, "flap_setting", "")
-
-    # Build the context using the extracted function
-    context = {
-        "attributes": Attribute.objects.order_by("order"),
-        "simbrief_id": simbrief_pilot_id or "",
-        **get_simbrief_context(simbrief),
-    }
-
-    # Add a cookie for simbrief_pilot_id if "remember_me" is in the GET request
-    response = TemplateResponse(request, "checklist/profile.html", context)
-
-    # Set cookie if "remember_me" is checked or if cookie already exists
-    if (request.COOKIES.get("simbrief_pilot_id")) or (
-        "remember_me" in request.POST and simbrief_pilot_id
-    ):
-        expiration_date = now() + timedelta(days=31)
-        response.set_cookie(
-            "simbrief_pilot_id",
-            simbrief_pilot_id,
-            expires=expiration_date,
-            secure=True,  # Ensures the cookie is sent over HTTPS only
-            httponly=True,  # Prevents JavaScript access to the cookie
-            samesite="Lax",  # Restricts cross-site cookie sharing
-        )
-    else:
-        response.delete_cookie("simbrief_pilot_id")
-
-    return response
-
-
-def update_profile(request):
-    """
-    function that is called when profile is submitted
-    Stores profile in session
-    add default attributes, that is non visible
-    and removes default if related attrib is selected
-    """
-
-    attlist = []
-
-    over_rules = {}
-    non_visual_attributes = list(Attribute.objects.filter(show=False))
-
-    for default_attrib in non_visual_attributes:
-        attlist.append(default_attrib.id)
-        if default_attrib.over_ruled_by:
-            over_rules[default_attrib.over_ruled_by.id] = default_attrib.id
-
-    attrset = request.POST.getlist("attributes")
-
-    for att in attrset:
-        attlist.append(int(att))
-        if over_rules.get(int(att), None):
-            attlist.remove(over_rules[int(att)])
-
-    request.session["attrib"] = attlist
-    update_dual_mode(request)
-
-    return HttpResponseRedirect(reverse("checklist:index"))
-
-
 def update_session_role(request):
-    """
-    Updates the session with the selected roles (Pilot Role and Captain Role).
-    """
+    """Updates the session with the selected roles (Pilot Role and Captain Role)."""
     if request.method == "POST":
         pilot_role = request.POST.get("pilot_role", "PM")
         captain_role = request.POST.get("captain_role", "FO")
-
-        # Update the session with the new roles
         request.session["pilot_role"] = pilot_role
         request.session["captain_role"] = captain_role
-
         return JsonResponse(
             {"success": True, "pilot_role": pilot_role, "captain_role": captain_role}
         )
-
     return JsonResponse({"success": False}, status=400)

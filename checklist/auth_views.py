@@ -77,7 +77,7 @@ def register_view(request):
                 user.profile.simbrief_id = simbrief_id
                 user.profile.save()
             login(request, user)
-            return redirect("checklist:index")
+            return redirect("checklist:start")
     else:
         form = RegisterForm()
     return render(request, "registration/register.html", {"form": form})

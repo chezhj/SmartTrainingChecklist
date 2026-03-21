@@ -25,7 +25,7 @@ class TestRegisterView(TestCase):
                 "password2": "Securepass123!",
             },
         )
-        self.assertRedirects(response, reverse("checklist:index"))
+        self.assertRedirects(response, reverse("checklist:start"))
         self.assertTrue(User.objects.filter(username="testpilot").exists())
         self.assertIn("_auth_user_id", self.client.session)
 
