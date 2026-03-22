@@ -7,6 +7,7 @@
     "order": 2,
     "description": "Select this for items that are needed only if you fly online (ATC)",
     "show": true,
+    "is_user_preference": false,
     "over_ruled_by": null,
     "btn_color": "#E01843"
   }
@@ -19,6 +20,7 @@
     "order": 3,
     "description": "Select if you want to see the items on the checklist that require no actual change",
     "show": true,
+    "is_user_preference": true,
     "over_ruled_by": null,
     "btn_color": "#3FC381"
   }
@@ -31,6 +33,7 @@
     "order": 1,
     "description": "Also show optional items, if not checked only required are shown",
     "show": true,
+    "is_user_preference": true,
     "over_ruled_by": null,
     "btn_color": "#1D8E2A"
   }
@@ -43,6 +46,7 @@
     "order": 4,
     "description": "RWY is long enough icw weight, not above 10000ft, so take-of without APU",
     "show": false,
+    "is_user_preference": false,
     "over_ruled_by": 8,
     "btn_color": "#19E40F"
   }
@@ -55,6 +59,7 @@
     "order": 6,
     "description": "The stand.gate requires pushback",
     "show": false,
+    "is_user_preference": false,
     "over_ruled_by": 11,
     "btn_color": "#18DD29"
   }
@@ -67,6 +72,7 @@
     "order": 8,
     "description": "Temp at or below 0",
     "show": true,
+    "is_user_preference": false,
     "over_ruled_by": null,
     "btn_color": "#4E7BCC"
   }
@@ -79,6 +85,7 @@
     "order": 20,
     "description": "Short Runway procedure or above 10.000",
     "show": true,
+    "is_user_preference": false,
     "over_ruled_by": null,
     "btn_color": "194D33"
   }
@@ -91,6 +98,7 @@
     "order": 22,
     "description": "Actions you do when temp is between 0C and 10C",
     "show": true,
+    "is_user_preference": false,
     "over_ruled_by": null,
     "btn_color": "#88DBF5"
   }
@@ -103,6 +111,7 @@
     "order": 50,
     "description": "NormalConditions",
     "show": false,
+    "is_user_preference": false,
     "over_ruled_by": 9,
     "btn_color": "#194D33"
   }
@@ -115,6 +124,7 @@
     "order": 20,
     "description": "Select if you do not need to be pushed back",
     "show": true,
+    "is_user_preference": false,
     "over_ruled_by": null,
     "btn_color": "194D33"
   }
@@ -127,6 +137,7 @@
     "order": 7,
     "description": "These are the recommanded but still optional safety tests",
     "show": true,
+    "is_user_preference": true,
     "over_ruled_by": null,
     "btn_color": "#9BAD20"
   }
@@ -139,6 +150,7 @@
     "order": 222,
     "description": "Actions overrulled by icing procedure",
     "show": false,
+    "is_user_preference": false,
     "over_ruled_by": 7,
     "btn_color": "#5588E5"
   }
@@ -319,6 +331,7 @@
     "action_label": "PLAYED",
     "dataref_expression": "laminar/b738/fmodpack/play_welcome_msg:1",
     "role": "C",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -335,6 +348,7 @@
     "action_label": "CHECKED",
     "dataref_expression": "",
     "role": "PF",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -351,6 +365,7 @@
     "action_label": "DONE",
     "dataref_expression": "",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       6
     ]
@@ -367,6 +382,7 @@
     "action_label": "DONE",
     "dataref_expression": "(laminar/B738/annunciator/aft_entry:0) && (laminar/B738/annunciator/fwd_entry:0)",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -381,6 +397,7 @@
     "action_label": "CHECKED",
     "dataref_expression": "laminar/B738/door/flt_dk_door_ratio:0",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -395,6 +412,7 @@
     "action_label": "ASNEEDED",
     "dataref_expression": "(laminar/B738/fuel/fuel_tank_pos_ctr1:1)&&(laminar/B738/fuel/fuel_tank_pos_ctr2:1)",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -409,6 +427,7 @@
     "action_label": "SET",
     "dataref_expression": "(laminar/B738/fuel/fuel_tank_pos_lft1:1)&&(laminar/B738/fuel/fuel_tank_pos_lft2:1) &&(laminar/B738/fuel/fuel_tank_pos_rgt1:1)&&(laminar/B738/fuel/fuel_tank_pos_rgt2:1)",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -423,6 +442,7 @@
     "action_label": "SET",
     "dataref_expression": "(laminar/B738/toggle_switch/electric_hydro_pumps1_pos:1)&&(laminar/B738/toggle_switch/electric_hydro_pumps2_pos:1)",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -437,6 +457,7 @@
     "action_label": "SET",
     "dataref_expression": "sim/cockpit/electrical/beacon_lights_on:1",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -453,6 +474,7 @@
     "action_label": "SET",
     "dataref_expression": "laminar/B738/FMS/trim_set:1",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -467,6 +489,7 @@
     "action_label": "SET",
     "dataref_expression": "(sim/cockpit2/switches/yaw_damper_on:0)",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -481,6 +504,7 @@
     "action_label": "CHECKED",
     "dataref_expression": "(laminar/B738/knobs/cross_feed:0)",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       3
     ]
@@ -497,6 +521,7 @@
     "action_label": "CHECKED",
     "dataref_expression": "(laminar/B738/fuel/fuel_tank_pos_lft1:0)&&(laminar/B738/fuel/fuel_tank_pos_lft2:0)&&(laminar/B738/fuel/fuel_tank_pos_rgt1:0)&&(laminar/B738/fuel/fuel_tank_pos_rgt2:0)&&(laminar/B738/fuel/fuel_tank_pos_ctr1:0)&&(laminar/B738/fuel/fuel_tank_pos_ctr2:0)",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       3
     ]
@@ -513,6 +538,7 @@
     "action_label": "CHECKED",
     "dataref_expression": "(laminar/B738/toggle_switch/cab_util_pos:1)",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       3,
       4
@@ -530,6 +556,7 @@
     "action_label": "CHECKED",
     "dataref_expression": "(laminar/B738/toggle_switch/ife_pass_seat_pos:1)",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       3
     ]
@@ -546,6 +573,7 @@
     "action_label": "CHECKED",
     "dataref_expression": "(laminar/B738/toggle_switch/eq_cool_supply:0)",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       3
     ]
@@ -562,6 +590,7 @@
     "action_label": "CHECKED",
     "dataref_expression": "(laminar/B738/toggle_switch/eq_cool_exhaust:0)",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       3
     ]
@@ -578,6 +607,7 @@
     "action_label": "CHECKED",
     "dataref_expression": "(laminar/B738/toggle_switch/seatbelt_sign_pos:2)",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -594,6 +624,7 @@
     "action_label": "CHECKED",
     "dataref_expression": "(sim/cockpit2/switches/wiper_speed:0)",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       3,
       4
@@ -611,6 +642,7 @@
     "action_label": "TESTED",
     "dataref_expression": "",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -627,6 +659,7 @@
     "action_label": "TESTED",
     "dataref_expression": "",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -643,6 +676,7 @@
     "action_label": "SET",
     "dataref_expression": "(laminar/B738/ice/window_heat_l_side_pos:1)&&(laminar/B738/ice/window_heat_l_fwd_pos:1)&&(laminar/B738/ice/window_heat_r_fwd_pos:1)&&(laminar/B738/ice/window_heat_r_side_pos:1)",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -657,6 +691,7 @@
     "action_label": "CHECKED",
     "dataref_expression": "(laminar/B738/toggle_switch/capt_probes_pos:0)&&(laminar/B738/toggle_switch/fo_probes_pos:0)",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       3
     ]
@@ -673,6 +708,7 @@
     "action_label": "CHECKED",
     "dataref_expression": "",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -689,6 +725,7 @@
     "action_label": "CHECKED",
     "dataref_expression": "(laminar/B738/ice/wing_heat_pos:0)",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       3
     ]
@@ -705,6 +742,7 @@
     "action_label": "CHECKED",
     "dataref_expression": "(laminar/B738/ice/eng1_heat_pos:0)&&(laminar/B738/ice/eng2_heat_pos:0)",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       3
     ]
@@ -721,6 +759,7 @@
     "action_label": "CHECHED",
     "dataref_expression": "(laminar/B738/toggle_switch/electric_hydro_pumps1_pos:0)&&(sim/operation/failures/rel_hydpmp_ele:0)&&(laminar/B738/toggle_switch/electric_hydro_pumps2_pos:0)&&(sim/operation/failures/rel_hydpmp_ele:0)",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       3
     ]
@@ -737,6 +776,7 @@
     "action_label": "SET",
     "dataref_expression": "(laminar/B738/spring_toggle_switch/APU_start_pos:1)",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -751,6 +791,7 @@
     "action_label": "SET",
     "dataref_expression": "(laminar/B738/spring_toggle_switch/APU_start_pos:2)",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -765,6 +806,7 @@
     "action_label": "ON",
     "dataref_expression": "",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -779,6 +821,7 @@
     "action_label": "ON",
     "dataref_expression": "",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -793,6 +836,7 @@
     "action_label": "SET",
     "dataref_expression": "(sim/cockpit2/electrical/APU_generator_on:1)&&(laminar/B738/annunciator/source_off1x:0)&&(laminar/B738/annunciator/source_off1x:0)&&(laminar/B738/annunciator/source_off2x:0)",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -807,6 +851,7 @@
     "action_label": "REMOVED",
     "dataref_expression": "(laminar/B738/fmod/gpu_deployed:0)",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -821,6 +866,7 @@
     "action_label": "CHECKED",
     "dataref_expression": "",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -837,6 +883,7 @@
     "action_label": "SET",
     "dataref_expression": "(laminar/B738/air/trim_air_pos:1)",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -853,6 +900,7 @@
     "action_label": "CHECKED",
     "dataref_expression": "",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       3,
       4
@@ -870,6 +918,7 @@
     "action_label": "SET",
     "dataref_expression": "",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -886,6 +935,7 @@
     "action_label": "VERIFIED",
     "dataref_expression": "",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -902,6 +952,7 @@
     "action_label": "VERIFIED",
     "dataref_expression": "(laminar/B738/air/l_recirc_fan_pos:1)&&(laminar/B738/air/r_recirc_fan_pos:1)",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       3
     ]
@@ -918,6 +969,7 @@
     "action_label": "TESTED",
     "dataref_expression": "",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -934,6 +986,7 @@
     "action_label": "SET",
     "dataref_expression": "(laminar/B738/air/l_pack_pos:>0)&&(laminar/B738/air/r_pack_pos:>0)",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -948,6 +1001,7 @@
     "action_label": "VERIFIED",
     "dataref_expression": "(laminar/B738/air/isolation_valve_pos:2)",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       3
     ]
@@ -964,6 +1018,7 @@
     "action_label": "VERIFIED",
     "dataref_expression": "(laminar/B738/toggle_switch/bleed_air_1_pos:1)&&(laminar/B738/toggle_switch/bleed_air_2_pos:1)&&(sim/operation/failures/rel_bleed_air_lft:0)&&(sim/operation/failures/rel_bleed_air_rgt:0)",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       3
     ]
@@ -980,6 +1035,7 @@
     "action_label": "SET",
     "dataref_expression": "(laminar/B738/toggle_switch/bleed_air_apu_pos:1)&&(sim/operation/failures/rel_APU_press:0)",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -994,6 +1050,7 @@
     "action_label": "SET",
     "dataref_expression": "",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -1008,6 +1065,7 @@
     "action_label": "SET",
     "dataref_expression": "",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -1022,6 +1080,7 @@
     "action_label": "CHECKED",
     "dataref_expression": "(laminar/B738/toggle_switch/air_valve_ctrl:0)",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       3
     ]
@@ -1038,6 +1097,7 @@
     "action_label": "SET",
     "dataref_expression": "(laminar/B738/autopilot/autothrottle_arm_pos:1)",
     "role": "C",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -1052,6 +1112,7 @@
     "action_label": "SET",
     "dataref_expression": "(laminar/B738/autopilot/flight_director_pos:1)",
     "role": "PF",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -1066,6 +1127,7 @@
     "action_label": "SET",
     "dataref_expression": "(laminar/B738/autopilot/flight_director_fo_pos:1)",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -1080,6 +1142,7 @@
     "action_label": "SET",
     "dataref_expression": "(laminar/B738/autobrake/autobrake_RTO_arm:1)&&(sim/operation/failures/rel_lbrakes:0)&&(sim/operation/failures/rel_rbrakes:0)",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -1094,6 +1157,7 @@
     "action_label": "SET",
     "dataref_expression": "(sim/cockpit/autopilot/airspeed:>={laminar/B738/FMS/v2})",
     "role": "C",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -1108,6 +1172,7 @@
     "action_label": "SET",
     "dataref_expression": "",
     "role": "C",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -1122,6 +1187,7 @@
     "action_label": "SET",
     "dataref_expression": "",
     "role": "C",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -1136,6 +1202,7 @@
     "action_label": "ARMED",
     "dataref_expression": "(laminar/B738/autopilot/vnav_status1:1)",
     "role": "C",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -1152,6 +1219,7 @@
     "action_label": "ARMED",
     "dataref_expression": "(laminar/B738/autopilot/lnav_status:1)||(laminar/B738/autopilot/hdg_sel_status:1)",
     "role": "C",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -1166,6 +1234,7 @@
     "action_label": "SET",
     "dataref_expression": "",
     "role": "BOTH",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -1180,6 +1249,7 @@
     "action_label": "SET",
     "dataref_expression": "",
     "role": "PF",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -1196,6 +1266,7 @@
     "action_label": "SET",
     "dataref_expression": "",
     "role": "BOTH",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -1212,6 +1283,7 @@
     "action_label": "SET",
     "dataref_expression": "",
     "role": "BOTH",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -1228,6 +1300,7 @@
     "action_label": "SET",
     "dataref_expression": "",
     "role": "BOTH",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -1244,6 +1317,7 @@
     "action_label": "SET",
     "dataref_expression": "",
     "role": "C",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -1260,6 +1334,7 @@
     "action_label": "DONE",
     "dataref_expression": "",
     "role": "PF",
+    "auto_check_rule": null,
     "attributes": [
       6
     ]
@@ -1276,6 +1351,7 @@
     "action_label": "DONE",
     "dataref_expression": "",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       2
     ]
@@ -1292,6 +1368,7 @@
     "action_label": "DONE",
     "dataref_expression": "",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       2
     ]
@@ -1308,6 +1385,7 @@
     "action_label": "SET",
     "dataref_expression": "laminar/B738/clock/captain/et_mode:1",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -1324,6 +1402,7 @@
     "action_label": "SET",
     "dataref_expression": "laminar/B738/knob/transponder_pos:5",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       2
     ]
@@ -1340,6 +1419,7 @@
     "action_label": "DONE",
     "dataref_expression": "laminar/B738/parking_brake_pos:0",
     "role": "PF",
+    "auto_check_rule": null,
     "attributes": [
       6
     ]
@@ -1356,6 +1436,7 @@
     "action_label": "SET",
     "dataref_expression": "(laminar/B738/engine/starter2_pos:0)",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       13
     ]
@@ -1372,6 +1453,7 @@
     "action_label": "CHECKED",
     "dataref_expression": "laminar/B738/engine/starter2_pos:1",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       3,
       13
@@ -1389,6 +1471,7 @@
     "action_label": "SET",
     "dataref_expression": "laminar/B738/engine/starter1_pos:0",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       13
     ]
@@ -1405,6 +1488,7 @@
     "action_label": "SET",
     "dataref_expression": "laminar/B738/engine/mixture_ratio1:1",
     "role": "PF",
+    "auto_check_rule": null,
     "attributes": [
       13
     ]
@@ -1421,6 +1505,7 @@
     "action_label": "SET",
     "dataref_expression": "(sim/cockpit2/electrical/generator_on[0]:1)&&(sim/operation/failures/rel_genera0:0)&&(sim/cockpit2/electrical/generator_on[1]:1)&&(sim/operation/failures/rel_genera1:0)",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       13
     ]
@@ -1437,6 +1522,7 @@
     "action_label": "SET",
     "dataref_expression": "(laminar/B738/engine/starter1_pos:2)&&(laminar/B738/engine/starter2_pos:2)",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -1451,6 +1537,7 @@
     "action_label": "SET",
     "dataref_expression": "laminar/B738/air/l_pack_pos:>0",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -1465,6 +1552,7 @@
     "action_label": "SET",
     "dataref_expression": "laminar/B738/air/isolation_valve_pos:1",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -1479,6 +1567,7 @@
     "action_label": "SET",
     "dataref_expression": "laminar/B738/parking_brake_pos:1.0",
     "role": "PF",
+    "auto_check_rule": null,
     "attributes": [
       6
     ]
@@ -1495,6 +1584,7 @@
     "action_label": "SET",
     "dataref_expression": "(laminar/B738/toggle_switch/capt_probes_pos:1)&&(sim/operation/failures/rel_ice_pitot_heat1:0)&&(laminar/B738/toggle_switch/fo_probes_pos:1)&&(sim/operation/failures/rel_ice_pitot_heat2:0)",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -1509,6 +1599,7 @@
     "action_label": "CHECKED",
     "dataref_expression": "(laminar/B738/air/l_pack_pos:>0)&&(laminar/B738/air/r_pack_pos:>0)",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       3
     ]
@@ -1525,6 +1616,7 @@
     "action_label": "CHECKED",
     "dataref_expression": "laminar/B738/toggle_switch/air_valve_ctrl:0",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       3
     ]
@@ -1541,6 +1633,7 @@
     "action_label": "SET",
     "dataref_expression": "laminar/B738/toggle_switch/bleed_air_apu_pos:0",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -1555,6 +1648,7 @@
     "action_label": "CHECKED",
     "dataref_expression": "laminar/B738/FMS/takeoff_flaps_set:1",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       10,
       13
@@ -1572,6 +1666,7 @@
     "action_label": "PRESSED",
     "dataref_expression": "laminar/B738/systems/lowerDU_page:1",
     "role": "PF",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -1588,6 +1683,7 @@
     "action_label": "SET",
     "dataref_expression": "",
     "role": "PF",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -1604,6 +1700,7 @@
     "action_label": "CHECKED",
     "dataref_expression": "",
     "role": "BOTH",
+    "auto_check_rule": null,
     "attributes": [
       4,
       9,
@@ -1622,6 +1719,7 @@
     "action_label": "PRESSED",
     "dataref_expression": "",
     "role": "PF",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -1638,6 +1736,7 @@
     "action_label": "SET",
     "dataref_expression": "(laminar/B738/toggle_switch/taxi_light_brightness_pos:>0)&&(sim/operation/failures/rel_lites_taxi:0)",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -1654,6 +1753,7 @@
     "action_label": "DONE",
     "dataref_expression": "",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -1670,6 +1770,7 @@
     "action_label": "CHECKED",
     "dataref_expression": "(laminar/B738/ice/wing_heat_pos:0)",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       3,
       10
@@ -1687,6 +1788,7 @@
     "action_label": "CHECKED",
     "dataref_expression": "(laminar/B738/ice/eng1_heat_pos:0)&&(laminar/B738/ice/eng2_heat_pos:0)",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       3,
       10
@@ -1704,6 +1806,7 @@
     "action_label": "DONE",
     "dataref_expression": "",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -1720,6 +1823,7 @@
     "action_label": "DONE",
     "dataref_expression": "",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       2
     ]
@@ -1736,6 +1840,7 @@
     "action_label": "DONE",
     "dataref_expression": "",
     "role": "PF",
+    "auto_check_rule": null,
     "attributes": [
       2
     ]
@@ -1752,6 +1857,7 @@
     "action_label": "SET",
     "dataref_expression": "(sim/operation/failures/rel_lites_land:0)&&(laminar/B738/led_lights:1)&&(laminar/B738/switch/land_lights_left_pos:1)&&(laminar/B738/switch/land_lights_right_pos:1)||(sim/operation/failures/rel_lites_land:0)&&(laminar/B738/led_lights:0)&&(laminar/B738/switch/land_lights_left_pos:1)&&(laminar/B738/switch/land_lights_right_pos:1)&&(laminar/B738/switch/land_lights_ret_left_pos:2)&&(laminar/B738/switch/land_lights_ret_right_pos:2)",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -1768,6 +1874,7 @@
     "action_label": "SET",
     "dataref_expression": "(sim/cockpit2/switches/generic_lights_switch[2]:1)&&(sim/cockpit2/switches/generic_lights_switch[3]:1)",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -1784,6 +1891,7 @@
     "action_label": "SET",
     "dataref_expression": "(laminar/B738/toggle_switch/taxi_light_brightness_pos:0)",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -1800,6 +1908,7 @@
     "action_label": "SET",
     "dataref_expression": "(sim/cockpit2/switches/navigation_lights_on:1)&&(sim/cockpit2/switches/strobe_lights_on:1)&&(sim/operation/failures/rel_lites_strobe:0)&&(sim/operation/failures/rel_lites_nav:0)",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -1816,6 +1925,7 @@
     "action_label": "SET",
     "dataref_expression": "sim/cockpit/switches/EFIS_shows_weather:1",
     "role": "PF",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -1832,6 +1942,7 @@
     "action_label": "AS REQ.",
     "dataref_expression": "(laminar/B738/EFIS_control/fo/push_button/terr:1)||(laminar/B738/EFIS_control/fo/terr_on:1)",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -1848,6 +1959,7 @@
     "action_label": "SET",
     "dataref_expression": "(laminar/B738/knob/transponder_pos:5)&&(sim/operation/failures/rel_xpndr:0)",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       2,
       4
@@ -1865,6 +1977,7 @@
     "action_label": "COMPLETE",
     "dataref_expression": "",
     "role": "PF",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -1881,6 +1994,7 @@
     "action_label": "DONE",
     "dataref_expression": "",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       2,
       13
@@ -1898,6 +2012,7 @@
     "action_label": "CHECKED",
     "dataref_expression": "",
     "role": "PF",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -1914,6 +2029,7 @@
     "action_label": "SET",
     "dataref_expression": "(sim/operation/failures/rel_lites_land:0)&&(laminar/B738/led_lights:1)&&(laminar/B738/switch/land_lights_left_pos:1)&&(laminar/B738/switch/land_lights_right_pos:1)||(sim/operation/failures/rel_lites_land:0)&&(laminar/B738/led_lights:0)&&(laminar/B738/switch/land_lights_left_pos:1)&&(laminar/B738/switch/land_lights_right_pos:1)&&(laminar/B738/switch/land_lights_ret_left_pos:2)&&(laminar/B738/switch/land_lights_ret_right_pos:2)",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -1930,6 +2046,7 @@
     "action_label": "SET",
     "dataref_expression": "laminar/B738/clock/captain/et_mode:1",
     "role": "PF",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -1946,6 +2063,7 @@
     "action_label": "CHECKED",
     "dataref_expression": "(sim/flightmodel/engine/ENGN_N1_[0]:>40)&&(sim/flightmodel/engine/ENGN_N1_[1]:>40)",
     "role": "PF",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -1960,6 +2078,7 @@
     "action_label": "DONE",
     "dataref_expression": "laminar/B738/autopilot/pfd_spd_mode:2",
     "role": "PF",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -1974,6 +2093,7 @@
     "action_label": "CHECK",
     "dataref_expression": "",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -1990,6 +2110,7 @@
     "action_label": "DONE",
     "dataref_expression": "",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -2006,6 +2127,7 @@
     "action_label": "DONE",
     "dataref_expression": "",
     "role": "PF",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -2020,6 +2142,7 @@
     "action_label": "DONE",
     "dataref_expression": "laminar/B738/controls/gear_handle_down:0",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -2034,6 +2157,7 @@
     "action_label": "DONE",
     "dataref_expression": "",
     "role": "PF",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -2048,6 +2172,7 @@
     "action_label": "DONE",
     "dataref_expression": "(sim/cockpit2/controls/flap_ratio:0)&&(sim/operation/failures/rel_flap_act:0)",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -2062,6 +2187,7 @@
     "action_label": "SET",
     "dataref_expression": "laminar/B738/autobrake/autobrake_pos:1",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -2076,6 +2202,7 @@
     "action_label": "CHECKED",
     "dataref_expression": "",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -2092,6 +2219,7 @@
     "action_label": "DONE",
     "dataref_expression": "laminar/B738/spring_toggle_switch/APU_start_pos:0",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       5
     ]
@@ -2108,6 +2236,7 @@
     "action_label": "CHECKED",
     "dataref_expression": "(laminar/B738/annunciator/six_pack_fuel:>0)&&(laminar/B738/annunciator/six_pack_fire:>0)&&(laminar/B738/annunciator/six_pack_apu:>0)&&(laminar/B738/annunciator/six_pack_flt_cont:>0)&&(laminar/B738/annunciator/six_pack_elec:>0)&&(laminar/B738/annunciator/six_pack_irs:>0)&&(laminar/B738/annunciator/six_pack_ice:>0)&&(laminar/B738/annunciator/six_pack_doors:>0)&&(laminar/B738/annunciator/six_pack_doors:>0)&&(laminar/B738/annunciator/six_pack_eng:>0)&&(laminar/B738/annunciator/six_pack_hyd:>0)&&(laminar/B738/annunciator/six_pack_air_cond:>0)&&(laminar/B738/annunciator/six_pack_overhead:>0)",
     "role": "BOTH",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -2124,6 +2253,7 @@
     "action_label": "DONE",
     "dataref_expression": "(737u/doors/aft_Cargo:1)||(737u/doors/Fwd_Cargo:1)||(737u/doors/L1:1)",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -2140,6 +2270,7 @@
     "action_label": "DONE",
     "dataref_expression": "",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -2156,6 +2287,7 @@
     "action_label": "STARTED",
     "dataref_expression": "laminar/b738/fmodpack/fmod_play_cargo:1",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -2172,6 +2304,7 @@
     "action_label": "CHECKED",
     "dataref_expression": "",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       3
     ]
@@ -2188,6 +2321,7 @@
     "action_label": "SET",
     "dataref_expression": "(laminar/B738/fmod/gpu_deployed:1)||(sim/cockpit/electrical/gpu_amps:>0)&&(sim/operation/failures/rel_ex_power_on:0)",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -2202,6 +2336,7 @@
     "action_label": "SET",
     "dataref_expression": "",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -2216,6 +2351,7 @@
     "action_label": "STARTED",
     "dataref_expression": "sim/flightmodel/weight/m_fuel_total:><0",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -2230,6 +2366,7 @@
     "action_label": "",
     "dataref_expression": "laminar/B738/parking_brake_pos:1.0",
     "role": "C",
+    "auto_check_rule": null,
     "attributes": [
       3
     ]
@@ -2246,6 +2383,7 @@
     "action_label": "",
     "dataref_expression": "(laminar/B738/engine/mixture_ratio1:0)||(laminar/B738/engine/mixture_ratio2:0)",
     "role": "C",
+    "auto_check_rule": null,
     "attributes": [
       3
     ]
@@ -2262,6 +2400,7 @@
     "action_label": "",
     "dataref_expression": "(laminar/B738/flt_ctrls/reverse_lever12:0)",
     "role": "C",
+    "auto_check_rule": null,
     "attributes": [
       3
     ]
@@ -2278,6 +2417,7 @@
     "action_label": "",
     "dataref_expression": "sim/cockpit2/controls/speedbrake_ratio:0",
     "role": "C",
+    "auto_check_rule": null,
     "attributes": [
       3
     ]
@@ -2294,6 +2434,7 @@
     "action_label": "",
     "dataref_expression": "(laminar/B738/engine/thrust1_leveler:0)&&(laminar/B738/engine/thrust2_leveler:0)",
     "role": "C",
+    "auto_check_rule": null,
     "attributes": [
       3
     ]
@@ -2310,6 +2451,7 @@
     "action_label": "",
     "dataref_expression": "(sim/cockpit2/controls/flap_ratio:0)",
     "role": "C",
+    "auto_check_rule": null,
     "attributes": [
       3
     ]
@@ -2326,6 +2468,7 @@
     "action_label": "",
     "dataref_expression": "laminar/B738/controls/gear_handle_down:1",
     "role": "C",
+    "auto_check_rule": null,
     "attributes": [
       3
     ]
@@ -2342,6 +2485,7 @@
     "action_label": "SET",
     "dataref_expression": "(laminar/B738/electric/battery_pos:1)&&(laminar/B738/button_switch/cover_position[2]:0)&&(sim/operation/failures/rel_batter0:0)",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -2356,6 +2500,7 @@
     "action_label": "",
     "dataref_expression": "(sim/cockpit2/electrical/battery_on[0]:1)&&(laminar/B738/button_switch/cover_position[3]:0)&&(sim/operation/failures/rel_batter1:0)",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       3
     ]
@@ -2372,6 +2517,7 @@
     "action_label": "",
     "dataref_expression": "(laminar/B738/one_way_switch/drive_disconnect1_pos:0)&&(laminar/B738/one_way_switch/drive_disconnect2_pos:0)&&(laminar/B738/button_switch/cover_position[4]:0)&&(laminar/B738/button_switch/cover_position[5]:0)",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       3
     ]
@@ -2388,6 +2534,7 @@
     "action_label": "",
     "dataref_expression": "(sim/cockpit2/electrical/cross_tie:1)&&(laminar/B738/button_switch/cover_position[6]:0)",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       3
     ]
@@ -2404,6 +2551,7 @@
     "action_label": "SET",
     "dataref_expression": "(sim/cockpit/electrical/gpu_amps:>0)&&(sim/operation/failures/rel_ex_power_on:0)",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -2418,6 +2566,7 @@
     "action_label": "SET",
     "dataref_expression": "(laminar/B738/toggle_switch/emer_exit_lights:1)&&(laminar/B738/button_switch/cover_position[9]:0)",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -2434,6 +2583,7 @@
     "action_label": "SET",
     "dataref_expression": "(sim/cockpit2/switches/navigation_lights_on:1)&&(sim/cockpit2/switches/strobe_lights_on:0)&&(sim/operation/failures/rel_lites_nav:0)",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -2450,6 +2600,7 @@
     "action_label": "SET",
     "dataref_expression": "(sim/cockpit2/switches/generic_lights_switch[1]:1)||(laminar/B738/toggle_switch/electric_hydro_pumps1_pos:0:1)||(laminar/B738/toggle_switch/electric_hydro_pumps2_pos:0:1)||(laminar/B738/toggle_switch/electric_hydro_pumps1_pos:1)||(laminar/B738/toggle_switch/electric_hydro_pumps2_pos:1)",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -2466,6 +2617,7 @@
     "action_label": "",
     "dataref_expression": "",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -2482,6 +2634,7 @@
     "action_label": "SET",
     "dataref_expression": "(sim/cockpit2/switches/generic_lights_switch[5]:1)||(sim/cockpit2/switches/generic_lights_switch[0]:1)||(sim/cockpit2/switches/generic_lights_switch[1]:1)||(laminar/B738/toggle_switch/electric_hydro_pumps1_pos:0:1)||(laminar/B738/toggle_switch/electric_hydro_pumps2_pos:0:1)||(laminar/B738/toggle_switch/electric_hydro_pumps1_pos:1)||(laminar/B738/toggle_switch/electric_hydro_pumps2_pos:1)",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -2498,6 +2651,7 @@
     "action_label": "CHECKED",
     "dataref_expression": "(sim/flightmodel/engine/ENGN_N1_[0]:>40)&&(laminar/B738/annunciator/takeoff_config:1)&&(sim/flightmodel/engine/ENGN_N1_[1]:>40)",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -2514,6 +2668,7 @@
     "action_label": "SET",
     "dataref_expression": "(laminar/B738/toggle_switch/irs_left:2)&&(laminar/B738/toggle_switch/irs_right:2)",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -2528,6 +2683,7 @@
     "action_label": "SET",
     "dataref_expression": "laminar/B738/toggle_switch/irs_dspl_sel:4",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -2544,6 +2700,7 @@
     "action_label": "DONE",
     "dataref_expression": "",
     "role": "",
+    "auto_check_rule": null,
     "attributes": [
       2
     ]
@@ -2560,6 +2717,7 @@
     "action_label": "DONE",
     "dataref_expression": "laminar/b738/fmodpack/fmod_play_cargo:0",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -2576,6 +2734,7 @@
     "action_label": "DONE",
     "dataref_expression": "laminar/b738/fmodpack/fmod_start_leg:1",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -2592,6 +2751,7 @@
     "action_label": "DONE",
     "dataref_expression": "",
     "role": "BOTH",
+    "auto_check_rule": null,
     "attributes": [
       2
     ]
@@ -2608,6 +2768,7 @@
     "action_label": "CHECKED",
     "dataref_expression": "",
     "role": "PF",
+    "auto_check_rule": null,
     "attributes": [
       2
     ]
@@ -2624,6 +2785,7 @@
     "action_label": "VERIFIED",
     "dataref_expression": "",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       2
     ]
@@ -2640,6 +2802,7 @@
     "action_label": "CHECKED",
     "dataref_expression": "",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       2,
       4
@@ -2657,6 +2820,7 @@
     "action_label": "OPTIONAL",
     "dataref_expression": "",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       2,
       4
@@ -2674,6 +2838,7 @@
     "action_label": "READBACK",
     "dataref_expression": "",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       2
     ]
@@ -2690,6 +2855,7 @@
     "action_label": "VERIFIED",
     "dataref_expression": "",
     "role": "C",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -2704,6 +2870,7 @@
     "action_label": "SET",
     "dataref_expression": "",
     "role": "C",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -2720,6 +2887,7 @@
     "action_label": "SET",
     "dataref_expression": "",
     "role": "C",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -2734,6 +2902,7 @@
     "action_label": "SET",
     "dataref_expression": "",
     "role": "C",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -2748,6 +2917,7 @@
     "action_label": "SET",
     "dataref_expression": "",
     "role": "C",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -2762,6 +2932,7 @@
     "action_label": "SET",
     "dataref_expression": "",
     "role": "C",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -2778,6 +2949,7 @@
     "action_label": "SET",
     "dataref_expression": "",
     "role": "C",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -2794,6 +2966,7 @@
     "action_label": "SET",
     "dataref_expression": "",
     "role": "C",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -2808,6 +2981,7 @@
     "action_label": "SET",
     "dataref_expression": "",
     "role": "C",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -2822,6 +2996,7 @@
     "action_label": "SET",
     "dataref_expression": "",
     "role": "C",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -2836,6 +3011,7 @@
     "action_label": "SET",
     "dataref_expression": "",
     "role": "C",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -2850,6 +3026,7 @@
     "action_label": "SET",
     "dataref_expression": "",
     "role": "C",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -2864,6 +3041,7 @@
     "action_label": "SET",
     "dataref_expression": "",
     "role": "C",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -2878,6 +3056,7 @@
     "action_label": "EXECUTED",
     "dataref_expression": "",
     "role": "C",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -2892,6 +3071,7 @@
     "action_label": "",
     "dataref_expression": "",
     "role": "",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -2906,6 +3086,7 @@
     "action_label": "",
     "dataref_expression": "",
     "role": "",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -2920,6 +3101,7 @@
     "action_label": "",
     "dataref_expression": "",
     "role": "",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -2934,6 +3116,7 @@
     "action_label": "",
     "dataref_expression": "",
     "role": "",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -2948,6 +3131,7 @@
     "action_label": "",
     "dataref_expression": "",
     "role": "",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -2962,6 +3146,7 @@
     "action_label": "",
     "dataref_expression": "",
     "role": "",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -2976,6 +3161,7 @@
     "action_label": "",
     "dataref_expression": "",
     "role": "",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -2992,6 +3178,7 @@
     "action_label": "",
     "dataref_expression": "",
     "role": "",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -3008,6 +3195,7 @@
     "action_label": "",
     "dataref_expression": "",
     "role": "",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -3024,6 +3212,7 @@
     "action_label": "",
     "dataref_expression": "",
     "role": "",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -3040,6 +3229,7 @@
     "action_label": "",
     "dataref_expression": "",
     "role": "",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -3054,6 +3244,7 @@
     "action_label": "",
     "dataref_expression": "",
     "role": "",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -3070,6 +3261,7 @@
     "action_label": "",
     "dataref_expression": "",
     "role": "",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -3084,6 +3276,7 @@
     "action_label": "",
     "dataref_expression": "",
     "role": "",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -3100,6 +3293,7 @@
     "action_label": "",
     "dataref_expression": "",
     "role": "",
+    "auto_check_rule": null,
     "attributes": [
       2
     ]
@@ -3116,6 +3310,7 @@
     "action_label": "",
     "dataref_expression": "",
     "role": "",
+    "auto_check_rule": null,
     "attributes": [
       2
     ]
@@ -3132,6 +3327,7 @@
     "action_label": "",
     "dataref_expression": "",
     "role": "PF",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -3146,6 +3342,7 @@
     "action_label": "",
     "dataref_expression": "",
     "role": "PF",
+    "auto_check_rule": null,
     "attributes": [
       2
     ]
@@ -3162,6 +3359,7 @@
     "action_label": "",
     "dataref_expression": "",
     "role": "PF",
+    "auto_check_rule": null,
     "attributes": [
       2
     ]
@@ -3178,6 +3376,7 @@
     "action_label": "",
     "dataref_expression": "",
     "role": "",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -3194,6 +3393,7 @@
     "action_label": "STARTED",
     "dataref_expression": "",
     "role": "",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -3208,6 +3408,7 @@
     "action_label": "STARTED",
     "dataref_expression": "",
     "role": "",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -3222,6 +3423,7 @@
     "action_label": "",
     "dataref_expression": "",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       2
     ]
@@ -3238,6 +3440,7 @@
     "action_label": "VERIFIED",
     "dataref_expression": "",
     "role": "BOTH",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -3252,6 +3455,7 @@
     "action_label": "SET",
     "dataref_expression": "",
     "role": "C",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -3266,6 +3470,7 @@
     "action_label": "SET",
     "dataref_expression": "laminar/B738/FMS/fmc_gw_app:>0",
     "role": "C",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -3280,6 +3485,7 @@
     "action_label": "DONE",
     "dataref_expression": "",
     "role": "C",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -3294,6 +3500,7 @@
     "action_label": "SET",
     "dataref_expression": "",
     "role": "C",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -3308,6 +3515,7 @@
     "action_label": "SET",
     "dataref_expression": "",
     "role": "C",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -3324,6 +3532,7 @@
     "action_label": "SET",
     "dataref_expression": "",
     "role": "C",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -3340,6 +3549,7 @@
     "action_label": "SET",
     "dataref_expression": "",
     "role": "C",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -3354,6 +3564,7 @@
     "action_label": "VERIFIED",
     "dataref_expression": "",
     "role": "C",
+    "auto_check_rule": null,
     "attributes": [
       3,
       4
@@ -3371,6 +3582,7 @@
     "action_label": "SET",
     "dataref_expression": "",
     "role": "C",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -3387,6 +3599,7 @@
     "action_label": "EXECUTED",
     "dataref_expression": "",
     "role": "C",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -3401,6 +3614,7 @@
     "action_label": "DONE",
     "dataref_expression": "",
     "role": "C",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -3415,6 +3629,7 @@
     "action_label": "DONE",
     "dataref_expression": "",
     "role": "C",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -3429,6 +3644,7 @@
     "action_label": "SET",
     "dataref_expression": "",
     "role": "C",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -3445,6 +3661,7 @@
     "action_label": "SET",
     "dataref_expression": "",
     "role": "C",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -3461,6 +3678,7 @@
     "action_label": "SELECTED",
     "dataref_expression": "",
     "role": "C",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -3475,6 +3693,7 @@
     "action_label": "SET",
     "dataref_expression": "laminar/B738/FMS/takeoff_flaps:>0",
     "role": "C",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -3489,6 +3708,7 @@
     "action_label": "SET",
     "dataref_expression": "laminar/B738/tab/cg_pos:{laminar/B738/FMS/fmc_cg}-0.05|{laminar/B738/FMS/fmc_cg}+0.05",
     "role": "C",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -3503,6 +3723,7 @@
     "action_label": "SELECTED",
     "dataref_expression": "",
     "role": "C",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -3519,6 +3740,7 @@
     "action_label": "SET",
     "dataref_expression": "",
     "role": "C",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -3535,6 +3757,7 @@
     "action_label": "SET",
     "dataref_expression": "",
     "role": "C",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -3551,6 +3774,7 @@
     "action_label": "SET",
     "dataref_expression": "(laminar/B738/FMS/v1_set:>0)&&(laminar/B738/FMS/vr_set:>0)&&(laminar/B738/FMS/v2_set:>0)",
     "role": "C",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -3565,6 +3789,7 @@
     "action_label": "SET",
     "dataref_expression": "",
     "role": "C",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -3581,6 +3806,7 @@
     "action_label": "",
     "dataref_expression": "",
     "role": "PF",
+    "auto_check_rule": null,
     "attributes": [
       3,
       4
@@ -3598,6 +3824,7 @@
     "action_label": "",
     "dataref_expression": "",
     "role": "PF",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -3612,6 +3839,7 @@
     "action_label": "",
     "dataref_expression": "",
     "role": "PF",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -3626,6 +3854,7 @@
     "action_label": "",
     "dataref_expression": "",
     "role": "PF",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -3640,6 +3869,7 @@
     "action_label": "",
     "dataref_expression": "",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       2
     ]
@@ -3656,6 +3886,7 @@
     "action_label": "",
     "dataref_expression": "",
     "role": "PF",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -3670,6 +3901,7 @@
     "action_label": "",
     "dataref_expression": "",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -3684,6 +3916,7 @@
     "action_label": "",
     "dataref_expression": "",
     "role": "PF",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -3698,6 +3931,7 @@
     "action_label": "",
     "dataref_expression": "",
     "role": "PF",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -3712,6 +3946,7 @@
     "action_label": "",
     "dataref_expression": "",
     "role": "PF",
+    "auto_check_rule": null,
     "attributes": [
       2
     ]
@@ -3728,6 +3963,7 @@
     "action_label": "",
     "dataref_expression": "",
     "role": "PF",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -3742,6 +3978,7 @@
     "action_label": "",
     "dataref_expression": "",
     "role": "PF",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -3756,6 +3993,7 @@
     "action_label": "SET",
     "dataref_expression": "(laminar/B738/air/r_pack_pos:1)",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       8
     ]
@@ -3772,6 +4010,7 @@
     "action_label": "SET",
     "dataref_expression": "laminar/B738/air/isolation_valve_pos:0",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       8
     ]
@@ -3788,6 +4027,7 @@
     "action_label": "SET",
     "dataref_expression": "(laminar/B738/air/l_pack_pos:1)",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       8
     ]
@@ -3804,6 +4044,7 @@
     "action_label": "SET",
     "dataref_expression": "(laminar/B738/toggle_switch/bleed_air_1_pos:0)",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       8
     ]
@@ -3820,6 +4061,7 @@
     "action_label": "CHECKED",
     "dataref_expression": "(sim/cockpit/engine/APU_running:1)&&(laminar/B738/toggle_switch/bleed_air_apu_pos:1)",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       8
     ]
@@ -3836,6 +4078,7 @@
     "action_label": "SET",
     "dataref_expression": "(laminar/B738/toggle_switch/bleed_air_2_pos:0)",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       8
     ]
@@ -3852,6 +4095,7 @@
     "action_label": "CHECKED",
     "dataref_expression": "sim/cockpit/engine/APU_running:1",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       8
     ]
@@ -3868,6 +4112,7 @@
     "action_label": "SET",
     "dataref_expression": "(laminar/B738/toggle_switch/bleed_air_2_pos:1)",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       8
     ]
@@ -3884,6 +4129,7 @@
     "action_label": "SET",
     "dataref_expression": "(laminar/B738/toggle_switch/bleed_air_apu_pos:0)",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       8
     ]
@@ -3900,6 +4146,7 @@
     "action_label": "SET",
     "dataref_expression": "(laminar/B738/toggle_switch/bleed_air_1_pos:1)",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       8
     ]
@@ -3916,6 +4163,7 @@
     "action_label": "SET",
     "dataref_expression": "laminar/B738/air/l_pack_pos:>0",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       8
     ]
@@ -3932,6 +4180,7 @@
     "action_label": "SET",
     "dataref_expression": "laminar/B738/air/isolation_valve_pos:1",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       8
     ]
@@ -3948,6 +4197,7 @@
     "action_label": "SET",
     "dataref_expression": "laminar/B738/air/r_pack_pos:>0",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       8
     ]
@@ -3964,6 +4214,7 @@
     "action_label": "SET",
     "dataref_expression": "sim/cockpit/engine/APU_N1:0",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       8
     ]
@@ -3980,6 +4231,7 @@
     "action_label": "SET",
     "dataref_expression": "(laminar/B738/ice/wing_heat_pos:1)",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       7,
       9
@@ -3997,6 +4249,7 @@
     "action_label": "SET",
     "dataref_expression": "(laminar/B738/ice/eng1_heat_pos:1)&&(laminar/B738/ice/eng2_heat_pos:1)",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       7,
       9
@@ -4014,6 +4267,7 @@
     "action_label": "CHECKED",
     "dataref_expression": "sim/cockpit2/controls/flap_ratio:0",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       9
     ]
@@ -4030,6 +4284,7 @@
     "action_label": "DONE",
     "dataref_expression": "",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       7
     ]
@@ -4046,6 +4301,7 @@
     "action_label": "SET",
     "dataref_expression": "laminar/B738/engine/starter2_pos:0",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       7
     ]
@@ -4062,6 +4318,7 @@
     "action_label": "SET",
     "dataref_expression": "laminar/B738/engine/mixture_ratio2:1",
     "role": "C",
+    "auto_check_rule": null,
     "attributes": [
       7
     ]
@@ -4078,6 +4335,7 @@
     "action_label": "SET",
     "dataref_expression": "laminar/B738/engine/starter1_pos:0",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       7
     ]
@@ -4094,6 +4352,7 @@
     "action_label": "SET",
     "dataref_expression": "laminar/B738/engine/mixture_ratio2:1",
     "role": "C",
+    "auto_check_rule": null,
     "attributes": [
       7
     ]
@@ -4110,6 +4369,7 @@
     "action_label": "SET",
     "dataref_expression": "(sim/cockpit2/electrical/generator_on[0]:1)&&(sim/operation/failures/rel_genera0:0)&&(sim/cockpit2/electrical/generator_on[1]:1)&&(sim/operation/failures/rel_genera1:0)",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       7
     ]
@@ -4126,6 +4386,7 @@
     "action_label": "SET",
     "dataref_expression": "",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       7
     ]
@@ -4142,6 +4403,7 @@
     "action_label": "CHECKED",
     "dataref_expression": "",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       7
     ]
@@ -4158,6 +4420,7 @@
     "action_label": "CHECKED",
     "dataref_expression": "sim/cockpit2/controls/flap_ratio:0",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       4,
       7
@@ -4175,6 +4438,7 @@
     "action_label": "TESTED",
     "dataref_expression": "laminar/B738/annunciator/gpws:1",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       12
     ]
@@ -4191,6 +4455,7 @@
     "action_label": "TESTED",
     "dataref_expression": "(laminar/B738/push_botton/cargo_fire_test:>0)&&(laminar/B738/annunciator/cargo_fire:>0)&&(laminar/B738/annunciator/fire_bell_annun:1)",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       12
     ]
@@ -4207,6 +4472,7 @@
     "action_label": "TESTED",
     "dataref_expression": "laminar/B738/toggle_switch/extinguisher_circuit_test:-1",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       12
     ]
@@ -4223,6 +4489,7 @@
     "action_label": "TESTED",
     "dataref_expression": "(laminar/B738/push_botton/cargo_fire_test:>0)&&(laminar/B738/annunciator/cargo_fire:>0)&&(laminar/B738/annunciator/fire_bell_annun:1)",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       12
     ]
@@ -4239,6 +4506,7 @@
     "action_label": "DONE",
     "dataref_expression": "",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       12
     ]
@@ -4255,6 +4523,7 @@
     "action_label": "TESTED",
     "dataref_expression": "",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       12
     ]
@@ -4271,6 +4540,7 @@
     "action_label": "SET",
     "dataref_expression": "(laminar/B738/ice/eng1_heat_pos:1)&&(laminar/B738/ice/eng2_heat_pos:1)",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       9
     ]
@@ -4287,6 +4557,7 @@
     "action_label": "SET",
     "dataref_expression": "(laminar/B738/ice/wing_heat_pos:1)",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       9
     ]
@@ -4303,6 +4574,7 @@
     "action_label": "CHECKED",
     "dataref_expression": "sim/cockpit2/controls/flap_ratio:0",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       7
     ]
@@ -4319,6 +4591,7 @@
     "action_label": "VOID",
     "dataref_expression": "",
     "role": "",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -4333,6 +4606,7 @@
     "action_label": "SET",
     "dataref_expression": "laminar/B738/hud/hdg_bug_tape:-1|1",
     "role": "",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -4347,6 +4621,7 @@
     "action_label": "CHECKED",
     "dataref_expression": "laminar/B738/engine/starter1_pos:1",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       3,
       13
@@ -4364,6 +4639,7 @@
     "action_label": "CHECKED",
     "dataref_expression": "laminar/B738/engine/starter2_pos:1",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       3,
       7
@@ -4381,6 +4657,7 @@
     "action_label": "CHECKED",
     "dataref_expression": "laminar/B738/engine/starter1_pos:1",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       3,
       7
@@ -4398,6 +4675,7 @@
     "action_label": "WAIT",
     "dataref_expression": "",
     "role": "PF",
+    "auto_check_rule": null,
     "attributes": [
       7
     ]
@@ -4414,6 +4692,7 @@
     "action_label": "SET",
     "dataref_expression": "laminar/B738/engine/mixture_ratio2:1",
     "role": "PF",
+    "auto_check_rule": null,
     "attributes": [
       13
     ]
@@ -4430,6 +4709,7 @@
     "action_label": "SET",
     "dataref_expression": "(laminar/B738/air/l_pack_pos:0)&&(laminar/B738/air/r_pack_pos:0)",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -4444,6 +4724,7 @@
     "action_label": "SET",
     "dataref_expression": "laminar/B738/air/r_pack_pos:>0",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": []
   }
 },
@@ -4458,6 +4739,7 @@
     "action_label": "SET",
     "dataref_expression": "(sim/cockpit2/switches/generic_lights_switch[0]:1)",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -4474,6 +4756,7 @@
     "action_label": "SET",
     "dataref_expression": "(sim/cockpit2/controls/parking_brake_ratio:1)",
     "role": "PF",
+    "auto_check_rule": null,
     "attributes": [
       7
     ]
@@ -4490,6 +4773,7 @@
     "action_label": "SET",
     "dataref_expression": "(laminar/B738/FMS/takeoff_flaps_set:1)",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       7
     ]
@@ -4506,6 +4790,7 @@
     "action_label": "SET",
     "dataref_expression": "(sim/cockpit2/controls/parking_brake_ratio:0)",
     "role": "PF",
+    "auto_check_rule": null,
     "attributes": [
       4,
       7
@@ -4523,6 +4808,7 @@
     "action_label": "COMPLETE",
     "dataref_expression": "",
     "role": "PF",
+    "auto_check_rule": null,
     "attributes": [
       4,
       7
@@ -4540,6 +4826,7 @@
     "action_label": "DONE",
     "dataref_expression": "",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       2,
       13
@@ -4557,6 +4844,7 @@
     "action_label": "DONE",
     "dataref_expression": "",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       2,
       7
@@ -4574,6 +4862,7 @@
     "action_label": "DONE",
     "dataref_expression": "",
     "role": "C",
+    "auto_check_rule": null,
     "attributes": [
       7
     ]
@@ -4590,6 +4879,7 @@
     "action_label": "SET",
     "dataref_expression": "",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       4,
       7
@@ -4607,6 +4897,7 @@
     "action_label": "CHECKED",
     "dataref_expression": "",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       4,
       7
@@ -4624,6 +4915,7 @@
     "action_label": "CHECKED",
     "dataref_expression": "",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       4,
       7
@@ -4641,6 +4933,7 @@
     "action_label": "SET",
     "dataref_expression": "",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       4,
       7
@@ -4658,6 +4951,7 @@
     "action_label": "SET",
     "dataref_expression": "",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       4,
       7
@@ -4675,6 +4969,7 @@
     "action_label": "SET",
     "dataref_expression": "",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       4,
       7
@@ -4692,6 +4987,7 @@
     "action_label": "SET",
     "dataref_expression": "",
     "role": "FO",
+    "auto_check_rule": null,
     "attributes": [
       4,
       7
@@ -4709,6 +5005,7 @@
     "action_label": "SET",
     "dataref_expression": "(sim/cockpit2/controls/parking_brake_ratio:1)",
     "role": "PF",
+    "auto_check_rule": null,
     "attributes": [
       7
     ]
@@ -4725,6 +5022,7 @@
     "action_label": "DONE",
     "dataref_expression": "",
     "role": "PF",
+    "auto_check_rule": null,
     "attributes": [
       4,
       7
@@ -4742,6 +5040,7 @@
     "action_label": "CHECKED",
     "dataref_expression": "",
     "role": "PM",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -4758,6 +5057,7 @@
     "action_label": "DONE",
     "dataref_expression": "",
     "role": "PF",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
@@ -4774,6 +5074,7 @@
     "action_label": "DONE",
     "dataref_expression": "",
     "role": "PF",
+    "auto_check_rule": null,
     "attributes": [
       4
     ]
