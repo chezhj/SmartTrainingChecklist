@@ -15,6 +15,7 @@ from checklist.simbrief import SimBrief
 from .models import (
     Attribute,
     FlightInfo,
+    FlightItemState,
     FlightSession,
     FlightSessionAttribute,
     Procedure,
@@ -72,6 +73,33 @@ def _get_user_default_ids(user_profile) -> set[int]:
         UserAttributeDefault.objects.filter(user_profile=user_profile)
         .values_list("attribute_id", flat=True)
     )
+
+
+def _update_session_attributes(
+    flight_session,
+    selected_attr_ids: list[int],
+    ofp_attr_ids: set[int],
+    user_default_ids: set[int],
+) -> None:
+    """Apply attribute form choices to an existing FlightSession in-place."""
+    selected_set = set(selected_attr_ids)
+    for attr in Attribute.objects.all():
+        is_active = (
+            attr.id in selected_set
+            or attr.id in ofp_attr_ids
+            or attr.id in user_default_ids
+        )
+        if attr.id in ofp_attr_ids:
+            source = "ofp_derived"
+        elif attr.id in selected_set and attr.id not in user_default_ids:
+            source = "pilot_override"
+        else:
+            source = "user_default"
+        FlightSessionAttribute.objects.update_or_create(
+            flight_session=flight_session,
+            attribute=attr,
+            defaults={"is_active": is_active, "source": source},
+        )
 
 
 def _create_flight_session(
@@ -185,8 +213,12 @@ def profile_view(request):
             request.session["sb_error"] = getattr(sb, "error_message", "") or ""
         return redirect("checklist:start")
 
-    # ── POST: start_checklist ────────────────────────────────────────────────
-    if request.method == "POST" and request.POST.get("action") == "start_checklist":
+    # ── POST: start_checklist / new_flight ───────────────────────────────────
+    if request.method == "POST" and request.POST.get("action") in (
+        "start_checklist",
+        "new_flight",
+    ):
+        action = request.POST.get("action")
         selected_ids = [int(x) for x in request.POST.getlist("attributes")]
         ofp_ids = set(request.session.get("sb_derived_attribs", []))
 
@@ -205,12 +237,43 @@ def profile_view(request):
             except UserProfile.DoesNotExist:
                 pass
 
-        simbrief_data = _get_simbrief_session_data(request)
-
-        # Deactivate any previous session for this browser
-        _deactivate_current_session(request)
-
         user_default_ids = _get_user_default_ids(user_profile)
+
+        # Continue existing session in-place (unless pilot explicitly chose New Flight)
+        if action == "start_checklist":
+            existing_key = request.session.get("flight_session_key")
+            if existing_key:
+                try:
+                    existing_session = FlightSession.objects.get(
+                        session_key=existing_key, is_active=True
+                    )
+                    _update_session_attributes(
+                        existing_session, selected_ids, ofp_ids, user_default_ids
+                    )
+                    if (
+                        existing_session.pilot_role != pilot_role
+                        or existing_session.pilot_function != pilot_function
+                    ):
+                        existing_session.pilot_role = pilot_role
+                        existing_session.pilot_function = pilot_function
+                        existing_session.save(update_fields=["pilot_role", "pilot_function"])
+                    request.session["dual_mode"] = dual_mode
+                    if dual_mode:
+                        request.session["pilot_role"] = pilot_role
+                        request.session["captain_role"] = "C"
+                    active_slug = existing_session.active_phase
+                    if active_slug:
+                        return redirect("checklist:detail", slug=active_slug)
+                    first_proc = Procedure.objects.order_by("step").first()
+                    if first_proc:
+                        return redirect("checklist:detail", slug=first_proc.slug)
+                    return redirect("checklist:index")
+                except FlightSession.DoesNotExist:
+                    pass  # fall through to create new
+
+        # Create a new session (new_flight action, or start_checklist with no active session)
+        simbrief_data = _get_simbrief_session_data(request)
+        _deactivate_current_session(request)
 
         session = _create_flight_session(
             user_profile=user_profile,
@@ -258,6 +321,30 @@ def profile_view(request):
             pass
     user_default_ids = _get_user_default_ids(user_profile)
 
+    # Check for an active flight session
+    active_flight_session = None
+    existing_key = request.session.get("flight_session_key")
+    if existing_key:
+        try:
+            active_flight_session = FlightSession.objects.get(
+                session_key=existing_key, is_active=True
+            )
+        except FlightSession.DoesNotExist:
+            pass
+
+    # Pre-checked attribute IDs: use current session state when continuing,
+    # otherwise fall back to OFP-derived + user defaults.
+    if active_flight_session:
+        prechecked_ids = set(
+            FlightSessionAttribute.objects.filter(
+                flight_session=active_flight_session, is_active=True
+            ).values_list("attribute_id", flat=True)
+        )
+        dual_mode_active = active_flight_session.pilot_role != "SOLO"
+    else:
+        prechecked_ids = ofp_derived_ids | user_default_ids
+        dual_mode_active = request.session.get("dual_mode", False)
+
     context = {
         "attributes": attributes,
         "simbrief_id": simbrief_id,
@@ -269,6 +356,9 @@ def profile_view(request):
         "sb_error": request.session.get("sb_error", ""),
         "ofp_derived_ids": ofp_derived_ids,
         "user_default_ids": user_default_ids,
+        "active_flight_session": active_flight_session,
+        "prechecked_ids": prechecked_ids,
+        "dual_mode_active": dual_mode_active,
     }
     return TemplateResponse(request, "checklist/profile.html", context)
 
@@ -345,6 +435,14 @@ def procedure_detail(request, slug=None, pk=None):
     except FlightSession.DoesNotExist:
         return HttpResponseRedirect(reverse("checklist:start"))
 
+    # Advance the active_phase frontier (forward-only)
+    current_frontier = Procedure.objects.filter(slug=flight_session.active_phase).first()
+    current_frontier_step = current_frontier.step if current_frontier else 0
+    if procedure2view.step > current_frontier_step:
+        flight_session.active_phase = procedure2view.slug
+        flight_session.save(update_fields=["active_phase"])
+    active_phase_step = max(procedure2view.step, current_frontier_step)
+
     active_attr_ids = list(
         FlightSessionAttribute.objects.filter(
             flight_session=flight_session, is_active=True
@@ -369,6 +467,21 @@ def procedure_detail(request, slug=None, pk=None):
         )
         check_items.append(item)
 
+    # Annotate items with server-side checked state (one query)
+    state_map = {
+        s.checklist_item_id: s
+        for s in FlightItemState.objects.filter(
+            flight_session=flight_session,
+            checklist_item_id__in=[item.id for item in check_items],
+        )
+    }
+    for item in check_items:
+        state = state_map.get(item.id)
+        if state and state.status == "checked":
+            item.checked_css = f"ci-{state.source}"  # "ci-manual" or "ci-auto"
+        else:
+            item.checked_css = ""  # skipped/pending/absent → unchecked
+
     time_finished = time()
     query_time = round(time_finished - time_start, 3)
 
@@ -392,6 +505,7 @@ def procedure_detail(request, slug=None, pk=None):
         "proctime": query_time,
         "all_procedures": Procedure.objects.order_by("step"),
         "flight_session": flight_session,
+        "active_phase_step": active_phase_step,
     }
     return TemplateResponse(request, "checklist/detail.html", context)
 

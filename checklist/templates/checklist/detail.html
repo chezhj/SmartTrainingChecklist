@@ -40,7 +40,7 @@
 
         <div class="proc-sidebar-list">
             {% for proc in all_procedures %}
-                <a class="proc-sidebar-item {% if proc.slug == procedure.slug %}active{% endif %}"
+                <a class="proc-sidebar-item {% if proc.slug == procedure.slug %}active{% elif proc.step < active_phase_step %}done{% endif %}"
                    href="{% url 'checklist:detail' proc.slug %}">
                     <span class="proc-sidebar-name">{{ proc.title }}</span>
                     <span class="proc-sidebar-badge">{{ proc.step }}</span>
@@ -88,14 +88,14 @@
             <div class="section-label js-hidden" id="label-completed">Completed</div>
 
             {% for item in check_items %}
-                <div class="ci {% if item.lowlight %}lowlight{% endif %}"
+                <div class="ci {% if item.lowlight %}lowlight{% endif %} {{ item.checked_css }}"
                      data-item-id="{{ item.id }}"
                      role="button"
                      tabindex="0"
                      aria-label="{{ item.item }}">
                     <div class="ci-inner">
 
-                        <div class="check-box"></div>
+                        <div class="check-box">{% if item.checked_css == 'ci-manual' %}<svg width="11" height="8" viewBox="0 0 11 8" fill="none" aria-hidden="true"><path d="M1 3.5L4 6.5L10 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>{% endif %}</div>
 
                         <div class="ci-content">
                             <div class="ci-name">{{ item.item }}</div>
@@ -153,10 +153,11 @@
         + '<path d="M1 3.5L4 6.5L10 1" stroke="white" stroke-width="1.8"'
         + ' stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
-    var totalItems   = document.querySelectorAll('.ci').length;
-    var checkedCount = 0;
-    var autoCount    = 0;
-    var manualCount  = 0;
+    var totalItems       = document.querySelectorAll('.ci').length;
+    var checkedCount     = document.querySelectorAll('.ci-manual, .ci-auto').length;
+    var autoCount        = document.querySelectorAll('.ci-auto').length;
+    var manualCount      = document.querySelectorAll('.ci-manual').length;
+    var allowAutoAdvance = false; /* true only after an item is checked this visit */
     var CIRCUMFERENCE = 119.4;
 
     function updateProgress() {
@@ -190,25 +191,65 @@
         /* Completed label */
         var labelEl = document.getElementById('label-completed');
         if (labelEl) labelEl.classList.toggle('js-hidden', checkedCount === 0);
+
+        /* Auto-advance when all items are checked this visit */
+        {% if nextproc %}
+        if (allowAutoAdvance && checkedCount === totalItems && totalItems > 0) {
+            setTimeout(function () {
+                window.location.href = '{% url "checklist:detail" nextproc.slug %}';
+            }, 600);
+        }
+        {% endif %}
     }
 
-    /* ── Toggle a row between unchecked and ci-manual ── */
+    /* ── CSRF token helper ── */
+    function getCsrf() {
+        var el = document.querySelector('[name=csrfmiddlewaretoken]');
+        return el ? el.value : '';
+    }
+
+    /* ── Toggle a row: optimistic update + persist to DB ── */
     function toggleItem(row) {
-        var box = row.querySelector('.check-box');
+        var box    = row.querySelector('.check-box');
+        var itemId = parseInt(row.dataset.itemId, 10);
 
         if (row.classList.contains('ci-manual')) {
             row.classList.remove('ci-manual');
             box.innerHTML = '';
             checkedCount = Math.max(0, checkedCount - 1);
             manualCount  = Math.max(0, manualCount  - 1);
+            updateProgress();
+            fetch('/api/uncheck/', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCsrf()},
+                body: JSON.stringify({check_item_id: itemId})
+            }).catch(function () {
+                row.classList.add('ci-manual');
+                box.innerHTML = TICK_SVG;
+                checkedCount += 1;
+                manualCount  += 1;
+                updateProgress();
+            });
         } else if (!row.classList.contains('ci-auto')) {
             row.classList.add('ci-manual');
             box.innerHTML = TICK_SVG;
             checkedCount += 1;
             manualCount  += 1;
+            allowAutoAdvance = true;
+            updateProgress();
+            fetch('/api/check/', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCsrf()},
+                body: JSON.stringify({check_item_id: itemId})
+            }).catch(function () {
+                row.classList.remove('ci-manual');
+                box.innerHTML = '';
+                checkedCount = Math.max(0, checkedCount - 1);
+                manualCount  = Math.max(0, manualCount  - 1);
+                updateProgress();
+            });
         }
-
-        updateProgress();
+        // ci-auto: no action — auto state cleared only by session reset (Phase 2)
     }
 
     /* ── Wire up click / keyboard handlers ── */
@@ -247,6 +288,7 @@
         if (!alreadyCounted) {
             checkedCount += 1;
             if (source === 'AUTO') { autoCount += 1; } else { manualCount += 1; }
+            allowAutoAdvance = true;
             updateProgress();
         }
     };

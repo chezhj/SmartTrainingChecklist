@@ -9,7 +9,7 @@ from unittest.mock import MagicMock, Mock, patch
 from django.db.models.query import QuerySet
 from django.test import RequestFactory, TestCase
 
-from checklist.models import Attribute, FlightSession, FlightSessionAttribute, UserAttributeDefault
+from checklist.models import Attribute, FlightItemState, FlightSession, FlightSessionAttribute, UserAttributeDefault
 from checklist.tests.testFactories import (
     AttributeFactory,
     CheckItemFactory,
@@ -225,6 +225,88 @@ class TestProfileView(ViewTestCase):
         fsa = FlightSessionAttribute.objects.get(flight_session=session, attribute=pref_attr)
         self.assertEqual(fsa.source, "user_default")
 
+    def test_start_checklist_with_active_session_continues_in_place(self):
+        """start_checklist action reuses the existing session instead of creating a new one."""
+        attr = Attribute.objects.create(title="ExistingAttr", order=10)
+        request = self.create_request_with_session(
+            "/", request_data={"action": "start_checklist"}
+        )
+        request.user = Mock(is_authenticated=False)
+        # Seed an existing active session
+        existing = FlightSession.objects.create()
+        request.session["flight_session_key"] = existing.session_key
+        request.session.save()
+
+        profile_view(request)
+
+        existing.refresh_from_db()
+        self.assertTrue(existing.is_active)
+        self.assertEqual(FlightSession.objects.filter(is_active=True).count(), 1)
+
+    def test_new_flight_action_deactivates_existing_and_creates_new(self):
+        request = self.create_request_with_session(
+            "/", request_data={"action": "new_flight"}
+        )
+        request.user = Mock(is_authenticated=False)
+        existing = FlightSession.objects.create()
+        request.session["flight_session_key"] = existing.session_key
+        request.session.save()
+
+        profile_view(request)
+
+        existing.refresh_from_db()
+        self.assertFalse(existing.is_active)
+        new_key = request.session.get("flight_session_key")
+        self.assertNotEqual(new_key, existing.session_key)
+
+    def test_continue_updates_attributes_in_place(self):
+        attr = Attribute.objects.create(title="NewAttr", order=11)
+        existing = FlightSession.objects.create()
+        FlightSessionAttribute.objects.create(
+            flight_session=existing, attribute=attr, is_active=False
+        )
+        request = self.create_request_with_session(
+            "/",
+            request_data={"action": "start_checklist", "attributes": str(attr.id)},
+        )
+        request.user = Mock(is_authenticated=False)
+        request.session["flight_session_key"] = existing.session_key
+        request.session.save()
+
+        profile_view(request)
+
+        fsa = FlightSessionAttribute.objects.get(flight_session=existing, attribute=attr)
+        self.assertTrue(fsa.is_active)
+
+    def test_profile_get_with_active_session_passes_prechecked_ids(self):
+        attr = Attribute.objects.create(title="ActiveAttr", order=12)
+        existing = FlightSession.objects.create()
+        FlightSessionAttribute.objects.create(
+            flight_session=existing, attribute=attr, is_active=True
+        )
+        request = self.create_request_with_session("/")
+        request.user = Mock(is_authenticated=False)
+        request.session["flight_session_key"] = existing.session_key
+        request.session.save()
+
+        response = profile_view(request)
+
+        self.assertIn(attr.id, response.context_data["prechecked_ids"])
+        self.assertIsNotNone(response.context_data["active_flight_session"])
+
+    def test_profile_get_without_active_session_prechecked_ids_from_defaults(self):
+        from django.contrib.auth.models import User
+        user = User.objects.create_user(username="pilot5", password="pass!")
+        pref_attr = Attribute.objects.create(title="Default5", order=13, is_user_preference=True)
+        UserAttributeDefault.objects.create(user_profile=user.profile, attribute=pref_attr)
+
+        request = self.create_request_with_session("/")
+        request.user = user
+        response = profile_view(request)
+
+        self.assertIn(pref_attr.id, response.context_data["prechecked_ids"])
+        self.assertIsNone(response.context_data["active_flight_session"])
+
     def test_start_checklist_dual_mode_sets_pilot_role(self):
         request = self.create_request_with_session(
             "/",
@@ -416,6 +498,111 @@ class TestProcedureDetailView(ViewTestCase):
                 self.assertEqual(response.status_code, 200)
                 for item in response.context_data["check_items"]:
                     self.assertEqual(item.lowlight, expected_lowlight)
+
+
+    def test_procedure_detail_advances_active_phase(self):
+        attr = AttributeFactory()
+        item = CheckItemFactory(attributes=[attr])
+        request = self.create_request_with_session("/")
+        session = _create_session_with_flight(request, [attr.id])
+        # active_phase starts at the first procedure created by _create_flight_session
+        # which is empty here — set it to a lower step so visiting item.procedure advances it
+        session.active_phase = ""
+        session.save()
+
+        procedure_detail(request, slug=item.procedure.slug)
+
+        session.refresh_from_db()
+        self.assertEqual(session.active_phase, item.procedure.slug)
+
+    def test_procedure_detail_does_not_retreat_active_phase(self):
+        attr = AttributeFactory()
+        item_low = CheckItemFactory(attributes=[attr])
+        item_high = CheckItemFactory(attributes=[attr])
+        # Ensure distinct steps
+        item_low.procedure.step = 1
+        item_low.procedure.save()
+        item_high.procedure.step = 10
+        item_high.procedure.save()
+
+        request = self.create_request_with_session("/")
+        session = _create_session_with_flight(request, [attr.id])
+        session.active_phase = item_high.procedure.slug
+        session.save()
+
+        # Navigate to a lower-step procedure
+        procedure_detail(request, slug=item_low.procedure.slug)
+
+        session.refresh_from_db()
+        self.assertEqual(session.active_phase, item_high.procedure.slug)
+
+    def test_procedure_detail_active_phase_step_in_context(self):
+        attr = AttributeFactory()
+        item = CheckItemFactory(attributes=[attr])
+        request = self.create_request_with_session("/")
+        _create_session_with_flight(request, [attr.id])
+
+        response = procedure_detail(request, slug=item.procedure.slug)
+
+        self.assertIn("active_phase_step", response.context_data)
+
+    def test_checked_manual_item_annotated_with_ci_manual(self):
+        from datetime import datetime, timezone
+        attr = AttributeFactory()
+        item = CheckItemFactory(attributes=[attr])
+        request = self.create_request_with_session("/")
+        session = _create_session_with_flight(request, [attr.id])
+        FlightItemState.objects.create(
+            flight_session=session,
+            checklist_item=item,
+            status="checked",
+            source="manual",
+            checked_at=datetime.now(tz=timezone.utc),
+        )
+        response = procedure_detail(request, slug=item.procedure.slug)
+        items = response.context_data["check_items"]
+        self.assertEqual(items[0].checked_css, "ci-manual")
+
+    def test_checked_auto_item_annotated_with_ci_auto(self):
+        from datetime import datetime, timezone
+        attr = AttributeFactory()
+        item = CheckItemFactory(attributes=[attr])
+        request = self.create_request_with_session("/")
+        session = _create_session_with_flight(request, [attr.id])
+        FlightItemState.objects.create(
+            flight_session=session,
+            checklist_item=item,
+            status="checked",
+            source="auto",
+            checked_at=datetime.now(tz=timezone.utc),
+        )
+        response = procedure_detail(request, slug=item.procedure.slug)
+        items = response.context_data["check_items"]
+        self.assertEqual(items[0].checked_css, "ci-auto")
+
+    def test_unchecked_item_annotated_with_empty_string(self):
+        attr = AttributeFactory()
+        item = CheckItemFactory(attributes=[attr])
+        request = self.create_request_with_session("/")
+        _create_session_with_flight(request, [attr.id])
+        response = procedure_detail(request, slug=item.procedure.slug)
+        items = response.context_data["check_items"]
+        self.assertEqual(items[0].checked_css, "")
+
+    def test_skipped_item_annotated_as_unchecked(self):
+        attr = AttributeFactory()
+        item = CheckItemFactory(attributes=[attr])
+        request = self.create_request_with_session("/")
+        session = _create_session_with_flight(request, [attr.id])
+        FlightItemState.objects.create(
+            flight_session=session,
+            checklist_item=item,
+            status="skipped",
+            source=None,
+        )
+        response = procedure_detail(request, slug=item.procedure.slug)
+        items = response.context_data["check_items"]
+        self.assertEqual(items[0].checked_css, "")
 
 
 class TestUpdateSessionRole(TestCase):

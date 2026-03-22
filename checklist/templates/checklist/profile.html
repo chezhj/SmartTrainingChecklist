@@ -67,7 +67,7 @@
             <div class="attr-row">
                 <label class="attr-toggle-wrap">
                     <input type="checkbox" name="dual_mode" class="attr-checkbox"
-                           {% if request.session.dual_mode %}checked{% endif %}>
+                           {% if dual_mode_active %}checked{% endif %}>
                     <span class="attr-toggle"></span>
                 </label>
                 <div class="attr-info">
@@ -82,7 +82,7 @@
                 <label class="attr-toggle-wrap">
                     <input type="checkbox" name="attributes" value="{{ attr.id }}"
                            class="attr-checkbox"
-                           {% if attr.id in ofp_derived_ids or attr.id in user_default_ids %}checked{% endif %}>
+                           {% if attr.id in prechecked_ids %}checked{% endif %}>
                     <span class="attr-toggle"></span>
                 </label>
                 <div class="attr-info">
@@ -99,8 +99,13 @@
         </div>
 
         <div class="profile-actions">
+            {% if active_flight_session %}
+            <button type="button" class="profile-btn" id="new-flight-btn">New Flight</button>
+            <button type="submit" class="profile-btn profile-btn--primary">Continue →</button>
+            {% else %}
             <button type="button" class="profile-btn" id="clear-btn">Clear</button>
             <button type="submit" class="profile-btn profile-btn--primary">Start Checklist →</button>
+            {% endif %}
         </div>
     </form>
 
@@ -113,10 +118,19 @@
 </div>
 
 <script>
+{% if active_flight_session %}
+document.getElementById('new-flight-btn').addEventListener('click', function () {
+    if (confirm('Start a new flight? All progress in the current flight will be lost.')) {
+        document.querySelector('#start-form [name=action]').value = 'new_flight';
+        document.getElementById('start-form').submit();
+    }
+});
+{% else %}
 document.getElementById('clear-btn').addEventListener('click', function () {
     if (confirm('Are you sure you want to reset your flight? All progress will be lost.')) {
         document.getElementById('clear-form').submit();
     }
 });
+{% endif %}
 </script>
 {% endblock content %}
