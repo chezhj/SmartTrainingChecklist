@@ -14,6 +14,8 @@ from django.contrib.auth.forms import (
 )
 from django.shortcuts import redirect, render
 
+from checklist.models import Attribute, UserAttributeDefault
+
 _INPUT = {"class": "auth-input"}
 
 
@@ -108,9 +110,25 @@ class SimBriefIdForm(forms.Form):
         return value
 
 
+def _preference_context(profile):
+    """Return context keys needed to render the My Preferences section."""
+    preference_attributes = Attribute.objects.filter(
+        is_user_preference=True
+    ).order_by("order")
+    active_ids = set(
+        UserAttributeDefault.objects.filter(user_profile=profile)
+        .values_list("attribute_id", flat=True)
+    )
+    return {
+        "preference_attributes": preference_attributes,
+        "active_preference_ids": active_ids,
+    }
+
+
 @login_required
 def account_profile_view(request):
     profile = request.user.profile
+
     if request.method == "POST" and request.POST.get("action") == "update_simbrief":
         form = SimBriefIdForm(request.POST)
         if form.is_valid():
@@ -120,16 +138,29 @@ def account_profile_view(request):
         return render(
             request,
             "registration/profile.html",
-            {"simbrief_form": form, "profile": profile},
+            {"simbrief_form": form, "profile": profile, **_preference_context(profile)},
         )
+
+    if request.method == "POST" and request.POST.get("action") == "update_preferences":
+        selected_ids = {int(x) for x in request.POST.getlist("preference_attr")}
+        valid_ids = set(
+            Attribute.objects.filter(is_user_preference=True).values_list("id", flat=True)
+        )
+        # Replace all defaults: delete existing, bulk-create new
+        UserAttributeDefault.objects.filter(user_profile=profile).delete()
+        UserAttributeDefault.objects.bulk_create([
+            UserAttributeDefault(user_profile=profile, attribute_id=attr_id)
+            for attr_id in selected_ids & valid_ids
+        ])
+        return redirect("checklist:account")
+
     return render(
         request,
         "registration/profile.html",
         {
-            "simbrief_form": SimBriefIdForm(
-                initial={"simbrief_id": profile.simbrief_id}
-            ),
+            "simbrief_form": SimBriefIdForm(initial={"simbrief_id": profile.simbrief_id}),
             "profile": profile,
+            **_preference_context(profile),
         },
     )
 

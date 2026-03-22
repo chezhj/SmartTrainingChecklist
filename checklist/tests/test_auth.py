@@ -195,6 +195,104 @@ class TestAccountProfileView(TestCase):
         self.assertEqual(self.user.profile.simbrief_id, "")  # unchanged
 
 
+class TestUserPreferences(TestCase):
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="pilot", password="Securepass123!"
+        )
+        self.url = reverse("checklist:account")
+        from checklist.models import Attribute
+        self.pref_attr = Attribute.objects.create(
+            title="Optional", order=10, is_user_preference=True
+        )
+        self.non_pref_attr = Attribute.objects.create(
+            title="Anti-Ice Normal", order=20, is_user_preference=False
+        )
+
+    def test_get_context_contains_preference_attributes(self):
+        self.client.force_login(self.user)
+        response = self.client.get(self.url)
+        self.assertIn("preference_attributes", response.context)
+        pref_ids = [a.id for a in response.context["preference_attributes"]]
+        self.assertIn(self.pref_attr.id, pref_ids)
+        self.assertNotIn(self.non_pref_attr.id, pref_ids)
+
+    def test_get_context_active_preference_ids_empty_by_default(self):
+        self.client.force_login(self.user)
+        response = self.client.get(self.url)
+        self.assertEqual(response.context["active_preference_ids"], set())
+
+    def test_post_saves_checked_preferences(self):
+        from checklist.models import UserAttributeDefault
+        self.client.force_login(self.user)
+        response = self.client.post(
+            self.url,
+            {"action": "update_preferences", "preference_attr": str(self.pref_attr.id)},
+        )
+        self.assertRedirects(response, self.url)
+        self.assertTrue(
+            UserAttributeDefault.objects.filter(
+                user_profile=self.user.profile, attribute=self.pref_attr
+            ).exists()
+        )
+
+    def test_post_replaces_existing_defaults(self):
+        from checklist.models import Attribute, UserAttributeDefault
+        other_pref = Attribute.objects.create(
+            title="Safety Test", order=11, is_user_preference=True
+        )
+        UserAttributeDefault.objects.create(
+            user_profile=self.user.profile, attribute=other_pref
+        )
+        self.client.force_login(self.user)
+        self.client.post(
+            self.url,
+            {"action": "update_preferences", "preference_attr": str(self.pref_attr.id)},
+        )
+        self.assertTrue(
+            UserAttributeDefault.objects.filter(
+                user_profile=self.user.profile, attribute=self.pref_attr
+            ).exists()
+        )
+        self.assertFalse(
+            UserAttributeDefault.objects.filter(
+                user_profile=self.user.profile, attribute=other_pref
+            ).exists()
+        )
+
+    def test_post_empty_clears_all_defaults(self):
+        from checklist.models import UserAttributeDefault
+        UserAttributeDefault.objects.create(
+            user_profile=self.user.profile, attribute=self.pref_attr
+        )
+        self.client.force_login(self.user)
+        self.client.post(self.url, {"action": "update_preferences"})
+        self.assertEqual(
+            UserAttributeDefault.objects.filter(user_profile=self.user.profile).count(), 0
+        )
+
+    def test_post_ignores_non_preference_attributes(self):
+        from checklist.models import UserAttributeDefault
+        self.client.force_login(self.user)
+        self.client.post(
+            self.url,
+            {"action": "update_preferences", "preference_attr": str(self.non_pref_attr.id)},
+        )
+        self.assertEqual(
+            UserAttributeDefault.objects.filter(user_profile=self.user.profile).count(), 0
+        )
+
+    def test_saved_defaults_shown_as_active_on_get(self):
+        from checklist.models import UserAttributeDefault
+        UserAttributeDefault.objects.create(
+            user_profile=self.user.profile, attribute=self.pref_attr
+        )
+        self.client.force_login(self.user)
+        response = self.client.get(self.url)
+        self.assertIn(self.pref_attr.id, response.context["active_preference_ids"])
+
+
 class TestDeleteAccountView(TestCase):
 
     def setUp(self):

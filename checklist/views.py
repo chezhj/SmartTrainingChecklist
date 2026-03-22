@@ -18,6 +18,7 @@ from .models import (
     FlightSession,
     FlightSessionAttribute,
     Procedure,
+    UserAttributeDefault,
     UserProfile,
 )
 
@@ -63,10 +64,21 @@ def _derive_ofp_attrib_ids(sb_temp: str, sb_bleed: str) -> set[int]:
 # ── Flight session creation ───────────────────────────────────────────────────
 
 
+def _get_user_default_ids(user_profile) -> set[int]:
+    """Return the set of Attribute IDs saved as defaults for the given user profile."""
+    if user_profile is None:
+        return set()
+    return set(
+        UserAttributeDefault.objects.filter(user_profile=user_profile)
+        .values_list("attribute_id", flat=True)
+    )
+
+
 def _create_flight_session(
     user_profile,
     selected_attr_ids: list[int],
     ofp_attr_ids: set[int],
+    user_default_ids: set[int],
     simbrief_data: dict | None,
     pilot_role: str,
     pilot_function: str,
@@ -75,6 +87,10 @@ def _create_flight_session(
     """
     Create a FlightSession with FlightSessionAttribute rows (one per Attribute)
     and optionally a FlightInfo record.
+
+    Seeding priority (highest wins for is_active):
+      OFP-derived  >  pilot selected on form  >  user saved default
+    Source field reflects the origin of the value.
     """
     # Determine initial active_phase from first procedure if not supplied
     if not active_phase:
@@ -92,10 +108,14 @@ def _create_flight_session(
     all_attributes = Attribute.objects.all()
     session_attrs = []
     for attr in all_attributes:
-        is_active = attr.id in selected_attr_ids or attr.id in ofp_attr_ids
+        is_active = (
+            attr.id in selected_attr_ids
+            or attr.id in ofp_attr_ids
+            or attr.id in user_default_ids
+        )
         if attr.id in ofp_attr_ids:
             source = "ofp_derived"
-        elif attr.id in selected_attr_ids:
+        elif attr.id in selected_attr_ids and attr.id not in user_default_ids:
             source = "pilot_override"
         else:
             source = "user_default"
@@ -142,7 +162,7 @@ def profile_view(request):
     # ── POST: clear ──────────────────────────────────────────────────────────
     if request.method == "POST" and request.POST.get("action") == "clear":
         _deactivate_current_session(request)
-        request.session.flush()
+        _clear_flight_session_keys(request)
         return redirect("checklist:start")
 
     # ── POST: get_plan ───────────────────────────────────────────────────────
@@ -190,10 +210,13 @@ def profile_view(request):
         # Deactivate any previous session for this browser
         _deactivate_current_session(request)
 
+        user_default_ids = _get_user_default_ids(user_profile)
+
         session = _create_flight_session(
             user_profile=user_profile,
             selected_attr_ids=selected_ids,
             ofp_attr_ids=ofp_ids,
+            user_default_ids=user_default_ids,
             simbrief_data=simbrief_data,
             pilot_role=pilot_role,
             pilot_function=pilot_function,
@@ -227,6 +250,14 @@ def profile_view(request):
     ofp_derived_ids = set(request.session.get("sb_derived_attribs", []))
     attributes = Attribute.objects.filter(show=True).order_by("order")
 
+    user_profile = None
+    if request.user.is_authenticated:
+        try:
+            user_profile = request.user.profile
+        except UserProfile.DoesNotExist:
+            pass
+    user_default_ids = _get_user_default_ids(user_profile)
+
     context = {
         "attributes": attributes,
         "simbrief_id": simbrief_id,
@@ -237,6 +268,7 @@ def profile_view(request):
         "sb_flaps": request.session.get("sb_flaps", ""),
         "sb_error": request.session.get("sb_error", ""),
         "ofp_derived_ids": ofp_derived_ids,
+        "user_default_ids": user_default_ids,
     }
     return TemplateResponse(request, "checklist/profile.html", context)
 
@@ -253,10 +285,34 @@ def _get_simbrief_session_data(request) -> dict | None:
     return None
 
 
+# All session keys that belong to a flight — cleared on reset, never on logout.
+_FLIGHT_SESSION_KEYS = [
+    "flight_session_key",
+    "dual_mode",
+    "pilot_role",
+    "captain_role",
+    "sb_origin",
+    "sb_destination",
+    "sb_runway",
+    "sb_temp",
+    "sb_flaps",
+    "sb_bleed",
+    "sb_derived_attribs",
+    "sb_simbrief_id",
+    "sb_error",
+]
+
+
 def _deactivate_current_session(request):
     key = request.session.get("flight_session_key")
     if key:
         FlightSession.objects.filter(session_key=key).update(is_active=False)
+
+
+def _clear_flight_session_keys(request):
+    """Remove all flight-state keys from the Django session, preserving auth state."""
+    for k in _FLIGHT_SESSION_KEYS:
+        request.session.pop(k, None)
 
 
 # ── Checklist views ───────────────────────────────────────────────────────────

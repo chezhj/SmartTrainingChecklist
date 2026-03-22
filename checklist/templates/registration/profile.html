@@ -60,6 +60,35 @@
     </div>
 </div>
 
+{# My Preferences card — only shown when preference attributes exist #}
+{% if preference_attributes %}
+<div class="auth-card">
+    <div class="auth-card-section">
+        <div class="auth-section-label">My Preferences</div>
+        <p class="auth-pref-hint">These will be pre-selected when you start a new flight.</p>
+        <form method="post" action="{% url 'checklist:account' %}">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="update_preferences">
+            {% for attr in preference_attributes %}
+            <div class="attr-row">
+                <label class="attr-toggle-wrap">
+                    <input type="checkbox" name="preference_attr" value="{{ attr.id }}"
+                           class="attr-checkbox"
+                           {% if attr.id in active_preference_ids %}checked{% endif %}>
+                    <span class="attr-toggle"></span>
+                </label>
+                <div class="attr-info">
+                    <span class="attr-name">{{ attr.title }}</span>
+                    <span class="attr-desc">{{ attr.description }}</span>
+                </div>
+            </div>
+            {% endfor %}
+            <button class="auth-btn" type="submit">Save preferences</button>
+        </form>
+    </div>
+</div>
+{% endif %}
+
 {# Sign out + danger zone #}
 <div class="auth-card">
     <div class="auth-card-section">

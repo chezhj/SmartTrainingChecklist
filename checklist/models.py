@@ -104,6 +104,25 @@ class UserProfile(models.Model):
         return f"Profile({self.user.username})"
 
 
+class UserAttributeDefault(models.Model):
+    """
+    User's preferred default for a user-preference attribute.
+    Presence of a row means the attribute is active by default.
+    Lazy — absence means inactive (no row needed).
+    """
+
+    user_profile = models.ForeignKey(
+        UserProfile, on_delete=models.CASCADE, related_name="attribute_defaults"
+    )
+    attribute = models.ForeignKey("Attribute", on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = [("user_profile", "attribute")]
+
+    def __str__(self) -> str:
+        return f"{self.user_profile}/{self.attribute.title}"
+
+
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def _create_user_profile(sender, instance, created, **kwargs):
     if created:
@@ -231,6 +250,10 @@ class Attribute(models.Model):
     order = models.PositiveIntegerField()
     description = models.TextField(blank=True)
     show = models.BooleanField(default="True")
+    is_user_preference = models.BooleanField(
+        default=False,
+        help_text="Show this attribute on the account profile page as a saveable default.",
+    )
     over_ruled_by = models.ForeignKey(
         "self", on_delete=models.SET_NULL, blank=True, null=True
     )

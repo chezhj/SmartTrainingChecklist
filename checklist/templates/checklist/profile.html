@@ -82,7 +82,7 @@
                 <label class="attr-toggle-wrap">
                     <input type="checkbox" name="attributes" value="{{ attr.id }}"
                            class="attr-checkbox"
-                           {% if attr.id in ofp_derived_ids %}checked{% endif %}>
+                           {% if attr.id in ofp_derived_ids or attr.id in user_default_ids %}checked{% endif %}>
                     <span class="attr-toggle"></span>
                 </label>
                 <div class="attr-info">

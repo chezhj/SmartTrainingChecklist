@@ -9,7 +9,7 @@ from unittest.mock import MagicMock, Mock, patch
 from django.db.models.query import QuerySet
 from django.test import RequestFactory, TestCase
 
-from checklist.models import Attribute, FlightSession, FlightSessionAttribute
+from checklist.models import Attribute, FlightSession, FlightSessionAttribute, UserAttributeDefault
 from checklist.tests.testFactories import (
     AttributeFactory,
     CheckItemFactory,
@@ -108,24 +108,40 @@ class TestProfileView(ViewTestCase):
         self.assertEqual(request.session["sb_origin"], "EHAM")
         self.assertEqual(request.session["sb_destination"], "LFPG")
 
-    def test_clear_action_flushes_session(self):
+    def test_clear_action_removes_flight_keys(self):
+        flight_data = {
+            "flight_session_key": "ABCD-1234",
+            "dual_mode": True,
+            "pilot_role": "PF",
+            "captain_role": "C",
+            "sb_origin": "EHAM",
+            "sb_destination": "LFPG",
+            "sb_runway": "18R",
+            "sb_temp": "+4°C",
+            "sb_flaps": "Flap 5",
+            "sb_bleed": "ON",
+            "sb_derived_attribs": [1, 2],
+            "sb_simbrief_id": "12345",
+            "sb_error": "",
+        }
         request = self.create_request_with_session(
-            "/", request_data={"action": "clear"}
+            "/", session_data=flight_data, request_data={"action": "clear"}
         )
         request.user = Mock(is_authenticated=False)
-
-        class _TrackFlush(dict):
-            flushed = False
-            def flush(self):
-                self.flushed = True
-                self.clear()
-            def cycle_key(self):
-                pass
-
-        tracked = _TrackFlush(request.session)
-        request.session = tracked
         profile_view(request)
-        self.assertTrue(tracked.flushed)
+
+        for key in flight_data:
+            self.assertNotIn(key, request.session)
+
+    def test_clear_action_preserves_auth_session(self):
+        from django.contrib.auth.models import User
+        user = User.objects.create_user(username="clearpilot", password="pass!")
+        self.client.force_login(user)
+        self.assertIn("_auth_user_id", self.client.session)
+
+        self.client.post("/", {"action": "clear"})
+
+        self.assertIn("_auth_user_id", self.client.session)
 
     def test_start_checklist_creates_flight_session(self):
         attr = Attribute.objects.create(title="Optional", order=1)
@@ -159,6 +175,55 @@ class TestProfileView(ViewTestCase):
             ).values_list("attribute_id", flat=True)
         )
         self.assertIn(attr.id, active_ids)
+
+    def test_user_default_ids_prechecked_on_get(self):
+        from django.contrib.auth.models import User
+        user = User.objects.create_user(username="pilot2", password="pass!")
+        pref_attr = Attribute.objects.create(title="Optional", order=5, is_user_preference=True)
+        UserAttributeDefault.objects.create(user_profile=user.profile, attribute=pref_attr)
+
+        request = self.create_request_with_session("/")
+        request.user = user
+        response = profile_view(request)
+        self.assertIn(pref_attr.id, response.context_data["user_default_ids"])
+
+    def test_start_checklist_seeds_user_defaults_as_active(self):
+        from django.contrib.auth.models import User
+        user = User.objects.create_user(username="pilot3", password="pass!")
+        pref_attr = Attribute.objects.create(title="Safety Test", order=6, is_user_preference=True)
+        UserAttributeDefault.objects.create(user_profile=user.profile, attribute=pref_attr)
+
+        request = self.create_request_with_session(
+            "/", request_data={"action": "start_checklist"}
+        )
+        request.user = user
+        profile_view(request)
+
+        key = request.session["flight_session_key"]
+        session = FlightSession.objects.get(session_key=key)
+        self.assertTrue(
+            FlightSessionAttribute.objects.filter(
+                flight_session=session, attribute=pref_attr, is_active=True
+            ).exists()
+        )
+
+    def test_start_checklist_user_default_source_is_user_default(self):
+        from django.contrib.auth.models import User
+        user = User.objects.create_user(username="pilot4", password="pass!")
+        pref_attr = Attribute.objects.create(title="Optional B", order=7, is_user_preference=True)
+        UserAttributeDefault.objects.create(user_profile=user.profile, attribute=pref_attr)
+
+        request = self.create_request_with_session(
+            "/",
+            request_data={"action": "start_checklist", "attributes": str(pref_attr.id)},
+        )
+        request.user = user
+        profile_view(request)
+
+        key = request.session["flight_session_key"]
+        session = FlightSession.objects.get(session_key=key)
+        fsa = FlightSessionAttribute.objects.get(flight_session=session, attribute=pref_attr)
+        self.assertEqual(fsa.source, "user_default")
 
     def test_start_checklist_dual_mode_sets_pilot_role(self):
         request = self.create_request_with_session(
