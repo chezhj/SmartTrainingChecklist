@@ -15,6 +15,10 @@ class TestSimBriefInit(unittest.TestCase):
         with open(dummy_path, "r", encoding="utf-8") as file:
             self.dummy_xml = file.read()
 
+        # Load the cool_situation XML file if present
+        cool_path = Path(__file__).parent / "cool_situation.xml"
+        self.freeze_xml = cool_path.read_bytes() if cool_path.exists() else None
+
     @patch("checklist.simbrief.SimBrief.parse_xml")
     def test_parse_xml_not_called_without_pilot_id(self, mock_parse_xml):
         """
@@ -171,6 +175,35 @@ class TestSimBriefInit(unittest.TestCase):
         self.assertEqual(
             str(context.exception), "Pilot ID is required to generate the XML URL."
         )
+
+
+    def test_freeze_xml_parses_temperature(self):
+        """freeze.xml (7°C) should parse correctly and produce no error."""
+        if self.freeze_xml is None:
+            self.skipTest("freeze.xml not found")
+        sb = SimBrief(pilot_id="test")
+        sb.parse_xml(self.freeze_xml)
+        self.assertIsNone(sb.error_message)
+        self.assertEqual(sb.origin, "EKAH")
+        self.assertEqual(sb.temperature, "7°C")
+        self.assertEqual(sb.bleed_setting, "ON")
+
+    def test_freeze_xml_derives_zero_to_ten_not_anti_ice(self):
+        """
+        7°C (from freeze.xml) is in the ZeroToTen range (0 < t < 11).
+        Anti-Ice Normal only fires below 0°C.
+        """
+        if self.freeze_xml is None:
+            self.skipTest("freeze.xml not found")
+        sb = SimBrief(pilot_id="test")
+        sb.parse_xml(self.freeze_xml)
+        # At 7°C: 0 < 7 < 11 → ZeroToTen fires; bleed ON → Short Runway does NOT fire
+        self.assertEqual(sb.temperature, "7°C")
+        self.assertEqual(sb.bleed_setting, "ON")
+        # Verify temperature is in ZeroToTen range
+        temp = float(sb.temperature.replace("°C", "").strip())
+        self.assertTrue(0 < temp < 11, f"Expected 0 < {temp} < 11 for ZeroToTen")
+        self.assertFalse(temp < 0, f"Expected temp NOT < 0 (Anti-Ice should not fire at {temp}°C)")
 
 
 class TestSimBriefHeaders(unittest.TestCase):

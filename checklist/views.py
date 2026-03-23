@@ -170,6 +170,10 @@ def _create_flight_session(
             origin_icao=simbrief_data.get("origin", ""),
             destination_icao=simbrief_data.get("destination", ""),
             departure_runway=simbrief_data.get("runway", ""),
+            flaps_setting=simbrief_data.get("flaps", ""),
+            callsign=simbrief_data.get("callsign", ""),
+            block_fuel_kg=simbrief_data.get("block_fuel"),
+            finres_altn_kg=simbrief_data.get("finres_altn"),
             oat=oat,
             ofp_loaded=True,
         )
@@ -180,45 +184,64 @@ def _create_flight_session(
 # ── Profile / flight setup view ───────────────────────────────────────────────
 
 
+def _fetch_and_cache_simbrief(request, simbrief_id: str) -> None:
+    """Fetch a SimBrief plan and write all OFP session keys including derived conditions."""
+    sb = SimBrief(simbrief_id)
+    sb.fetch_data()
+    request.session["sb_origin"] = getattr(sb, "origin", "") or ""
+    request.session["sb_destination"] = getattr(sb, "destination", "") or ""
+    request.session["sb_runway"] = getattr(sb, "runway", "") or ""
+    request.session["sb_temp"] = getattr(sb, "temperature", "") or ""
+    request.session["sb_flaps"] = getattr(sb, "flap_setting", "") or ""
+    request.session["sb_bleed"] = getattr(sb, "bleed_setting", "") or ""
+    request.session["sb_callsign"] = getattr(sb, "callsign", "") or ""
+    request.session["sb_block_fuel"] = getattr(sb, "block_fuel", None)
+    request.session["sb_finres_altn"] = getattr(sb, "finres_altn", None)
+    request.session["sb_simbrief_id"] = simbrief_id
+    derived = _derive_ofp_attrib_ids(
+        request.session["sb_temp"], request.session["sb_bleed"]
+    )
+    request.session["sb_derived_attribs"] = list(derived)
+    request.session["sb_error"] = getattr(sb, "error_message", "") or ""
+
+
 def profile_view(request):
     """
-    Flight setup page. Handles three POST actions:
+    Flight setup page. Handles POST actions:
       get_plan        — fetch SimBrief OFP, cache in session, re-render
-      start_checklist — create FlightSession + redirect to checklist index
-      clear           — deactivate current session + flush Django session
+      start_checklist — create FlightSession + redirect to checklist
+      clear           — deactivate session, re-fetch SimBrief from profile, return to setup
+      new_flight      — deactivate session, return to setup for reconfiguration
     """
     # ── POST: clear ──────────────────────────────────────────────────────────
     if request.method == "POST" and request.POST.get("action") == "clear":
         _deactivate_current_session(request)
         _clear_flight_session_keys(request)
+        simbrief_id = ""
+        if request.user.is_authenticated:
+            try:
+                simbrief_id = request.user.profile.simbrief_id or ""
+            except UserProfile.DoesNotExist:
+                pass
+        if simbrief_id:
+            _fetch_and_cache_simbrief(request, simbrief_id)
         return redirect("checklist:start")
 
     # ── POST: get_plan ───────────────────────────────────────────────────────
     if request.method == "POST" and request.POST.get("action") == "get_plan":
         simbrief_id = request.POST.get("simbrief_id", "").strip()
         if simbrief_id:
-            sb = SimBrief(simbrief_id)
-            sb.fetch_data()
-            request.session["sb_origin"] = getattr(sb, "origin", "") or ""
-            request.session["sb_destination"] = getattr(sb, "destination", "") or ""
-            request.session["sb_runway"] = getattr(sb, "runway", "") or ""
-            request.session["sb_temp"] = getattr(sb, "temperature", "") or ""
-            request.session["sb_flaps"] = getattr(sb, "flap_setting", "") or ""
-            request.session["sb_bleed"] = getattr(sb, "bleed_setting", "") or ""
-            request.session["sb_simbrief_id"] = simbrief_id
-            derived = _derive_ofp_attrib_ids(
-                request.session["sb_temp"], request.session["sb_bleed"]
-            )
-            request.session["sb_derived_attribs"] = list(derived)
-            request.session["sb_error"] = getattr(sb, "error_message", "") or ""
+            _fetch_and_cache_simbrief(request, simbrief_id)
         return redirect("checklist:start")
 
-    # ── POST: start_checklist / new_flight ───────────────────────────────────
-    if request.method == "POST" and request.POST.get("action") in (
-        "start_checklist",
-        "new_flight",
-    ):
-        action = request.POST.get("action")
+    # ── POST: new_flight — deactivate current session, return to setup ───────
+    if request.method == "POST" and request.POST.get("action") == "new_flight":
+        _deactivate_current_session(request)
+        _clear_flight_session_keys(request)
+        return redirect("checklist:start")
+
+    # ── POST: start_checklist ─────────────────────────────────────────────────
+    if request.method == "POST" and request.POST.get("action") == "start_checklist":
         selected_ids = [int(x) for x in request.POST.getlist("attributes")]
         ofp_ids = set(request.session.get("sb_derived_attribs", []))
 
@@ -239,10 +262,9 @@ def profile_view(request):
 
         user_default_ids = _get_user_default_ids(user_profile)
 
-        # Continue existing session in-place (unless pilot explicitly chose New Flight)
-        if action == "start_checklist":
-            existing_key = request.session.get("flight_session_key")
-            if existing_key:
+        # Continue existing session in-place when one is already active
+        existing_key = request.session.get("flight_session_key")
+        if existing_key:
                 try:
                     existing_session = FlightSession.objects.get(
                         session_key=existing_key, is_active=True
@@ -271,7 +293,7 @@ def profile_view(request):
                 except FlightSession.DoesNotExist:
                     pass  # fall through to create new
 
-        # Create a new session (new_flight action, or start_checklist with no active session)
+        # Create a new session (no active session found)
         simbrief_data = _get_simbrief_session_data(request)
         _deactivate_current_session(request)
 
@@ -311,7 +333,9 @@ def profile_view(request):
     simbrief_id = request.session.get("sb_simbrief_id", simbrief_id)
 
     ofp_derived_ids = set(request.session.get("sb_derived_attribs", []))
-    attributes = Attribute.objects.filter(show=True).order_by("order")
+    # Conditions: flight-specific (not user preference); General: user preference defaults
+    conditions_attrs = Attribute.objects.filter(show=True, is_user_preference=False).order_by("order")
+    general_attrs = Attribute.objects.filter(show=True, is_user_preference=True).order_by("order")
 
     user_profile = None
     if request.user.is_authenticated:
@@ -332,27 +356,32 @@ def profile_view(request):
         except FlightSession.DoesNotExist:
             pass
 
-    # Pre-checked attribute IDs: use current session state when continuing,
-    # otherwise fall back to OFP-derived + user defaults.
+    # Pre-checked attribute IDs.
+    # OFP-derived IDs are always included so loading a new plan updates the toggles.
     if active_flight_session:
-        prechecked_ids = set(
+        session_active_ids = set(
             FlightSessionAttribute.objects.filter(
                 flight_session=active_flight_session, is_active=True
             ).values_list("attribute_id", flat=True)
         )
+        prechecked_ids = session_active_ids | ofp_derived_ids
         dual_mode_active = active_flight_session.pilot_role != "SOLO"
     else:
         prechecked_ids = ofp_derived_ids | user_default_ids
         dual_mode_active = request.session.get("dual_mode", False)
 
     context = {
-        "attributes": attributes,
+        "conditions_attrs": conditions_attrs,
+        "general_attrs": general_attrs,
         "simbrief_id": simbrief_id,
         "sb_origin": request.session.get("sb_origin", ""),
         "sb_destination": request.session.get("sb_destination", ""),
         "sb_runway": request.session.get("sb_runway", ""),
         "sb_temp": request.session.get("sb_temp", ""),
         "sb_flaps": request.session.get("sb_flaps", ""),
+        "sb_callsign": request.session.get("sb_callsign", ""),
+        "sb_block_fuel": request.session.get("sb_block_fuel"),
+        "sb_finres_altn": request.session.get("sb_finres_altn"),
         "sb_error": request.session.get("sb_error", ""),
         "ofp_derived_ids": ofp_derived_ids,
         "user_default_ids": user_default_ids,
@@ -371,6 +400,9 @@ def _get_simbrief_session_data(request) -> dict | None:
             "runway": request.session.get("sb_runway", ""),
             "temp": request.session.get("sb_temp", ""),
             "flaps": request.session.get("sb_flaps", ""),
+            "callsign": request.session.get("sb_callsign", ""),
+            "block_fuel": request.session.get("sb_block_fuel"),
+            "finres_altn": request.session.get("sb_finres_altn"),
         }
     return None
 
@@ -387,6 +419,9 @@ _FLIGHT_SESSION_KEYS = [
     "sb_temp",
     "sb_flaps",
     "sb_bleed",
+    "sb_callsign",
+    "sb_block_fuel",
+    "sb_finres_altn",
     "sb_derived_attribs",
     "sb_simbrief_id",
     "sb_error",

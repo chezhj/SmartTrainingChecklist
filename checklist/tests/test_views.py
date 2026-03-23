@@ -74,6 +74,9 @@ class TestProfileView(ViewTestCase):
         mock_sb.temperature = "+4°C"
         mock_sb.flap_setting = "Flap 5"
         mock_sb.bleed_setting = "ON"
+        mock_sb.callsign = "KLM123"
+        mock_sb.block_fuel = 6500
+        mock_sb.finres_altn = 2400
         mock_sb.error_message = None
         mock_sb_cls.return_value = mock_sb
 
@@ -96,6 +99,9 @@ class TestProfileView(ViewTestCase):
         mock_sb.temperature = "+4°C"
         mock_sb.flap_setting = "Flap 5"
         mock_sb.bleed_setting = "ON"
+        mock_sb.callsign = "KLM123"
+        mock_sb.block_fuel = 6500
+        mock_sb.finres_altn = 2400
         mock_sb.error_message = None
         mock_sb_cls.return_value = mock_sb
 
@@ -103,10 +109,17 @@ class TestProfileView(ViewTestCase):
             "/", request_data={"action": "get_plan", "simbrief_id": "12345"}
         )
         request.user = Mock(is_authenticated=False)
+        # Create the attribute that should be derived for +4°C (ZeroToTen range)
+        zero_to_ten = Attribute.objects.create(title="ZeroToTen", order=1)
         profile_view(request)
 
         self.assertEqual(request.session["sb_origin"], "EHAM")
         self.assertEqual(request.session["sb_destination"], "LFPG")
+        self.assertEqual(request.session["sb_callsign"], "KLM123")
+        self.assertEqual(request.session["sb_block_fuel"], 6500)
+        self.assertEqual(request.session["sb_finres_altn"], 2400)
+        # +4°C is in the ZeroToTen range (0 < t < 11) → ZeroToTen attribute should be derived
+        self.assertIn(zero_to_ten.pk, request.session["sb_derived_attribs"])
 
     def test_clear_action_removes_flight_keys(self):
         flight_data = {
