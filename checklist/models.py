@@ -177,7 +177,10 @@ class FlightInfo(models.Model):
     oat = models.IntegerField(null=True, blank=True, help_text="Outside air temp °C")
     departure_runway = models.CharField(max_length=10, blank=True)
     departure_stand = models.CharField(max_length=20, blank=True)
-    fuel_on_board = models.IntegerField(null=True, blank=True, help_text="kg")
+    flaps_setting = models.CharField(max_length=10, blank=True)
+    callsign = models.CharField(max_length=20, blank=True)
+    block_fuel_kg = models.IntegerField(null=True, blank=True, help_text="Block fuel in kg (plan_ramp)")
+    finres_altn_kg = models.IntegerField(null=True, blank=True, help_text="FINRES+ALTN in kg")
     ofp_loaded = models.BooleanField(default=False)
 
     def __str__(self) -> str:
@@ -247,6 +250,11 @@ class Attribute(models.Model):
     """
 
     title = models.CharField(max_length=30)
+    label = models.CharField(
+        max_length=60,
+        blank=True,
+        help_text="User-facing display name shown in UI. Falls back to title when blank.",
+    )
     order = models.PositiveIntegerField()
     description = models.TextField(blank=True)
     show = models.BooleanField(default="True")

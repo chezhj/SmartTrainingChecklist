@@ -43,19 +43,31 @@ UserProfile
 
 ## Existing Model: `Attribute`
 
-**Do not modify this model.** It is used by the existing xChecklist export feature.
+The constraint "do not modify" applies specifically to `dataref_expression` and
+`show_expression` on `CheckItem` / `Procedure`, which are used by xChecklist export.
+**Display-only fields may be added to `Attribute`** without affecting any existing
+functionality. The `title` field is still used for internal logic (OFP derivation,
+`get_action_label`); the new `label` field is UI-only.
 
 ```python
 class Attribute(models.Model):
-    title = models.CharField(max_length=30)
+    title = models.CharField(max_length=30)       # internal key — do not change values
+    label = models.CharField(max_length=60, blank=True)  # UI display name; falls back to title
     order = models.PositiveIntegerField()
     description = models.TextField(blank=True)
     show = models.BooleanField(default=True)
+    is_user_preference = models.BooleanField(default=False)
     over_ruled_by = models.ForeignKey(
         "self", on_delete=models.SET_NULL, blank=True, null=True
     )
     btn_color = ColorField(default="#194D33")
 ```
+
+Setup page splits visible attributes into two columns:
+- **Conditions** (left): `show=True, is_user_preference=False` — flight-specific
+- **General** (right): `show=True, is_user_preference=True` — preference defaults
+
+`Online` attribute changed to `is_user_preference=True` so it appears in General.
 
 ### Overrule Logic
 
@@ -149,15 +161,18 @@ but **mutable** — real conditions often differ from planned ones.
 | `oat`              | IntegerField, nullable   | Outside air temp °C — drives anti-ice suggestion |
 | `departure_runway` | CharField, nullable      | e.g. `18R`                                       |
 | `departure_stand`  | CharField, nullable      | Drives pushback suggestion                       |
-| `fuel_on_board`    | IntegerField, nullable   | kg                                               |
+| `flaps_setting`    | CharField, nullable      | Flap setting from TLR (e.g. `25`)                |
+| `callsign`         | CharField, nullable      | ATC callsign from `atc/callsign`                 |
+| `block_fuel_kg`    | IntegerField, nullable   | Block fuel kg from `fuel/plan_ramp`              |
+| `finres_altn_kg`   | IntegerField, nullable   | FINRES+ALTN kg (`fuel/reserve` + `fuel/alternate_burn`) |
 | `ofp_loaded`       | BooleanField             | True if seeded from SimBrief OFP                 |
 
 **Notes:**
 
-- Changes to `FlightInfo` trigger **attribute suggestions** surfaced in the UI —
-  not automatic changes. Pilot confirms or ignores each suggestion.
-- Confirmed suggestion → updates `FlightSessionAttribute` (respecting overrule logic)
-  → partial checklist rebuild
+- OFP-derived conditions (anti-ice, ZeroToTen, short runway) are **auto-applied**
+  to `FlightSessionAttribute` when SimBrief is loaded — no pilot confirmation step.
+  The pilot can toggle them off manually after the fact.
+- `departure_stand` and pushback suggestion are not yet wired to SimBrief parsing.
 
 ---
 
@@ -272,8 +287,14 @@ Django responds to each plugin POST with a watch list — the set of datarefs to
 
 ## Session Lifecycle
 
+**UI entry point:** `/` serves the "New Flight" setup page.
+If a `FlightSession` is already active in the Django session, the view offers
+"Continue" (update existing) or "New Flight" (deactivate + create fresh).
+On "Continue" / "Start Checklist", the view creates the `FlightSession` and
+redirects to the first (or active) procedure.
+
 ```
-1. Browser: "Start Live Session"
+1. Browser: "Start Checklist" / "Continue" on New Flight page
    → FlightSession created, session_key generated
    → FlightSessionAttribute rows created eagerly (one per Attribute)
      → seeded from UserProfile defaults or Attribute.default_value for anon

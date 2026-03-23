@@ -4,8 +4,9 @@
   "pk": 2,
   "fields": {
     "title": "Online",
+    "label": "Online (ATC)",
     "order": 2,
-    "description": "Select this for items that are needed only if you fly online (ATC)",
+    "description": "Items needed only when flying on a network (VATSIM, IVAO)",
     "show": true,
     "is_user_preference": false,
     "over_ruled_by": null,
@@ -17,8 +18,9 @@
   "pk": 3,
   "fields": {
     "title": "NoActionNeed",
+    "label": "Informational Items",
     "order": 3,
-    "description": "Select if you want to see the items on the checklist that require no actual change",
+    "description": "Show items that require no physical action (verify / check only)",
     "show": true,
     "is_user_preference": true,
     "over_ruled_by": null,
@@ -30,8 +32,9 @@
   "pk": 4,
   "fields": {
     "title": "Optional",
+    "label": "Optional Items",
     "order": 1,
-    "description": "Also show optional items, if not checked only required are shown",
+    "description": "Also show optional items; if off only required items are shown",
     "show": true,
     "is_user_preference": true,
     "over_ruled_by": null,
@@ -43,6 +46,7 @@
   "pk": 5,
   "fields": {
     "title": "Long Runway",
+    "label": "",
     "order": 4,
     "description": "RWY is long enough icw weight, not above 10000ft, so take-of without APU",
     "show": false,
@@ -56,6 +60,7 @@
   "pk": 6,
   "fields": {
     "title": "Pushback Needed",
+    "label": "",
     "order": 6,
     "description": "The stand.gate requires pushback",
     "show": false,
@@ -69,8 +74,9 @@
   "pk": 7,
   "fields": {
     "title": "Anti-Ice Normal",
+    "label": "Anti-Ice (≤0°C)",
     "order": 8,
-    "description": "Temp at or below 0",
+    "description": "Temperature at or below 0°C — icing procedures apply",
     "show": true,
     "is_user_preference": false,
     "over_ruled_by": null,
@@ -82,12 +88,13 @@
   "pk": 8,
   "fields": {
     "title": "Short Runway",
+    "label": "Short Runway / High Altitude",
     "order": 20,
-    "description": "Short Runway procedure or above 10.000",
+    "description": "Short runway procedure or departure above 10 000 ft",
     "show": true,
     "is_user_preference": false,
     "over_ruled_by": null,
-    "btn_color": "194D33"
+    "btn_color": "#d6cc09"
   }
 },
 {
@@ -95,8 +102,9 @@
   "pk": 9,
   "fields": {
     "title": "ZeroToTen",
+    "label": "0°C – 10°C Conditions",
     "order": 22,
-    "description": "Actions you do when temp is between 0C and 10C",
+    "description": "Temperature between 0°C and 10°C — additional checks required",
     "show": true,
     "is_user_preference": false,
     "over_ruled_by": null,
@@ -108,6 +116,7 @@
   "pk": 10,
   "fields": {
     "title": "Above10",
+    "label": "",
     "order": 50,
     "description": "NormalConditions",
     "show": false,
@@ -121,12 +130,13 @@
   "pk": 11,
   "fields": {
     "title": "No Pushback",
+    "label": "No Pushback",
     "order": 20,
-    "description": "Select if you do not need to be pushed back",
+    "description": "No pushback required — engine start at stand",
     "show": true,
     "is_user_preference": false,
     "over_ruled_by": null,
-    "btn_color": "194D33"
+    "btn_color": "#098244"
   }
 },
 {
@@ -134,8 +144,9 @@
   "pk": 12,
   "fields": {
     "title": "Safety Tests",
+    "label": "Safety Tests",
     "order": 7,
-    "description": "These are the recommanded but still optional safety tests",
+    "description": "Recommended but optional safety checks",
     "show": true,
     "is_user_preference": true,
     "over_ruled_by": null,
@@ -147,6 +158,7 @@
   "pk": 13,
   "fields": {
     "title": "AboveZero",
+    "label": "",
     "order": 222,
     "description": "Actions overrulled by icing procedure",
     "show": false,
