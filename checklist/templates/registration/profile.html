@@ -1,104 +1,126 @@
-{% extends "registration/auth_base.html" %}
-{% block title %}My profile · fly.vdwaal.net{% endblock title %}
-{% block auth_title %}My profile{% endblock auth_title %}
+{% extends "checklist/base.html" %}
+{% block title %}My Profile · fly.vdwaal.net{% endblock title %}
+{% block page_class %}setup-page{% endblock page_class %}
 
-{% block auth_content %}
+{% block content %}
+<div class="setup-inner">
 
-{# Avatar card #}
-<div class="auth-card">
-    <div class="auth-card-section auth-avatar-section">
-        <div class="auth-avatar" aria-hidden="true">{{ user.username|slice:":2"|upper }}</div>
-        <div class="auth-avatar-name">{{ user.username }}</div>
-        {% if user.email %}
-        <div class="auth-avatar-email">{{ user.email }}</div>
-        {% endif %}
-    </div>
-</div>
+  <div class="page-header">
+    <h1>My Profile</h1>
+    <p>Account details and default flight preferences</p>
+  </div>
 
-{# Account details card #}
-<div class="auth-card">
-    <div class="auth-card-section">
-        <div class="auth-section-label">Account details</div>
+  {# X-Plane live banner — only shown when plugin is connected #}
+  {% if xplane_connected %}
+  <div class="xplane-banner">
+    <div class="xplane-dot"></div>
+    <span class="xplane-banner-text">
+      X-Plane connected
+      {% if xplane_aircraft %} — <span>{{ xplane_aircraft }}</span>{% endif %}
+    </span>
+  </div>
+  {% endif %}
 
-        <div class="profile-row">
-            <span class="profile-row-label">Username</span>
-            <span class="profile-row-value">{{ user.username }}</span>
+  <div class="two-col">
+
+    {# ── Left column: Account ─────────────────────────────────────── #}
+    <div>
+      <div class="card">
+        <div class="profile-hero">
+          <div class="profile-avatar-lg" aria-hidden="true">{{ user.username|slice:":2"|upper }}</div>
+          <div>
+            <div class="profile-hero-name">{{ user.username }}</div>
+            {% if user.email %}<div class="profile-hero-email">{{ user.email }}</div>{% endif %}
+          </div>
         </div>
 
-        <div class="profile-row">
-            <span class="profile-row-label">Email</span>
-            <span class="profile-row-value">{{ user.email|default:"—" }}</span>
+        <div class="card-header" style="border-top:1px solid var(--color-border)">
+          <span class="card-header-title">Account Details</span>
         </div>
 
-        {# SimBrief ID — inline edit via <details> #}
-        <details class="auth-simbrief-edit"{% if simbrief_form.errors %} open{% endif %}>
-            <summary class="profile-row">
-                <span class="profile-row-label">SimBrief ID</span>
-                <div class="auth-simbrief-summary-right">
-                    <span class="profile-row-value">{{ profile.simbrief_id|default:"—" }}</span>
-                    <span class="profile-row-action">edit</span>
-                </div>
+        <div class="account-fields">
+          <div class="account-field">
+            <span class="field-label">Username</span>
+            <span class="field-value">{{ user.username }}</span>
+          </div>
+          <div class="account-field">
+            <span class="field-label">Email</span>
+            <span class="field-value">{{ user.email|default:"—" }}</span>
+          </div>
+
+          {# SimBrief ID — inline edit via <details> #}
+          <details class="account-field-details"{% if simbrief_form.errors %} open{% endif %}>
+            <summary class="account-field">
+              <span class="field-label">SimBrief ID</span>
+              <span class="field-value">{{ profile.simbrief_id|default:"—" }}</span>
+              <span class="field-action-link">edit</span>
             </summary>
-            <form method="post" action="{% url 'checklist:account' %}" novalidate class="auth-simbrief-form">
+            <div class="account-field-edit">
+              <form method="post" action="{% url 'checklist:account' %}" novalidate>
                 {% csrf_token %}
                 <input type="hidden" name="action" value="update_simbrief">
-                <label class="auth-label" for="simbrief_id">Pilot ID</label>
                 {{ simbrief_form.simbrief_id }}
                 {% if simbrief_form.simbrief_id.errors %}
                 <ul class="auth-errors">
-                    {% for e in simbrief_form.simbrief_id.errors %}<li>{{ e }}</li>{% endfor %}
+                  {% for e in simbrief_form.simbrief_id.errors %}<li>{{ e }}</li>{% endfor %}
                 </ul>
                 {% endif %}
                 <button class="auth-btn" type="submit">Save</button>
-            </form>
-        </details>
+              </form>
+            </div>
+          </details>
 
-        <div class="profile-row profile-row--last">
-            <span class="profile-row-label">Password</span>
-            <a class="profile-row-action" href="{% url 'password_change' %}">Change password</a>
+          <div class="account-field account-field--last">
+            <span class="field-label">Password</span>
+            <span class="field-value">••••••••</span>
+            <a class="field-action-link" href="{% url 'password_change' %}">change</a>
+          </div>
         </div>
-    </div>
-</div>
+      </div>
 
-{# My Preferences card — only shown when preference attributes exist #}
-{% if preference_attributes %}
-<div class="auth-card">
-    <div class="auth-card-section">
-        <div class="auth-section-label">My Preferences</div>
-        <p class="auth-pref-hint">These will be pre-selected when you start a new flight.</p>
+      <div class="card">
+        <div class="danger-zone">
+          <a class="btn-ghost" href="{% url 'logout_confirm' %}">Sign out</a>
+          <a class="btn-danger" href="{% url 'checklist:delete_account' %}">Delete account</a>
+        </div>
+      </div>
+    </div>
+
+    {# ── Right column: Preferences ────────────────────────────────── #}
+    <div>
+      {% if preference_attributes %}
+      <div class="card">
+        <div class="card-header">
+          <span class="card-header-title">My Preferences</span>
+        </div>
+        <p class="pref-hint">Pre-selected when you start a new flight.</p>
         <form method="post" action="{% url 'checklist:account' %}">
-            {% csrf_token %}
-            <input type="hidden" name="action" value="update_preferences">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="update_preferences">
+          <div class="toggle-list">
             {% for attr in preference_attributes %}
-            <div class="attr-row">
-                <label class="attr-toggle-wrap">
-                    <input type="checkbox" name="preference_attr" value="{{ attr.id }}"
-                           class="attr-checkbox"
-                           {% if attr.id in active_preference_ids %}checked{% endif %}>
-                    <span class="attr-toggle"></span>
-                </label>
-                <div class="attr-info">
-                    <span class="attr-name">{{ attr.title }}</span>
-                    <span class="attr-desc">{{ attr.description }}</span>
-                </div>
+            <div class="toggle-row">
+              <div class="toggle-info">
+                <div class="toggle-name">{{ attr.label|default:attr.title }}</div>
+                <div class="toggle-desc">{{ attr.description }}</div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" name="preference_attr" value="{{ attr.id }}"
+                       {% if attr.id in active_preference_ids %}checked{% endif %}>
+                <span class="toggle-track"></span>
+              </label>
             </div>
             {% endfor %}
-            <button class="auth-btn" type="submit">Save preferences</button>
+          </div>
+          <div class="card-save-row">
+            <button class="btn-setup-primary" type="submit">Save preferences</button>
+          </div>
         </form>
+      </div>
+      {% endif %}
     </div>
-</div>
-{% endif %}
 
-{# Sign out + danger zone #}
-<div class="auth-card">
-    <div class="auth-card-section">
-        <a class="auth-btn auth-btn--outline" href="{% url 'logout_confirm' %}">Sign out</a>
-    </div>
-    <div class="auth-card-section">
-        <a class="auth-btn auth-btn--danger" href="{% url 'checklist:delete_account' %}">
-            Delete account
-        </a>
-    </div>
-</div>
+  </div>{# /.two-col #}
 
-{% endblock auth_content %}
+</div>{# /.setup-inner #}
+{% endblock content %}

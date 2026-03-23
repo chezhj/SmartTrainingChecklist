@@ -14,7 +14,27 @@ from django.contrib.auth.forms import (
 )
 from django.shortcuts import redirect, render
 
-from checklist.models import Attribute, UserAttributeDefault
+from django.utils import timezone
+
+from checklist.models import Attribute, FlightSession, UserAttributeDefault
+
+_PLUGIN_TIMEOUT_SECONDS = 30
+
+
+def _xplane_context(request):
+    """Return xplane_connected and xplane_aircraft based on active session plugin contact."""
+    session_key = request.session.get("flight_session_key")
+    if not session_key:
+        return {"xplane_connected": False, "xplane_aircraft": ""}
+    try:
+        fs = FlightSession.objects.get(session_key=session_key, is_active=True)
+    except FlightSession.DoesNotExist:
+        return {"xplane_connected": False, "xplane_aircraft": ""}
+    if fs.last_plugin_contact is None:
+        return {"xplane_connected": False, "xplane_aircraft": ""}
+    age = (timezone.now() - fs.last_plugin_contact).total_seconds()
+    connected = age <= _PLUGIN_TIMEOUT_SECONDS
+    return {"xplane_connected": connected, "xplane_aircraft": ""}
 
 _INPUT = {"class": "auth-input"}
 
@@ -161,6 +181,7 @@ def account_profile_view(request):
             "simbrief_form": SimBriefIdForm(initial={"simbrief_id": profile.simbrief_id}),
             "profile": profile,
             **_preference_context(profile),
+            **_xplane_context(request),
         },
     )
 

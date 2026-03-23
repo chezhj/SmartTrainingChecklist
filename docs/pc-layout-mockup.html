@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>fly.vdwaal.net — PC Layout Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --dark:   #0D1512;
+    --dark2:  #162019;
+    --td:     #0F6B54;
+    --tm:     #1A8A6C;
+    --tb:     #22C9A0;
+    --bg:     #F4F5F3;
+    --bg2:    #EAEBE8;
+    --text:   #1A1E1C;
+    --muted:  #6B7572;
+    --border: #D4D6D3;
+    --mono:   'IBM Plex Mono', monospace;
+    --sans:   'IBM Plex Sans', sans-serif;
+    --radius: 8px;
+    --max-content: 820px;
+    --topbar-h: 56px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  /* ─── PAGE SWITCHER (demo only) ─── */
+  .demo-tabs {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    display: flex;
+    gap: 8px;
+    z-index: 999;
+    background: var(--dark);
+    border-radius: 99px;
+    padding: 6px 8px;
+  }
+  .demo-tabs button {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    padding: 6px 14px;
+    border: none;
+    border-radius: 99px;
+    cursor: pointer;
+    background: transparent;
+    color: var(--tb);
+    letter-spacing: 0.04em;
+    transition: background 0.15s, color 0.15s;
+  }
+  .demo-tabs button.active {
+    background: var(--td);
+    color: #fff;
+  }
+
+  /* ─── TOP BAR ─── */
+  .topbar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: var(--topbar-h);
+    background: var(--dark);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 28px;
+    z-index: 100;
+    border-bottom: 1px solid rgba(34,201,160,0.12);
+  }
+
+  .topbar-logo {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--tb);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-decoration: none;
+  }
+
+  /* Center: flight context */
+  .topbar-flight {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .flight-status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #888;
+    flex-shrink: 0;
+  }
+  .flight-status-dot.manual { background: #888; }
+  .flight-status-dot.live   { background: var(--tb); box-shadow: 0 0 6px var(--tb); animation: pulse 2s infinite; }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.4; }
+  }
+
+  .flight-status-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    color: #6B7572;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .flight-route {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 600;
+    color: #C8CCC9;
+    letter-spacing: 0.06em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .flight-route .arrow {
+    color: var(--td);
+    font-size: 11px;
+  }
+  .flight-route .empty { color: #3A4E48; }
+  .flight-meta-item .val.empty { color: #3A4E48; }
+
+  .flight-meta {
+    display: flex;
+    gap: 16px;
+  }
+  .flight-meta-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .flight-meta-item .val {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 600;
+    color: #C8CCC9;
+    letter-spacing: 0.04em;
+  }
+  .flight-meta-item .lbl {
+    font-family: var(--mono);
+    font-size: 9px;
+    font-weight: 500;
+    color: #4A5652;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-top: 1px;
+  }
+
+  .topbar-divider {
+    width: 1px;
+    height: 20px;
+    background: rgba(255,255,255,0.08);
+  }
+
+  /* Right: avatar */
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .topbar-username {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    color: #6B7572;
+    letter-spacing: 0.04em;
+  }
+  .avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--td);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 600;
+    color: #fff;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    transition: background 0.15s;
+    text-decoration: none;
+  }
+  .avatar:hover { background: var(--tm); }
+
+  /* ─── MAIN LAYOUT ─── */
+  .page {
+    display: none;
+    padding-top: var(--topbar-h);
+    min-height: 100vh;
+  }
+  .page.active { display: block; }
+
+  .page-inner {
+    max-width: var(--max-content);
+    margin: 0 auto;
+    padding: 48px 24px 80px;
+  }
+
+  /* ─── PAGE HEADER ─── */
+  .page-header {
+    margin-bottom: 36px;
+  }
+  .page-header h1 {
+    font-family: var(--sans);
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: -0.01em;
+  }
+  .page-header p {
+    margin-top: 4px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  /* ─── CARD ─── */
+  .card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+
+  .card-header {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .card-header-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--td);
+  }
+
+  .card-body {
+    padding: 20px;
+  }
+
+  /* ─── SIMBRIEF SECTION ─── */
+  .simbrief-row {
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+  }
+  .simbrief-row .field {
+    flex: 1;
+  }
+  .field label {
+    display: block;
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .field input {
+    width: 100%;
+    height: 40px;
+    padding: 0 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-family: var(--mono);
+    font-size: 14px;
+    color: var(--text);
+    background: var(--bg);
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .field input:focus {
+    border-color: var(--tm);
+    box-shadow: 0 0 0 3px rgba(26,138,108,0.12);
+  }
+
+  .btn-primary {
+    height: 40px;
+    padding: 0 20px;
+    background: var(--td);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s;
+    flex-shrink: 0;
+  }
+  .btn-primary:hover { background: var(--tm); }
+
+  /* OFP data grid */
+  .ofp-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-top: 16px;
+  }
+  .ofp-cell {
+    background: var(--bg);
+    padding: 12px 16px;
+  }
+  .ofp-cell .lbl {
+    font-family: var(--mono);
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .ofp-cell .val {
+    font-family: var(--mono);
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: 0.04em;
+  }
+  .ofp-cell .val.accent { color: var(--td); }
+
+  /* ─── PROFILE TOGGLES ─── */
+  .toggle-list {
+    display: flex;
+    flex-direction: column;
+  }
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+  }
+  .toggle-row:last-child { border-bottom: none; }
+  .toggle-row:hover { background: var(--bg); }
+  .toggle-info { flex: 1; padding-right: 20px; }
+  .toggle-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .toggle-desc {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 1px;
+  }
+
+  /* Toggle switch */
+  .toggle-switch {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    flex-shrink: 0;
+  }
+  .toggle-switch input { opacity: 0; width: 0; height: 0; }
+  .toggle-track {
+    position: absolute;
+    inset: 0;
+    background: var(--border);
+    border-radius: 99px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .toggle-track::after {
+    content: '';
+    position: absolute;
+    top: 3px; left: 3px;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: #fff;
+    transition: transform 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .toggle-switch input:checked + .toggle-track {
+    background: var(--td);
+  }
+  .toggle-switch input:checked + .toggle-track::after {
+    transform: translateX(20px);
+  }
+
+  /* ─── TWO-COLUMN for wider screens ─── */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    align-items: start;
+  }
+  @media (max-width: 680px) {
+    .two-col { grid-template-columns: 1fr; }
+    .ofp-grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  /* ─── FOOTER ACTIONS ─── */
+  .footer-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    padding-top: 8px;
+  }
+  .btn-secondary {
+    height: 44px;
+    padding: 0 24px;
+    background: #fff;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .btn-secondary:hover { border-color: var(--tm); background: var(--bg); }
+
+  .btn-cta {
+    height: 44px;
+    padding: 0 32px;
+    background: var(--td);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .btn-cta:hover { background: var(--tm); }
+  .btn-cta .arrow { font-size: 14px; }
+
+  /* ─── PROFILE PAGE ─── */
+  .profile-hero {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 24px 20px;
+  }
+  .profile-avatar-lg {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--td);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--mono);
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+  }
+  .profile-hero-info h2 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .profile-hero-info span {
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .account-fields {
+    display: flex;
+    flex-direction: column;
+  }
+  .account-field {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 13px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .account-field:last-child { border-bottom: none; }
+  .account-field .field-label {
+    font-size: 13px;
+    color: var(--muted);
+    width: 120px;
+    flex-shrink: 0;
+  }
+  .account-field .field-value {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    flex: 1;
+  }
+  .field-action {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--td);
+    letter-spacing: 0.04em;
+    text-decoration: none;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+  }
+  .field-action:hover { color: var(--tm); }
+
+  /* Danger zone */
+  .danger-zone {
+    display: flex;
+    gap: 12px;
+    justify-content: space-between;
+    padding: 20px;
+  }
+  .btn-ghost {
+    height: 40px;
+    padding: 0 20px;
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-ghost:hover { border-color: var(--muted); color: var(--text); }
+  .btn-danger {
+    height: 40px;
+    padding: 0 20px;
+    background: transparent;
+    color: #C0392B;
+    border: 1px solid #E8C4C0;
+    border-radius: var(--radius);
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-danger:hover { background: #FDF0EE; border-color: #C0392B; }
+
+  /* ─── SECTION HINT ─── */
+  .section-hint {
+    font-size: 12px;
+    color: var(--muted);
+    padding: 0 20px 16px;
+  }
+
+  /* xplane status banner */
+  .xplane-banner {
+    background: rgba(15,107,84,0.07);
+    border: 1px solid rgba(15,107,84,0.2);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .xplane-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--tb);
+    box-shadow: 0 0 6px var(--tb);
+    animation: pulse 2s infinite;
+    flex-shrink: 0;
+  }
+  .xplane-banner-text {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--td);
+    font-weight: 500;
+  }
+  .xplane-banner-text span {
+    color: var(--muted);
+    font-weight: 400;
+  }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR (shared) -->
+<header class="topbar">
+  <a class="topbar-logo" href="#">fly.vdwaal.net</a>
+
+  <!-- Center: flight context -->
+  <div class="topbar-flight">
+    <div class="flight-status-dot manual" id="status-dot"></div>
+    <span class="flight-status-label" id="status-label">No flight</span>
+
+    <div class="topbar-divider"></div>
+
+    <div class="flight-route">
+      <span id="tb-orig" class="empty">ORIG</span>
+      <span class="arrow">→</span>
+      <span id="tb-dest" class="empty">DEST</span>
+    </div>
+
+    <div class="topbar-divider"></div>
+
+    <div class="flight-meta">
+      <div class="flight-meta-item">
+        <span class="val" id="tb-rwy">—</span>
+        <span class="lbl">Rwy</span>
+      </div>
+      <div class="flight-meta-item">
+        <span class="val" id="tb-temp">—</span>
+        <span class="lbl">Temp</span>
+      </div>
+      <div class="flight-meta-item">
+        <span class="val" id="tb-flaps">—</span>
+        <span class="lbl">Flaps</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="topbar-right">
+    <a class="avatar" href="#" id="avatar-btn">HJ</a>
+  </div>
+</header>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- PAGE: SESSION SETUP                        -->
+<!-- ══════════════════════════════════════════ -->
+<main class="page active" id="page-setup">
+  <div class="page-inner">
+
+    <div class="page-header">
+      <h1>New Flight</h1>
+      <p>Load your SimBrief plan and configure your flight profile</p>
+    </div>
+
+    <!-- SimBrief card -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-header-title">SimBrief OFP</span>
+      </div>
+      <div class="card-body">
+        <div class="simbrief-row">
+          <div class="field">
+            <label>Pilot ID</label>
+            <input type="text" value="12345" placeholder="Your SimBrief ID">
+          </div>
+          <button class="btn-primary">Get Plan</button>
+        </div>
+
+        <div class="ofp-grid">
+          <div class="ofp-cell">
+            <div class="lbl">Origin</div>
+            <div class="val accent">LOWI</div>
+          </div>
+          <div class="ofp-cell">
+            <div class="lbl">Destination</div>
+            <div class="val accent">EDDH</div>
+          </div>
+          <div class="ofp-cell">
+            <div class="lbl">Runway</div>
+            <div class="val">08</div>
+          </div>
+          <div class="ofp-cell">
+            <div class="lbl">Temp</div>
+            <div class="val">14°C</div>
+          </div>
+          <div class="ofp-cell">
+            <div class="lbl">Flaps</div>
+            <div class="val">25</div>
+          </div>
+          <div class="ofp-cell">
+            <div class="lbl">Cost Index</div>
+            <div class="val">30</div>
+          </div>
+          <div class="ofp-cell">
+            <div class="lbl">Block Fuel</div>
+            <div class="val">8 420 kg</div>
+          </div>
+          <div class="ofp-cell">
+            <div class="lbl">ZFW</div>
+            <div class="val">58 200 kg</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Flight Profile card — two columns on wider viewports -->
+    <div class="two-col">
+
+      <div class="card" style="margin-bottom:0">
+        <div class="card-header">
+          <span class="card-header-title">General</span>
+        </div>
+        <div class="toggle-list">
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <div class="toggle-name">Two Pilots</div>
+              <div class="toggle-desc">Enable PF / PM indicators</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox">
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <div class="toggle-name">Optional Items</div>
+              <div class="toggle-desc">Show optional items; if off only required shown</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" checked>
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <div class="toggle-name">Online (ATC)</div>
+              <div class="toggle-desc">Items needed only when flying on a network</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" checked>
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <div class="toggle-name">NoActionNeed</div>
+              <div class="toggle-desc">Show items requiring no physical action</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox">
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <div class="toggle-name">Safety Tests</div>
+              <div class="toggle-desc">Recommended but optional safety checks</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox">
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:0">
+        <div class="card-header">
+          <span class="card-header-title">Conditions</span>
+        </div>
+        <div class="toggle-list">
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <div class="toggle-name">Anti-Ice Normal</div>
+              <div class="toggle-desc">Temp at or below 0°C</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox">
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <div class="toggle-name">ZeroToTen</div>
+              <div class="toggle-desc">Actions when temp is between 0°C and 10°C</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox">
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <div class="toggle-name">Short Runway</div>
+              <div class="toggle-desc">Short runway procedure or above 10 000 ft</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox">
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <div class="toggle-name">No Pushback</div>
+              <div class="toggle-desc">Skip pushback procedure</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox">
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /.two-col -->
+
+    <div class="footer-actions" style="margin-top:28px">
+      <button class="btn-secondary">Clear</button>
+      <button class="btn-cta">Continue <span class="arrow">→</span></button>
+    </div>
+
+  </div>
+</main>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- PAGE: PROFILE                              -->
+<!-- ══════════════════════════════════════════ -->
+<main class="page" id="page-profile">
+  <div class="page-inner">
+
+    <div class="page-header">
+      <h1>My Profile</h1>
+      <p>Account details and default flight preferences</p>
+    </div>
+
+    <!-- X-Plane live status banner (context-aware, only shows when connected) -->
+    <div class="xplane-banner">
+      <div class="xplane-dot"></div>
+      <span class="xplane-banner-text">
+        X-Plane connected — <span>Zibo 737-800 · Parked at LOWI · Session ABCD-1234</span>
+      </span>
+    </div>
+
+    <div class="two-col">
+
+      <!-- Left col: Account -->
+      <div>
+        <div class="card">
+          <div class="profile-hero">
+            <div class="profile-avatar-lg">HJ</div>
+            <div class="profile-hero-info">
+              <h2>hjw</h2>
+              <span><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="6b032b1d0f1c0a0a0745050e1f">[email&#160;protected]</a></span>
+            </div>
+          </div>
+          <div class="card-header" style="border-top:1px solid var(--border)">
+            <span class="card-header-title">Account Details</span>
+          </div>
+          <div class="account-fields">
+            <div class="account-field">
+              <span class="field-label">Username</span>
+              <span class="field-value">hjw</span>
+            </div>
+            <div class="account-field">
+              <span class="field-label">Email</span>
+              <span class="field-value"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="3a527a4c5e4d5b5b5614545f4e">[email&#160;protected]</a></span>
+            </div>
+            <div class="account-field">
+              <span class="field-label">SimBrief ID</span>
+              <span class="field-value">12345</span>
+              <button class="field-action">edit</button>
+            </div>
+            <div class="account-field">
+              <span class="field-label">Password</span>
+              <span class="field-value">••••••••</span>
+              <button class="field-action">change</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="danger-zone">
+            <button class="btn-ghost">Sign out</button>
+            <button class="btn-danger">Delete account</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right col: Preferences -->
+      <div>
+        <div class="card">
+          <div class="card-header">
+            <span class="card-header-title">My Preferences</span>
+          </div>
+          <p class="section-hint" style="padding-top:14px">Pre-selected when you start a new flight.</p>
+          <div class="toggle-list">
+            <div class="toggle-row">
+              <div class="toggle-info">
+                <div class="toggle-name">Optional Items</div>
+                <div class="toggle-desc">Also show optional items</div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" checked>
+                <span class="toggle-track"></span>
+              </label>
+            </div>
+            <div class="toggle-row">
+              <div class="toggle-info">
+                <div class="toggle-name">NoActionNeed</div>
+                <div class="toggle-desc">Items requiring no actual change</div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox">
+                <span class="toggle-track"></span>
+              </label>
+            </div>
+            <div class="toggle-row">
+              <div class="toggle-info">
+                <div class="toggle-name">Safety Tests</div>
+                <div class="toggle-desc">Recommended optional safety tests</div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox">
+                <span class="toggle-track"></span>
+              </label>
+            </div>
+          </div>
+          <div style="padding:16px 20px; border-top:1px solid var(--border)">
+            <button class="btn-cta" style="width:100%; justify-content:center">Save preferences</button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /.two-col -->
+  </div>
+</main>
+
+<!-- Demo nav -->
+<div class="demo-tabs">
+  <button class="active" onclick="showPage('setup', this)" id="page-btn-setup">Setup</button>
+  <button onclick="showPage('profile', this)" id="page-btn-profile">Profile</button>
+  <div style="width:1px;background:rgba(255,255,255,0.12);margin:4px 2px"></div>
+  <button onclick="setSimState('none', this)" id="state-none" style="color:#6B7572">No flight</button>
+  <button onclick="setSimState('manual', this)" id="state-manual">Manual</button>
+  <button onclick="setSimState('live', this)" id="state-live">Live</button>
+</div>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+  function showPage(id, btn) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-' + id).classList.add('active');
+    document.querySelectorAll('.demo-tabs button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+
+  const simStates = {
+    none:   { dot: 'manual', label: 'No flight',    orig: 'ORIG', dest: 'DEST', empty: true,  rwy: '—',  temp: '—',    flaps: '—'  },
+    manual: { dot: 'manual', label: 'Manual only',  orig: 'LOWI', dest: 'EDDH', empty: false, rwy: '08', temp: '14°C', flaps: '25' },
+    live:   { dot: 'live',   label: 'X-Plane live', orig: 'LOWI', dest: 'EDDH', empty: false, rwy: '08', temp: '14°C', flaps: '25' },
+  };
+
+  function setSimState(key, btn) {
+    const s = simStates[key];
+
+    const dot = document.getElementById('status-dot');
+    dot.className = 'flight-status-dot ' + s.dot;
+    document.getElementById('status-label').textContent = s.label;
+
+    const origEl = document.getElementById('tb-orig');
+    const destEl = document.getElementById('tb-dest');
+    origEl.textContent = s.orig;
+    destEl.textContent = s.dest;
+    origEl.className = s.empty ? 'empty' : '';
+    destEl.className = s.empty ? 'empty' : '';
+
+    ['rwy','temp','flaps'].forEach(k => {
+      const el = document.getElementById('tb-' + k);
+      el.textContent = s[k];
+      el.className = 'val' + (s.empty ? ' empty' : '');
+    });
+
+    ['none','manual','live'].forEach(k => document.getElementById('state-' + k).classList.remove('active'));
+    btn.classList.add('active');
+  }
+
+  document.getElementById('avatar-btn').addEventListener('click', function(e) {
+    e.preventDefault();
+    showPage('profile', document.getElementById('page-btn-profile'));
+  });
+
+  // init: no-flight state
+  setSimState('none', document.getElementById('state-none'));
+</script>
+</body>
+</html>

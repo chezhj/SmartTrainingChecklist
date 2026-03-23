@@ -1,133 +1,174 @@
 {% extends "checklist/base.html" %}
-{% block title %}Session setup · fly.vdwaal.net{% endblock title %}
-{% block page_class %}auth-page{% endblock page_class %}
+{% block title %}New Flight · fly.vdwaal.net{% endblock title %}
+{% block page_class %}setup-page{% endblock page_class %}
 
 {% block content %}
-<div class="auth-sidebar"></div>
-<div class="profile-scroll">
+<div class="setup-inner">
 
-    {# ── Login nudge (anonymous only) ──────────────────────────────── #}
-    {% if not user.is_authenticated %}
-    <div class="nudge-card">
-        <div class="nudge-title">X-Plane live sync available</div>
-        <div class="nudge-desc">Sign in to connect your simulator. The checklist works fully without an account — auto-checking requires login.</div>
-        <div class="nudge-actions">
-            <a class="nudge-btn" href="{% url 'checklist:start' %}">Continue manually</a>
-            <a class="nudge-btn nudge-btn--primary" href="{% url 'login' %}">Sign in →</a>
-        </div>
+
+
+  {# ── SimBrief OFP card ──────────────────────────────────────────── #}
+  <div class="card">
+    <div class="card-header">
+      <span class="card-header-title">SimBrief OFP</span>
     </div>
-    {% endif %}
-
-    {# ── SimBrief card ─────────────────────────────────────────────── #}
-    <div class="setup-card">
-        <div class="setup-card-title">SimBrief</div>
-        <form method="post" action="{% url 'checklist:start' %}">
-            {% csrf_token %}
-            <input type="hidden" name="action" value="get_plan">
-            <div class="simbrief-row">
-                <input class="simbrief-input" type="text" name="simbrief_id"
-                       value="{{ simbrief_id }}" placeholder="Pilot ID">
-                <button class="simbrief-btn" type="submit">Get Plan</button>
-            </div>
-        </form>
-        {% if sb_error %}
-        <p class="simbrief-error">{{ sb_error }}</p>
-        {% endif %}
-        {% if sb_origin %}
-        <div class="simbrief-grid">
-            <div class="simbrief-cell">
-                <div class="simbrief-cell-label">Origin</div>
-                <div class="simbrief-cell-value">{{ sb_origin }}</div>
-            </div>
-            <div class="simbrief-cell">
-                <div class="simbrief-cell-label">Runway</div>
-                <div class="simbrief-cell-value">{{ sb_runway|default:"—" }}</div>
-            </div>
-            <div class="simbrief-cell">
-                <div class="simbrief-cell-label">Temp</div>
-                <div class="simbrief-cell-value">{{ sb_temp|default:"—" }}</div>
-            </div>
-            <div class="simbrief-cell">
-                <div class="simbrief-cell-label">Flaps</div>
-                <div class="simbrief-cell-value">{{ sb_flaps|default:"—" }}</div>
-            </div>
+    <div class="card-body">
+      <form method="post" action="{% url 'checklist:start' %}">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="get_plan">
+        <div class="simbrief-row">
+          <input class="simbrief-input" type="text" name="simbrief_id"
+                 value="{{ simbrief_id }}" placeholder="Pilot ID">
+          <button class="simbrief-btn" type="submit">Get Plan</button>
         </div>
-        {% endif %}
+      </form>
+      {% if sb_error %}<p class="simbrief-error">{{ sb_error }}</p>{% endif %}
+
+      {% if sb_origin %}
+      <div class="ofp-grid">
+        <div class="ofp-cell">
+          <div class="ofp-cell-label">Origin</div>
+          <div class="ofp-cell-value ofp-accent">{{ sb_origin }}</div>
+        </div>
+        <div class="ofp-cell">
+          <div class="ofp-cell-label">Destination</div>
+          <div class="ofp-cell-value ofp-accent">{{ sb_destination|default:"—" }}</div>
+        </div>
+        <div class="ofp-cell">
+          <div class="ofp-cell-label">Runway</div>
+          <div class="ofp-cell-value">{{ sb_runway|default:"—" }}</div>
+        </div>
+        <div class="ofp-cell">
+          <div class="ofp-cell-label">Temp</div>
+          <div class="ofp-cell-value">{{ sb_temp|default:"—" }}</div>
+        </div>
+        <div class="ofp-cell">
+          <div class="ofp-cell-label">Flaps</div>
+          <div class="ofp-cell-value">{{ sb_flaps|default:"—" }}</div>
+        </div>
+        <div class="ofp-cell">
+          <div class="ofp-cell-label">Callsign</div>
+          <div class="ofp-cell-value">{{ sb_callsign|default:"—" }}</div>
+        </div>
+        <div class="ofp-cell">
+          <div class="ofp-cell-label">Block Fuel</div>
+          <div class="ofp-cell-value">{% if sb_block_fuel %}{{ sb_block_fuel }} kg{% else %}—{% endif %}</div>
+        </div>
+        <div class="ofp-cell">
+          <div class="ofp-cell-label">FINRES+ALTN</div>
+          <div class="ofp-cell-value">{% if sb_finres_altn %}{{ sb_finres_altn }} kg{% else %}—{% endif %}</div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ── Flight profile form ────────────────────────────────────────── #}
+  <form method="post" action="{% url 'checklist:start' %}" id="start-form">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="start_checklist">
+
+    <div class="two-col">
+
+      {# Left column: Conditions (flight-specific) #}
+      <div class="card" style="margin-bottom:0">
+        <div class="card-header">
+          <span class="card-header-title">Conditions</span>
+        </div>
+        <div class="toggle-list">
+          {% for attr in conditions_attrs %}
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <div class="toggle-name">{{ attr.label|default:attr.title }}</div>
+              <div class="toggle-desc">{{ attr.description }}</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" name="attributes" value="{{ attr.id }}"
+                     {% if attr.id in prechecked_ids %}checked{% endif %}>
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      {# Right column: General (user preferences) #}
+      <div class="card" style="margin-bottom:0">
+        <div class="card-header">
+          <span class="card-header-title">General</span>
+        </div>
+        <div class="toggle-list">
+          {% for attr in general_attrs %}
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <div class="toggle-name">{{ attr.label|default:attr.title }}</div>
+              <div class="toggle-desc">{{ attr.description }}</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" name="attributes" value="{{ attr.id }}"
+                     {% if attr.id in prechecked_ids %}checked{% endif %}>
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+    </div>{# /.two-col #}
+
+    {# Cockpit section #}
+    <div class="card" style="margin-top:20px">
+      <div class="card-header">
+        <span class="card-header-title">Cockpit</span>
+      </div>
+      <div class="toggle-list">
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-name">Two Pilots</div>
+            <div class="toggle-desc">Enable PF / PM indicators on checklist items</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" name="dual_mode"
+                   {% if dual_mode_active %}checked{% endif %}>
+            <span class="toggle-track"></span>
+          </label>
+        </div>
+      </div>
     </div>
 
-    {# ── Flight Profile card ───────────────────────────────────────── #}
-    <form method="post" action="{% url 'checklist:start' %}" id="start-form">
-        {% csrf_token %}
-        <input type="hidden" name="action" value="start_checklist">
+    <div class="setup-footer">
+      {% if active_flight_session %}
+      <button type="button" class="btn-setup-secondary" id="new-flight-btn">New Flight</button>
+      <button type="submit" class="btn-setup-primary">Continue →</button>
+      {% else %}
+      <button type="button" class="btn-setup-secondary" id="clear-btn">Clear</button>
+      <button type="submit" class="btn-setup-primary">Start Checklist →</button>
+      {% endif %}
+    </div>
+  </form>
 
-        <div class="setup-card">
-            <div class="setup-card-title">Flight Profile</div>
+  {# Hidden action forms #}
+  <form method="post" action="{% url 'checklist:start' %}" id="clear-form">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="clear">
+  </form>
+  <form method="post" action="{% url 'checklist:start' %}" id="new-flight-form">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="new_flight">
+  </form>
 
-            {# Dual / two-pilot toggle #}
-            <div class="attr-row">
-                <label class="attr-toggle-wrap">
-                    <input type="checkbox" name="dual_mode" class="attr-checkbox"
-                           {% if dual_mode_active %}checked{% endif %}>
-                    <span class="attr-toggle"></span>
-                </label>
-                <div class="attr-info">
-                    <span class="attr-name">Two Pilots</span>
-                    <span class="attr-desc">Enable PF/PM indicators</span>
-                </div>
-            </div>
-
-            {# Dynamic attribute toggles (show=True attributes only) #}
-            {% for attr in attributes %}
-            <div class="attr-row">
-                <label class="attr-toggle-wrap">
-                    <input type="checkbox" name="attributes" value="{{ attr.id }}"
-                           class="attr-checkbox"
-                           {% if attr.id in prechecked_ids %}checked{% endif %}>
-                    <span class="attr-toggle"></span>
-                </label>
-                <div class="attr-info">
-                    <span class="attr-name">
-                        {{ attr.title }}
-                        {% if attr.id in ofp_derived_ids %}
-                        <span class="attr-badge">auto</span>
-                        {% endif %}
-                    </span>
-                    <span class="attr-desc">{{ attr.description }}</span>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-
-        <div class="profile-actions">
-            {% if active_flight_session %}
-            <button type="button" class="profile-btn" id="new-flight-btn">New Flight</button>
-            <button type="submit" class="profile-btn profile-btn--primary">Continue →</button>
-            {% else %}
-            <button type="button" class="profile-btn" id="clear-btn">Clear</button>
-            <button type="submit" class="profile-btn profile-btn--primary">Start Checklist →</button>
-            {% endif %}
-        </div>
-    </form>
-
-    {# Hidden clear form (submitted by JS after confirm) #}
-    <form method="post" action="{% url 'checklist:start' %}" id="clear-form">
-        {% csrf_token %}
-        <input type="hidden" name="action" value="clear">
-    </form>
-
-</div>
+</div>{# /.setup-inner #}
 
 <script>
 {% if active_flight_session %}
 document.getElementById('new-flight-btn').addEventListener('click', function () {
     if (confirm('Start a new flight? All progress in the current flight will be lost.')) {
-        document.querySelector('#start-form [name=action]').value = 'new_flight';
-        document.getElementById('start-form').submit();
+        document.getElementById('new-flight-form').submit();
     }
 });
 {% else %}
 document.getElementById('clear-btn').addEventListener('click', function () {
-    if (confirm('Are you sure you want to reset your flight? All progress will be lost.')) {
+    if (confirm('Reset? All progress will be lost.')) {
         document.getElementById('clear-form').submit();
     }
 });

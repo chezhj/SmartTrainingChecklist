@@ -291,6 +291,33 @@ body {
   }
 }
 
+/* ── Setup / New Flight page ────────────────────────────────────── */
+/* Scrollable full-width page — no sidebar */
+.setup-page {
+  overflow-y: auto;
+  background: var(--color-bg);
+}
+
+.setup-inner {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 40px 16px 80px;
+}
+
+/* Two-column grid — collapses to single column below 680px */
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 680px) {
+  .two-col {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ── Sidebar export link: desktop only ─────────────────────────── */
 .sidebar-export-link {
   display: none;

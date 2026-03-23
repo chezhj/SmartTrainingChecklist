@@ -22,7 +22,7 @@
         <!-- Brand: hidden on mobile, shown tablet+; links to checklist home -->
         <a href="{% url 'checklist:start' %}" class="conn-brand">FLY.VDWAAL.NET</a>
 
-        <!-- Status group: sim dot + status text + always-visible route -->
+        <!-- Status group: sim dot + status text + route -->
         <div class="conn-status-group">
             <div class="sim-dot" id="sim-dot"></div>
             <span class="conn-status-text" id="conn-status">Manual only</span>
@@ -30,12 +30,32 @@
             <span class="conn-route">{{ request.session.sb_origin|default:"ORIG" }} → {{ request.session.sb_destination|default:"DEST" }}</span>
         </div>
 
-        <!-- Actions: auth link + info button -->
+        <!-- Meta items: Rwy / Temp / Flaps — desktop only -->
+        {% if request.session.sb_origin %}
+        <div class="conn-meta">
+            <span class="conn-sep" aria-hidden="true">·</span>
+            <div class="conn-meta-item">
+                <span class="conn-meta-val">{{ request.session.sb_runway|default:"—" }}</span>
+                <span class="conn-meta-lbl">Rwy</span>
+            </div>
+            <div class="conn-meta-item">
+                <span class="conn-meta-val">{{ request.session.sb_temp|default:"—" }}</span>
+                <span class="conn-meta-lbl">Temp</span>
+            </div>
+            <div class="conn-meta-item">
+                <span class="conn-meta-val">{{ request.session.sb_flaps|default:"—" }}</span>
+                <span class="conn-meta-lbl">Flaps</span>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Actions: avatar/login + info button -->
         <div class="conn-actions">
             {% if user.is_authenticated %}
-            <a href="{% url 'checklist:account' %}" class="conn-auth-link">{{ user.username }}</a>
+            <a href="{% url 'checklist:account' %}" class="conn-avatar"
+               title="{{ user.username }}">{{ user.username|slice:":2"|upper }}</a>
             {% else %}
-            <a href="{% url 'login' %}" class="conn-auth-link">Sign in</a>
+            <a href="{% url 'login' %}" class="conn-login-pill">Sign in</a>
             {% endif %}
             <button class="info-btn" id="info-open-btn" aria-label="Open info panel">i</button>
         </div>
