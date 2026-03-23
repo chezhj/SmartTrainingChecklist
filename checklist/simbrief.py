@@ -27,6 +27,7 @@ class SimBrief:
     def __init__(self, pilot_id=None):
         self.pilot_id = pilot_id
         self.origin = None
+        self.destination = None
         self.elevation = None
         self.temperature = None
         self.runway = None
@@ -34,6 +35,9 @@ class SimBrief:
         self.altimeter = None
         self.flap_setting = None
         self.bleed_setting = None
+        self.callsign = None
+        self.block_fuel = None
+        self.finres_altn = None
         self.error_message = None
         self.mock_token = None
 
@@ -77,7 +81,7 @@ class SimBrief:
         except requests.RequestException as e:
             self.error_message = f"Error fetching SimBrief data: {e}"
             print(f"Error fetching SimBrief data: {e}")
-        except ET.ParseError as e:
+        except (ET.ParseError, ValueError, TypeError) as e:
             self.error_message = f"Error parsing SimBrief XML: {e}"
             print(f"Error parsing SimBrief XML: {e}")
 
@@ -105,3 +109,14 @@ class SimBrief:
                 self.flap_setting = runway.findtext("flap_setting")
                 self.bleed_setting = runway.findtext("bleed_setting")
                 break
+
+        self.callsign = root.findtext("atc/callsign") or ""
+
+        block_str = root.findtext("fuel/plan_ramp")
+        self.block_fuel = int(float(block_str)) if block_str else None
+
+        reserve_str = root.findtext("fuel/reserve")
+        altn_str = root.findtext("fuel/alternate_burn")
+        reserve = int(float(reserve_str)) if reserve_str else 0
+        altn = int(float(altn_str)) if altn_str else 0
+        self.finres_altn = reserve + altn if (reserve_str or altn_str) else None
