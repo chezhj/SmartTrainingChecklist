@@ -115,6 +115,10 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 MOCK_TOKEN = config("X-Auth-Token", default=None)
 
+# Polling interval for the JS checklist polling loop (milliseconds).
+# Override in dev.py / prod.py if needed.
+POLL_INTERVAL_MS = 2500
+
 # Auth redirects
 LOGIN_URL = "/login/"
 LOGIN_REDIRECT_URL = "checklist:start"

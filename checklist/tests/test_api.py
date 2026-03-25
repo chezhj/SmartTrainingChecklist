@@ -1,9 +1,10 @@
-"""Tests for /api/check and /api/uncheck endpoints."""
+"""Tests for /api/check, /api/uncheck, and /api/poll endpoints."""
 
 # pylint: disable=missing-class-docstring
 # pylint: disable=missing-function-docstring
 
 import json
+from datetime import datetime, timedelta, timezone
 
 from django.test import TestCase
 from django.urls import reverse
@@ -23,6 +24,114 @@ def _post_json(client, url, data, session_key=None):
         data=json.dumps(data),
         content_type="application/json",
     )
+
+
+def _set_session_key(client, session_key):
+    """Helper: write flight_session_key into the Django test session."""
+    session = client.session
+    session["flight_session_key"] = session_key
+    session.save()
+
+
+def _get_poll(client, procedure_slug="before-start", since=0):
+    return client.get(
+        reverse("checklist:api_poll"),
+        {"procedure": procedure_slug, "since": since},
+    )
+
+
+class TestPollView(TestCase):
+
+    def setUp(self):
+        self.procedure = Procedure.objects.create(title="Before Start", step=1, slug="before-start")
+        self.item = CheckItemFactory(procedure=self.procedure)
+        self.session = FlightSession.objects.create()
+
+    def _seed_checked(self, item=None, source="manual", delta_seconds=0):
+        item = item or self.item
+        ts = datetime.now(tz=timezone.utc) + timedelta(seconds=delta_seconds)
+        return FlightItemState.objects.create(
+            flight_session=self.session,
+            checklist_item=item,
+            status="checked",
+            source=source,
+            checked_at=ts,
+        )
+
+    def test_no_session_returns_empty_200(self):
+        response = _get_poll(self.client)
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["checked_items"], [])
+        self.assertFalse(data["sim_connected"])
+        self.assertEqual(data["last_seen"], 0)
+
+    def test_post_returns_405(self):
+        _set_session_key(self.client, self.session.session_key)
+        response = self.client.post(reverse("checklist:api_poll"))
+        self.assertEqual(response.status_code, 405)
+
+    def test_returns_checked_items_with_uppercased_source(self):
+        self._seed_checked(source="manual")
+        _set_session_key(self.client, self.session.session_key)
+        response = _get_poll(self.client, since=0)
+        self.assertEqual(response.status_code, 200)
+        items = response.json()["checked_items"]
+        self.assertEqual(len(items), 1)
+        self.assertEqual(items[0]["id"], self.item.id)
+        self.assertEqual(items[0]["source"], "MANUAL")
+
+    def test_auto_source_uppercased(self):
+        self._seed_checked(source="auto")
+        _set_session_key(self.client, self.session.session_key)
+        items = _get_poll(self.client).json()["checked_items"]
+        self.assertEqual(items[0]["source"], "AUTO")
+
+    def test_since_filters_out_older_items(self):
+        # Item checked 10 seconds ago
+        self._seed_checked(delta_seconds=-10)
+        _set_session_key(self.client, self.session.session_key)
+        # Poll with since = 5 seconds ago → item is older, should be excluded
+        since = int((datetime.now(tz=timezone.utc) - timedelta(seconds=5)).timestamp())
+        items = _get_poll(self.client, since=since).json()["checked_items"]
+        self.assertEqual(items, [])
+
+    def test_since_includes_newer_items(self):
+        # Item checked 2 seconds ago
+        self._seed_checked(delta_seconds=-2)
+        _set_session_key(self.client, self.session.session_key)
+        # Poll with since = 10 seconds ago → item is newer, should be included
+        since = int((datetime.now(tz=timezone.utc) - timedelta(seconds=10)).timestamp())
+        items = _get_poll(self.client, since=since).json()["checked_items"]
+        self.assertEqual(len(items), 1)
+
+    def test_sim_connected_false_when_no_plugin_contact(self):
+        _set_session_key(self.client, self.session.session_key)
+        data = _get_poll(self.client).json()
+        self.assertFalse(data["sim_connected"])
+        self.assertEqual(data["last_seen"], 0)
+
+    def test_sim_connected_false_when_plugin_contact_stale(self):
+        self.session.last_plugin_contact = datetime.now(tz=timezone.utc) - timedelta(seconds=20)
+        self.session.save()
+        _set_session_key(self.client, self.session.session_key)
+        data = _get_poll(self.client).json()
+        self.assertFalse(data["sim_connected"])
+        self.assertGreater(data["last_seen"], 0)
+
+    def test_sim_connected_true_when_plugin_contact_recent(self):
+        self.session.last_plugin_contact = datetime.now(tz=timezone.utc) - timedelta(seconds=3)
+        self.session.save()
+        _set_session_key(self.client, self.session.session_key)
+        data = _get_poll(self.client).json()
+        self.assertTrue(data["sim_connected"])
+
+    def test_invalid_since_defaults_to_zero(self):
+        self._seed_checked()
+        _set_session_key(self.client, self.session.session_key)
+        response = self.client.get(reverse("checklist:api_poll"), {"since": "bogus"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()["checked_items"]), 1)
 
 
 class TestCheckView(TestCase):

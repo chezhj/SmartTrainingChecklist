@@ -294,11 +294,10 @@
     };
 
     /* ── updateConnectionBadge: called by polling JS ── */
-    window.updateConnectionBadge = function (simConnected, aircraft, reconnecting) {
+    /* disconnected = was connected before but lost >30 s ago (vs never connected) */
+    window.updateConnectionBadge = function (simConnected, aircraft, reconnecting, disconnected) {
         var dot    = document.getElementById('sim-dot');
         var status = document.getElementById('conn-status');
-        var route  = (document.querySelector('.conn-bar') || {}).dataset
-                     ? document.querySelector('.conn-bar').dataset.route : '';
 
         dot.classList.remove('sim-connected', 'sim-reconnecting');
         status.classList.remove('sim-connected', 'sim-reconnecting');
@@ -306,7 +305,6 @@
         if (simConnected) {
             dot.classList.add('sim-connected');
             status.classList.add('sim-connected');
-            /* Route is always shown in the static .conn-route element */
             var parts = ['X-Plane Live'];
             if (aircraft) parts.push(aircraft);
             parts.push('1 Hz');
@@ -315,6 +313,8 @@
             dot.classList.add('sim-reconnecting');
             status.classList.add('sim-reconnecting');
             status.textContent = 'Reconnecting\u2026';
+        } else if (disconnected) {
+            status.textContent = 'Simulator disconnected';
         } else {
             status.textContent = 'Manual only';
         }
@@ -322,6 +322,40 @@
 
     /* Initial progress render */
     updateProgress();
+
+    /* ── Polling loop ── */
+    var POLL_INTERVAL = {{ poll_interval_ms }};
+    var lastPoll = 0;
+
+    async function pollChecklist() {
+        try {
+            var res = await fetch('/api/poll/?procedure={{ procedure.slug }}&since=' + lastPoll);
+            var data = await res.json();
+            lastPoll = Math.floor(Date.now() / 1000);
+
+            data.checked_items.forEach(function (item) { markItem(item.id, item.source); });
+
+            /* Derive 4-state badge: connected / reconnecting (10–30 s) / disconnected (>30 s) / manual */
+            var age          = data.last_seen > 0 ? (Date.now() / 1000 - data.last_seen) : Infinity;
+            var reconnecting = !data.sim_connected && data.last_seen > 0 && age < 30;
+            var disconnected = !data.sim_connected && data.last_seen > 0 && age >= 30;
+            updateConnectionBadge(data.sim_connected, null, reconnecting, disconnected);
+        } catch (e) {
+            updateConnectionBadge(false, null, false, false);
+        }
+    }
+
+    var pollTimer = setInterval(pollChecklist, POLL_INTERVAL);
+
+    /* Pause when tab is hidden; catch up immediately on return */
+    document.addEventListener('visibilitychange', function () {
+        if (document.hidden) {
+            clearInterval(pollTimer);
+        } else {
+            pollChecklist();
+            pollTimer = setInterval(pollChecklist, POLL_INTERVAL);
+        }
+    });
 
     /* ── Role toggle reload (preserves existing behaviour) ── */
     var pilotSwitch   = document.getElementById('pilot_role');

@@ -4,6 +4,7 @@ Base views for checklist
 
 from time import time
 
+from django.conf import settings
 from django.http import JsonResponse
 from django.shortcuts import HttpResponseRedirect, get_object_or_404, redirect
 from django.template.response import TemplateResponse
@@ -70,8 +71,9 @@ def _get_user_default_ids(user_profile) -> set[int]:
     if user_profile is None:
         return set()
     return set(
-        UserAttributeDefault.objects.filter(user_profile=user_profile)
-        .values_list("attribute_id", flat=True)
+        UserAttributeDefault.objects.filter(user_profile=user_profile).values_list(
+            "attribute_id", flat=True
+        )
     )
 
 
@@ -265,33 +267,35 @@ def profile_view(request):
         # Continue existing session in-place when one is already active
         existing_key = request.session.get("flight_session_key")
         if existing_key:
-                try:
-                    existing_session = FlightSession.objects.get(
-                        session_key=existing_key, is_active=True
+            try:
+                existing_session = FlightSession.objects.get(
+                    session_key=existing_key, is_active=True
+                )
+                _update_session_attributes(
+                    existing_session, selected_ids, ofp_ids, user_default_ids
+                )
+                if (
+                    existing_session.pilot_role != pilot_role
+                    or existing_session.pilot_function != pilot_function
+                ):
+                    existing_session.pilot_role = pilot_role
+                    existing_session.pilot_function = pilot_function
+                    existing_session.save(
+                        update_fields=["pilot_role", "pilot_function"]
                     )
-                    _update_session_attributes(
-                        existing_session, selected_ids, ofp_ids, user_default_ids
-                    )
-                    if (
-                        existing_session.pilot_role != pilot_role
-                        or existing_session.pilot_function != pilot_function
-                    ):
-                        existing_session.pilot_role = pilot_role
-                        existing_session.pilot_function = pilot_function
-                        existing_session.save(update_fields=["pilot_role", "pilot_function"])
-                    request.session["dual_mode"] = dual_mode
-                    if dual_mode:
-                        request.session["pilot_role"] = pilot_role
-                        request.session["captain_role"] = "C"
-                    active_slug = existing_session.active_phase
-                    if active_slug:
-                        return redirect("checklist:detail", slug=active_slug)
-                    first_proc = Procedure.objects.order_by("step").first()
-                    if first_proc:
-                        return redirect("checklist:detail", slug=first_proc.slug)
-                    return redirect("checklist:index")
-                except FlightSession.DoesNotExist:
-                    pass  # fall through to create new
+                request.session["dual_mode"] = dual_mode
+                if dual_mode:
+                    request.session["pilot_role"] = pilot_role
+                    request.session["captain_role"] = "C"
+                active_slug = existing_session.active_phase
+                if active_slug:
+                    return redirect("checklist:detail", slug=active_slug)
+                first_proc = Procedure.objects.order_by("step").first()
+                if first_proc:
+                    return redirect("checklist:detail", slug=first_proc.slug)
+                return redirect("checklist:index")
+            except FlightSession.DoesNotExist:
+                pass  # fall through to create new
 
         # Create a new session (no active session found)
         simbrief_data = _get_simbrief_session_data(request)
@@ -334,8 +338,12 @@ def profile_view(request):
 
     ofp_derived_ids = set(request.session.get("sb_derived_attribs", []))
     # Conditions: flight-specific (not user preference); General: user preference defaults
-    conditions_attrs = Attribute.objects.filter(show=True, is_user_preference=False).order_by("order")
-    general_attrs = Attribute.objects.filter(show=True, is_user_preference=True).order_by("order")
+    conditions_attrs = Attribute.objects.filter(
+        show=True, is_user_preference=False
+    ).order_by("order")
+    general_attrs = Attribute.objects.filter(
+        show=True, is_user_preference=True
+    ).order_by("order")
 
     user_profile = None
     if request.user.is_authenticated:
@@ -471,7 +479,9 @@ def procedure_detail(request, slug=None, pk=None):
         return HttpResponseRedirect(reverse("checklist:start"))
 
     # Advance the active_phase frontier (forward-only)
-    current_frontier = Procedure.objects.filter(slug=flight_session.active_phase).first()
+    current_frontier = Procedure.objects.filter(
+        slug=flight_session.active_phase
+    ).first()
     current_frontier_step = current_frontier.step if current_frontier else 0
     if procedure2view.step > current_frontier_step:
         flight_session.active_phase = procedure2view.slug
@@ -541,6 +551,7 @@ def procedure_detail(request, slug=None, pk=None):
         "all_procedures": Procedure.objects.order_by("step"),
         "flight_session": flight_session,
         "active_phase_step": active_phase_step,
+        "poll_interval_ms": settings.POLL_INTERVAL_MS,
     }
     return TemplateResponse(request, "checklist/detail.html", context)
 

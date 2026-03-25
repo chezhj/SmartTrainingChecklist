@@ -4,7 +4,7 @@ import json
 from datetime import datetime, timezone
 
 from django.http import JsonResponse
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_GET, require_POST
 
 from .models import CheckItem, FlightItemState, FlightSession
 
@@ -32,6 +32,48 @@ def _parse_body(request):
         return json.loads(request.body), None
     except (json.JSONDecodeError, ValueError):
         return None, JsonResponse({"status": "error", "detail": "Invalid JSON."}, status=400)
+
+
+@require_GET
+def poll_view(request):
+    """
+    GET /api/poll/?procedure=<slug>&since=<unix_timestamp>
+    Returns checked items newer than `since` and the current sim connection state.
+    No session → returns an empty-but-valid response (not 403).
+    """
+    session = _get_flight_session(request)
+    if session is None:
+        return JsonResponse({"checked_items": [], "sim_connected": False, "last_seen": 0})
+
+    try:
+        since_ts = int(request.GET.get("since", 0) or 0)
+    except (ValueError, TypeError):
+        since_ts = 0
+    since_dt = datetime.fromtimestamp(since_ts, tz=timezone.utc)
+
+    states = FlightItemState.objects.filter(
+        flight_session=session,
+        status="checked",
+        checked_at__gt=since_dt,
+    ).select_related("checklist_item")
+
+    checked_items = [
+        {"id": s.checklist_item.pk, "source": s.source.upper()}
+        for s in states
+    ]
+
+    last_seen = 0
+    sim_connected = False
+    if session.last_plugin_contact:
+        last_seen = int(session.last_plugin_contact.timestamp())
+        age = (datetime.now(tz=timezone.utc) - session.last_plugin_contact).total_seconds()
+        sim_connected = age < 10
+
+    return JsonResponse({
+        "checked_items": checked_items,
+        "sim_connected": sim_connected,
+        "last_seen": last_seen,
+    })
 
 
 @require_POST
