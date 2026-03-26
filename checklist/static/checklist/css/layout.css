@@ -151,6 +151,10 @@ body {
     display: block;
   }
 
+  .conn-logo {
+    display: none;
+  }
+
   .info-panel {
     width: 360px;
     left: auto;             /* slide from right edge only */
@@ -310,6 +314,12 @@ body {
   grid-template-columns: 1fr 1fr;
   gap: 20px;
   align-items: start;
+}
+
+@media (min-width: 681px) {
+  .danger-zone-wrapper {
+    grid-column: 1;
+  }
 }
 
 @media (max-width: 680px) {

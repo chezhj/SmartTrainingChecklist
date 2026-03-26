@@ -117,7 +117,7 @@ MOCK_TOKEN = config("X-Auth-Token", default=None)
 
 # Polling interval for the JS checklist polling loop (milliseconds).
 # Override in dev.py / prod.py if needed.
-POLL_INTERVAL_MS = 2500
+POLL_INTERVAL_MS = 1500
 
 # Auth redirects
 LOGIN_URL = "/login/"

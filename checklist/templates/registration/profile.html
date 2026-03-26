@@ -34,7 +34,7 @@
           </div>
         </div>
 
-        <div class="card-header" style="border-top:1px solid var(--color-border)">
+        <div class="card-header card-header--bordered">
           <span class="card-header-title">Account Details</span>
         </div>
 
@@ -78,11 +78,70 @@
         </div>
       </div>
 
+      {# ── API Key card ──────────────────────────────────────────────── #}
       <div class="card">
-        <div class="danger-zone">
-          <a class="btn-ghost" href="{% url 'logout_confirm' %}">Sign out</a>
-          <a class="btn-danger" href="{% url 'checklist:delete_account' %}">Delete account</a>
+        <div class="card-header">
+          <span class="card-header-title">X-Plane Plugin Key</span>
         </div>
+        <p class="pref-hint">Paste this key into the xFlow plugin's <code>config.ini</code>.</p>
+
+        {% if new_api_key %}
+          {# Shown once immediately after generate / regenerate #}
+          <div class="api-key-body">
+            <p class="api-key-warning">This key is shown once — copy it now.</p>
+            <input class="api-key-display" id="api-key-value" type="text" readonly
+                   value="{{ new_api_key }}">
+          </div>
+          <div class="card-save-row api-key-actions">
+            <form method="post" action="{% url 'checklist:account' %}">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="generate_api_key">
+              <button class="btn-setup-secondary" type="submit">Regenerate</button>
+            </form>
+            <button class="btn-setup-secondary" type="button" id="api-key-copy">Copy</button>
+          </div>
+          <script>
+          (function () {
+            var inp = document.getElementById('api-key-value');
+            inp.focus();
+            inp.select();
+            document.getElementById('api-key-copy').addEventListener('click', function () {
+              var btn = this;
+              navigator.clipboard.writeText(inp.value).then(function () {
+                btn.textContent = 'Copied!';
+                setTimeout(function () { btn.textContent = 'Copy'; }, 2000);
+              });
+            });
+          })();
+          </script>
+
+        {% elif profile.api_key_prefix %}
+          {# Key exists — show prefix only #}
+          <div class="api-key-body">
+            <div class="account-field account-field--last">
+              <span class="field-label">Active key</span>
+              <span class="field-value">{{ profile.api_key_prefix }}…</span>
+            </div>
+          </div>
+          <div class="card-save-row">
+            <form method="post" action="{% url 'checklist:account' %}">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="generate_api_key">
+              <button class="btn-setup-secondary" type="submit">Regenerate</button>
+            </form>
+          </div>
+
+        {% else %}
+          {# No key yet #}
+          <div class="card-save-row">
+            <form method="post" action="{% url 'checklist:account' %}">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="generate_api_key">
+              <button class="btn-setup-primary" type="submit">Generate key</button>
+            </form>
+          </div>
+        {% endif %}
+
       </div>
     </div>
 
@@ -118,6 +177,16 @@
         </form>
       </div>
       {% endif %}
+    </div>
+
+    {# ── Danger zone — third grid item, pinned to col 1 on desktop ── #}
+    <div class="danger-zone-wrapper">
+      <div class="card">
+        <div class="danger-zone">
+          <a class="btn-ghost" href="{% url 'logout_confirm' %}">Sign out</a>
+          <a class="btn-danger" href="{% url 'checklist:delete_account' %}">Delete account</a>
+        </div>
+      </div>
     </div>
 
   </div>{# /.two-col #}

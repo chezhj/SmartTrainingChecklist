@@ -717,6 +717,31 @@
   color: #fff;
 }
 
+.conn-logo {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--color-teal-dark);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background var(--transition-fast);
+}
+
+.conn-logo:hover {
+  background: var(--color-teal-mid);
+}
+
+.conn-logo + .conn-status-group {
+  margin-left: 10px;
+}
+
 .conn-status-group {
   display: flex;
   align-items: center;
@@ -1575,6 +1600,10 @@
   justify-content: space-between;
 }
 
+.card-header--bordered {
+  border-top: 1px solid var(--color-border);
+}
+
 .card-header-title {
   font-family: var(--font-mono);
   font-size: 10px;
@@ -1988,4 +2017,35 @@
 .xplane-banner-text span {
   color: var(--color-ink-muted);
   font-weight: 400;
+}
+
+/* API Key card */
+.api-key-body {
+  padding: 10px 20px 14px;
+}
+
+.api-key-warning {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-amber);
+  margin: 0 0 10px;
+}
+
+.api-key-display {
+  width: 100%;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-alt, var(--color-surface));
+  color: var(--color-ink);
+  cursor: text;
+  box-sizing: border-box;
+}
+
+.api-key-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }

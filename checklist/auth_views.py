@@ -16,7 +16,7 @@ from django.shortcuts import redirect, render
 
 from django.utils import timezone
 
-from checklist.models import Attribute, FlightSession, UserAttributeDefault
+from checklist.models import Attribute, FlightSession, UserAttributeDefault, generate_api_key
 
 _PLUGIN_TIMEOUT_SECONDS = 30
 
@@ -174,12 +174,21 @@ def account_profile_view(request):
         ])
         return redirect("checklist:account")
 
+    new_api_key = None
+    if request.method == "POST" and request.POST.get("action") == "generate_api_key":
+        raw, hashed, prefix = generate_api_key()
+        profile.api_key_hash = hashed
+        profile.api_key_prefix = prefix
+        profile.save(update_fields=["api_key_hash", "api_key_prefix"])
+        new_api_key = raw  # shown once in this response only; never stored
+
     return render(
         request,
         "registration/profile.html",
         {
             "simbrief_form": SimBriefIdForm(initial={"simbrief_id": profile.simbrief_id}),
             "profile": profile,
+            "new_api_key": new_api_key,
             **_preference_context(profile),
             **_xplane_context(request),
         },

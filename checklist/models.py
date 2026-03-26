@@ -6,6 +6,7 @@ Main models module for al database objects
 
 import secrets
 
+from django.contrib.auth.hashers import make_password
 from colorfield.fields import ColorField
 from django.conf import settings
 from django.db import models
@@ -19,6 +20,16 @@ def _generate_session_key():
     letters = secrets.token_hex(2).upper()
     digits = str(secrets.randbelow(10000)).zfill(4)
     return f"{letters}-{digits}"
+
+
+def generate_api_key():
+    """
+    Generate a new API key for plugin authentication.
+    Returns (raw, hashed, prefix) — only hashed and prefix are persisted.
+    The raw key is shown to the user once and never stored.
+    """
+    raw = "fvw_" + secrets.token_urlsafe(32)
+    return raw, make_password(raw), raw[:8]
 
 
 class Procedure(models.Model):
@@ -99,6 +110,8 @@ class UserProfile(models.Model):
         related_name="profile",
     )
     simbrief_id = models.CharField(max_length=20, blank=True)
+    api_key_hash = models.CharField(max_length=128, blank=True, null=True)
+    api_key_prefix = models.CharField(max_length=8, blank=True, null=True)
 
     def __str__(self) -> str:
         return f"Profile({self.user.username})"
