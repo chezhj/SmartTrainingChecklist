@@ -119,6 +119,15 @@ class TestPollView(TestCase):
         self.assertFalse(data["sim_connected"])
         self.assertGreater(data["last_seen"], 0)
 
+    def test_sim_connected_false_when_plugin_contact_just_outside_threshold(self):
+        # 7s ago is outside the 5s threshold but would have been True under a 10s threshold
+        self.session.last_plugin_contact = datetime.now(tz=timezone.utc) - timedelta(seconds=7)
+        self.session.save()
+        _set_session_key(self.client, self.session.session_key)
+        data = _get_poll(self.client).json()
+        self.assertFalse(data["sim_connected"])
+        self.assertGreater(data["last_seen"], 0)
+
     def test_sim_connected_true_when_plugin_contact_recent(self):
         self.session.last_plugin_contact = datetime.now(tz=timezone.utc) - timedelta(seconds=3)
         self.session.save()

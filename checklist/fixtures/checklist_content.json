@@ -469,7 +469,11 @@
     "action_label": "SET",
     "dataref_expression": "sim/cockpit/electrical/beacon_lights_on:1",
     "role": "FO",
-    "auto_check_rule": null,
+    "auto_check_rule": {
+      "dataref": "sim/cockpit/electrical/beacon_lights_on",
+      "op": "eq",
+      "value": 1
+    },
     "attributes": [
       4
     ]
@@ -619,7 +623,11 @@
     "action_label": "CHECKED",
     "dataref_expression": "(laminar/B738/toggle_switch/seatbelt_sign_pos:2)",
     "role": "FO",
-    "auto_check_rule": null,
+    "auto_check_rule": {
+      "dataref": "sim/cockpit/switches/fasten_seat_belts",
+      "op": "gte",
+      "value": 1
+    },
     "attributes": [
       4
     ]
@@ -1431,7 +1439,11 @@
     "action_label": "DONE",
     "dataref_expression": "laminar/B738/parking_brake_pos:0",
     "role": "PF",
-    "auto_check_rule": null,
+    "auto_check_rule": {
+      "dataref": "laminar/B738/parking_brake_pos",
+      "op": "eq",
+      "value": 0
+    },
     "attributes": [
       6
     ]
@@ -1579,7 +1591,11 @@
     "action_label": "SET",
     "dataref_expression": "laminar/B738/parking_brake_pos:1.0",
     "role": "PF",
-    "auto_check_rule": null,
+    "auto_check_rule": {
+      "dataref": "laminar/B738/parking_brake_pos",
+      "op": "eq",
+      "value": 1
+    },
     "attributes": [
       6
     ]
@@ -1748,7 +1764,11 @@
     "action_label": "SET",
     "dataref_expression": "(laminar/B738/toggle_switch/taxi_light_brightness_pos:>0)&&(sim/operation/failures/rel_lites_taxi:0)",
     "role": "PM",
-    "auto_check_rule": null,
+    "auto_check_rule": {
+      "dataref": "sim/cockpit/electrical/taxi_light_on",
+      "op": "eq",
+      "value": 1
+    },
     "attributes": [
       4
     ]
@@ -1869,7 +1889,11 @@
     "action_label": "SET",
     "dataref_expression": "(sim/operation/failures/rel_lites_land:0)&&(laminar/B738/led_lights:1)&&(laminar/B738/switch/land_lights_left_pos:1)&&(laminar/B738/switch/land_lights_right_pos:1)||(sim/operation/failures/rel_lites_land:0)&&(laminar/B738/led_lights:0)&&(laminar/B738/switch/land_lights_left_pos:1)&&(laminar/B738/switch/land_lights_right_pos:1)&&(laminar/B738/switch/land_lights_ret_left_pos:2)&&(laminar/B738/switch/land_lights_ret_right_pos:2)",
     "role": "PM",
-    "auto_check_rule": null,
+    "auto_check_rule": {
+      "dataref": "sim/cockpit/electrical/landing_lights_on",
+      "op": "eq",
+      "value": 1
+    },
     "attributes": [
       4
     ]
@@ -1920,7 +1944,11 @@
     "action_label": "SET",
     "dataref_expression": "(sim/cockpit2/switches/navigation_lights_on:1)&&(sim/cockpit2/switches/strobe_lights_on:1)&&(sim/operation/failures/rel_lites_strobe:0)&&(sim/operation/failures/rel_lites_nav:0)",
     "role": "PM",
-    "auto_check_rule": null,
+    "auto_check_rule": {
+      "dataref": "sim/cockpit/electrical/strobe_lights_on",
+      "op": "eq",
+      "value": 1
+    },
     "attributes": [
       4
     ]
@@ -2154,7 +2182,11 @@
     "action_label": "DONE",
     "dataref_expression": "laminar/B738/controls/gear_handle_down:0",
     "role": "PM",
-    "auto_check_rule": null,
+    "auto_check_rule": {
+      "dataref": "sim/cockpit/switches/gear_handle_status",
+      "op": "eq",
+      "value": 0
+    },
     "attributes": []
   }
 },
@@ -2199,7 +2231,11 @@
     "action_label": "SET",
     "dataref_expression": "laminar/B738/autobrake/autobrake_pos:1",
     "role": "PM",
-    "auto_check_rule": null,
+    "auto_check_rule": {
+      "dataref": "laminar/B738/autobrake/autobrake_pos",
+      "op": "eq",
+      "value": 0
+    },
     "attributes": []
   }
 },
@@ -2378,7 +2414,11 @@
     "action_label": "",
     "dataref_expression": "laminar/B738/parking_brake_pos:1.0",
     "role": "C",
-    "auto_check_rule": null,
+    "auto_check_rule": {
+      "dataref": "laminar/B738/parking_brake_pos",
+      "op": "eq",
+      "value": 1
+    },
     "attributes": [
       3
     ]
@@ -2429,7 +2469,11 @@
     "action_label": "",
     "dataref_expression": "sim/cockpit2/controls/speedbrake_ratio:0",
     "role": "C",
-    "auto_check_rule": null,
+    "auto_check_rule": {
+      "dataref": "laminar/B738/flt_ctrls/speedbrake_lever_pos",
+      "op": "eq",
+      "value": 0
+    },
     "attributes": [
       3
     ]
@@ -2463,7 +2507,11 @@
     "action_label": "",
     "dataref_expression": "(sim/cockpit2/controls/flap_ratio:0)",
     "role": "C",
-    "auto_check_rule": null,
+    "auto_check_rule": {
+      "dataref": "laminar/B738/flt_ctrls/flap_lever",
+      "op": "eq",
+      "value": 0.0
+    },
     "attributes": [
       3
     ]
@@ -2480,7 +2528,11 @@
     "action_label": "",
     "dataref_expression": "laminar/B738/controls/gear_handle_down:1",
     "role": "C",
-    "auto_check_rule": null,
+    "auto_check_rule": {
+      "dataref": "sim/cockpit/switches/gear_handle_status",
+      "op": "eq",
+      "value": 1
+    },
     "attributes": [
       3
     ]
@@ -2497,7 +2549,11 @@
     "action_label": "SET",
     "dataref_expression": "(laminar/B738/electric/battery_pos:1)&&(laminar/B738/button_switch/cover_position[2]:0)&&(sim/operation/failures/rel_batter0:0)",
     "role": "FO",
-    "auto_check_rule": null,
+    "auto_check_rule": {
+      "dataref": "laminar/B738/electric/battery_pos",
+      "op": "eq",
+      "value": 1
+    },
     "attributes": []
   }
 },
@@ -3288,7 +3344,11 @@
     "action_label": "",
     "dataref_expression": "",
     "role": "",
-    "auto_check_rule": null,
+    "auto_check_rule": {
+      "dataref": "sim/cockpit/switches/fasten_seat_belts",
+      "op": "gte",
+      "value": 1
+    },
     "attributes": [
       4
     ]

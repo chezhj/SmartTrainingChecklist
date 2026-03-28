@@ -5,6 +5,7 @@ All endpoints in this file are called by the xFlow X-Plane plugin,
 not by the browser. Auth is via Bearer token, not Django session.
 """
 
+import json
 import logging
 from datetime import datetime, timezone
 
@@ -21,6 +22,7 @@ from .models import (
     Procedure,
     UserProfile,
 )
+from .rules import collect_datarefs, evaluate_rule
 
 logger = logging.getLogger(__name__)
 
@@ -118,3 +120,111 @@ def plugin_check_next(request):
     )
 
     return JsonResponse({"checked": next_item.action_label}, status=200)
+
+
+def _parse_body(request):
+    """
+    Parse JSON request body. Returns (data, error_response).
+    On success: (dict, None). On failure: (None, JsonResponse 400).
+    """
+    try:
+        return json.loads(request.body), None
+    except (json.JSONDecodeError, ValueError):
+        return None, JsonResponse({"detail": "Invalid JSON."}, status=400)
+
+
+@csrf_exempt
+@require_POST
+def plugin_state(request):
+    """
+    POST /api/plugin/state/
+
+    Called by the xFlow plugin at ~1 Hz with current dataref values.
+    Evaluates auto_check_rule on visible items in the active phase and
+    creates FlightItemState(source='auto') for any that fire.
+
+    Responses:
+        200  {"status": "ok", "checked": [<id>, ...], "watch": [<path>, ...]}
+        400  missing/malformed body
+        401  bad or missing API key
+        404  session not found or doesn't belong to this user
+    """
+    profile = _get_profile_from_api_key(request)
+    if profile is None:
+        return JsonResponse({}, status=401)
+
+    data, err = _parse_body(request)
+    if err:
+        return err
+
+    session_id = data.get("session_id")
+    datarefs = data.get("datarefs")
+
+    if not isinstance(session_id, int):
+        return JsonResponse({"detail": "session_id must be an integer."}, status=400)
+    if not isinstance(datarefs, dict):
+        return JsonResponse({"detail": "datarefs must be an object."}, status=400)
+
+    try:
+        session = FlightSession.objects.get(
+            pk=session_id, user_profile=profile, is_active=True
+        )
+    except FlightSession.DoesNotExist:
+        return JsonResponse({}, status=404)
+
+    now = datetime.now(tz=timezone.utc)
+    FlightSession.objects.filter(pk=session.pk).update(last_plugin_contact=now)
+
+    newly_checked = []
+    watch = []
+
+    if session.active_phase:
+        try:
+            procedure = Procedure.objects.get(slug=session.active_phase)
+        except Procedure.DoesNotExist:
+            procedure = None
+
+        if procedure:
+            active_attr_ids = list(
+                FlightSessionAttribute.objects.filter(
+                    flight_session=session, is_active=True
+                ).values_list("attribute_id", flat=True)
+            )
+            checked_ids = set(
+                FlightItemState.objects.filter(
+                    flight_session=session, status="checked"
+                ).values_list("checklist_item_id", flat=True)
+            )
+
+            for item in CheckItem.objects.filter(
+                procedure=procedure, auto_check_rule__isnull=False
+            ).order_by("step"):
+                if not item.shouldshow(active_attr_ids):
+                    continue
+
+                watch.extend(collect_datarefs(item.auto_check_rule))
+
+                if item.pk in checked_ids:
+                    continue
+
+                if evaluate_rule(item.auto_check_rule, datarefs):
+                    FlightItemState.objects.update_or_create(
+                        flight_session=session,
+                        checklist_item=item,
+                        defaults={
+                            "status": "checked",
+                            "source": "auto",
+                            "checked_at": now,
+                        },
+                    )
+                    newly_checked.append(item.pk)
+
+    # Deduplicate while preserving order
+    seen = set()
+    unique_watch = []
+    for path in watch:
+        if path not in seen:
+            seen.add(path)
+            unique_watch.append(path)
+
+    return JsonResponse({"status": "ok", "checked": newly_checked, "watch": unique_watch})
