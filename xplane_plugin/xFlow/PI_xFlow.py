@@ -1,16 +1,18 @@
 """
 xFlow — simFlow X-Plane plugin
-Phase 3-alpha: manual "check next item" command via joystick/keyboard binding.
+Phase 3: flight loop dataref monitoring + manual check-next command.
 
 Installation:
   Copy the xFlow/ folder to:
     X-Plane 12/Resources/plugins/PythonPlugins/
 
   Edit config.ini:
-    api_key    — paste your key from the simFlow profile page
+    api_key     — paste your key from the simFlow profile page
     backend_url — leave as-is for local dev; change for production
+    log_level   — DEBUG / INFO / ERROR (default: INFO)
+                  DEBUG shows watch list contents, dataref values, raw responses
 
-Command registered:
+Commands registered:
   simflow/check_next_item
   Bind via X-Plane Settings → Keyboard or Joystick.
 """
@@ -18,6 +20,7 @@ Command registered:
 from __future__ import annotations
 
 import configparser
+import json
 import threading
 import urllib.error
 import urllib.request
@@ -45,11 +48,18 @@ plugin_desc = "simFlow – X-Plane checklist integration"
 _COMMAND_FULL = "simflow/check_next_item"
 _COMMAND_DESC = "simFlow – Check next checklist item"
 
+# ── Flight loop interval ───────────────────────────────────────────────────── #
+
+_LOOP_INTERVAL = 1.0   # seconds; reschedule rate returned from flight loop
+
+# ── Log levels ─────────────────────────────────────────────────────────────── #
+
+_LEVELS = {"DEBUG": 0, "INFO": 1, "ERROR": 2}
+
 # ── Config sentinel ────────────────────────────────────────────────────────── #
 #
 # PLACEHOLDER is the literal string that ships in config.ini.
-# _post_check_next checks for it so an unconfigured install logs a clear
-# warning ("api_key not set") instead of firing a request and getting 401.
+# Guards against firing requests on an unconfigured install.
 
 PLACEHOLDER = "paste-your-key-here"
 
@@ -89,22 +99,90 @@ class PythonInterface:
         )
         cfg = configparser.ConfigParser()
         cfg.read(config_path)
-        self._api_key     = cfg.get("xflow", "api_key",     fallback=PLACEHOLDER)
-        self._backend_url = cfg.get("xflow", "backend_url", fallback="http://cortado:8300")
-        self._check_cmd   = CheckCommand(_COMMAND_FULL, _COMMAND_DESC, self._on_check_next)
+        self._api_key      = cfg.get("xflow", "api_key",     fallback=PLACEHOLDER)
+        self._backend_url  = cfg.get("xflow", "backend_url", fallback="http://cortado:8300")
+        raw_level          = cfg.get("xflow", "log_level",   fallback="INFO").upper()
+        self._log_level    = _LEVELS.get(raw_level, _LEVELS["INFO"])
+        self._check_cmd    = CheckCommand(_COMMAND_FULL, _COMMAND_DESC, self._on_check_next)
+
+        # Session state — populated by _fetch_session()
+        self._session_id: int | None = None
+
+        # Watch list: dataref path → cached XP DataRef handle
+        # Populated from server responses; starts empty.
+        self._watch: list[str] = []
+        self._drefs: dict[str, object] = {}   # path → xp.findDataRef() result
+
+        # Last sent values — used to detect changes before POSTing
+        self._last_values: dict[str, float] = {}
+
+        # Serialise all HTTP work onto one daemon thread
+        self._lock = threading.Lock()
+
+    # ── Logging helper ─────────────────────────────────────────────────────── #
+
+    def _log(self, level: str, msg: str) -> None:
+        """Emit msg to X-Plane Log.txt only if level >= configured log_level."""
+        if _LEVELS.get(level, 0) >= self._log_level:
+            xp.log(f"[xFlow] {msg}")
+
+    # ── XPPython3 lifecycle ────────────────────────────────────────────────── #
 
     def XPluginStart(self):
         return plugin_name, plugin_sig, plugin_desc
 
     def XPluginEnable(self):
-        xp.log(f"[xFlow] ready — backend: {self._backend_url}")
+        self._log("INFO", f"ready — backend: {self._backend_url}")
+        # Register the flight loop callback
+        xp.registerFlightLoopCallback(self._flight_loop, _LOOP_INTERVAL, 0)
+        # Kick off session discovery in the background so we don't block enable
+        threading.Thread(target=self._fetch_session, daemon=True).start()
         return 1
 
     def XPluginDisable(self):
-        pass
+        xp.unregisterFlightLoopCallback(self._flight_loop, 0)
 
     def XPluginStop(self):
         self._check_cmd.destroy()
+
+    # ── Flight loop ────────────────────────────────────────────────────────── #
+
+    def _flight_loop(self, since_last: float, elapsed: float, counter: int, ref) -> float:
+        """
+        Called by X-Plane at ~1 Hz. Reads the current watch list datarefs
+        and, if any value changed since the last call, fires a background POST
+        to /api/plugin/state/. Always re-schedules at _LOOP_INTERVAL.
+        """
+        if not self._watch or self._session_id is None:
+            return _LOOP_INTERVAL
+
+        state: dict[str, float] = {}
+        changed = False
+
+        for path in self._watch:
+            dref = self._drefs.get(path)
+            if dref is None:
+                dref = xp.findDataRef(path)
+                if dref is None:
+                    self._log("DEBUG", f"dataref not found: {path}")
+                    continue
+                self._drefs[path] = dref
+
+            val = xp.getDataf(dref)
+            state[path] = val
+            if self._last_values.get(path) != val:
+                changed = True
+
+        self._last_values = state
+
+        if changed:
+            self._log("DEBUG", f"state changed — POSTing {len(state)} datarefs")
+            snapshot = dict(state)
+            threading.Thread(
+                target=self._post_state, args=(snapshot,), daemon=True
+            ).start()
+
+        return _LOOP_INTERVAL
 
     # ── Command handler ────────────────────────────────────────────────────── #
 
@@ -113,50 +191,173 @@ class PythonInterface:
             return
         threading.Thread(target=self._post_check_next, daemon=True).start()
 
-    # ── HTTP worker (daemon thread) ────────────────────────────────────────── #
+    # ── HTTP workers (daemon threads) ──────────────────────────────────────── #
 
-    def _post_check_next(self):
+    def _fetch_session(self) -> None:
+        """
+        GET /api/plugin/session/ — discover active session id on startup.
+        Retries silently; the flight loop simply does nothing until session_id
+        is set. Called again automatically when state POST returns 404.
+        """
         if not self._api_key or self._api_key == PLACEHOLDER:
-            xp.log("[xFlow] api_key not set — edit config.ini")
+            self._log("ERROR", "api_key not set — edit config.ini")
+            return
+
+        url     = self._backend_url.rstrip("/") + "/api/plugin/session/"
+        headers = {"Authorization": f"Bearer {self._api_key}"}
+
+        self._log("DEBUG", f"GET {url}")
+        try:
+            status, body = self._http_get(url, headers)
+        except Exception as exc:
+            self._log("ERROR", _classify_error(exc))
+            return
+
+        self._log("DEBUG", f"session response status {status}")
+
+        if status == 200:
+            with self._lock:
+                self._session_id = body.get("session_id")
+            self._log("INFO", f"session {self._session_id} — phase: {body.get('active_phase')}")
+        elif status == 404:
+            self._log("INFO", "no active session — waiting for pilot to start checklist")
+        elif status == 401:
+            self._log("ERROR", "authentication failed — check api_key in config.ini")
+        else:
+            self._log("INFO", f"session lookup returned {status}")
+
+    def _post_state(self, state: dict[str, float]) -> None:
+        """
+        POST /api/plugin/state/ with current dataref values.
+        Updates the watch list from the server response.
+        On 404, clears session_id so _fetch_session is retried next loop.
+        """
+        with self._lock:
+            session_id = self._session_id
+
+        if session_id is None:
+            return
+
+        url     = self._backend_url.rstrip("/") + "/api/plugin/state/"
+        headers = {
+            "Authorization": f"Bearer {self._api_key}",
+            "Content-Type": "application/json",
+        }
+        body    = {"session_id": session_id, "datarefs": state}
+
+        self._log("DEBUG", f"POST {url}")
+        try:
+            status, data = self._http_post_json(url, headers, body)
+        except Exception as exc:
+            self._log("ERROR", _classify_error(exc))
+            return
+
+        self._log("DEBUG", f"state response status {status}")
+
+        if status == 200:
+            newly_checked = data.get("checked", [])
+            new_watch     = data.get("watch", [])
+            if newly_checked:
+                self._log("DEBUG", f"auto-checked items: {newly_checked}")
+            if new_watch != self._watch:
+                self._log("DEBUG", f"watch list updated: {new_watch}")
+                with self._lock:
+                    self._watch = new_watch
+                    # Clear stale dref handles for paths no longer watched
+                    self._drefs = {p: v for p, v in self._drefs.items() if p in new_watch}
+        elif status == 401:
+            self._log("ERROR", "authentication failed — check api_key in config.ini")
+        elif status == 404:
+            self._log("INFO", "session expired — re-fetching session")
+            with self._lock:
+                self._session_id = None
+            threading.Thread(target=self._fetch_session, daemon=True).start()
+        else:
+            self._log("INFO", f"unexpected status {status}")
+
+    def _post_check_next(self) -> None:
+        if not self._api_key or self._api_key == PLACEHOLDER:
+            self._log("ERROR", "api_key not set — edit config.ini")
             return
 
         url     = self._backend_url.rstrip("/") + "/api/plugin/check-next/"
         headers = {"Authorization": f"Bearer {self._api_key}"}
 
+        self._log("DEBUG", f"POST {url}")
+
         try:
-            status = self._http_post(url, headers)
+            status, _ = self._http_post_json(url, headers, None)
         except Exception as exc:
-            xp.log(f"[xFlow] {_classify_error(exc)}")
+            self._log("ERROR", _classify_error(exc))
             return
 
+        self._log("DEBUG", f"check-next response status {status}")
+
         if status == 200:
-            pass  # success is silent
+            pass  # success — visible at DEBUG via the line above
         elif status == 204:
-            xp.log("[xFlow] phase complete — nothing left to check")
+            self._log("INFO", "phase complete — nothing left to check")
         elif status == 401:
-            xp.log("[xFlow] authentication failed — check api_key in config.ini")
+            self._log("ERROR", "authentication failed — check api_key in config.ini")
         elif status == 404:
-            xp.log("[xFlow] no active flight session")
+            self._log("INFO", "no active flight session")
         else:
-            xp.log(f"[xFlow] unexpected status {status}")
+            self._log("INFO", f"unexpected status {status}")
+
+    # ── HTTP primitives ────────────────────────────────────────────────────── #
 
     @staticmethod
-    def _http_post(url: str, headers: dict) -> int:
-        """
-        POST to url. Returns the HTTP status code.
-        Raises on network/timeout errors; caller handles logging.
-        urllib.error.HTTPError (4xx/5xx) is caught here and converted to a
-        status code so the caller's status-switch runs for all responses.
-        """
+    def _http_get(url: str, headers: dict) -> tuple[int, dict]:
+        """GET url. Returns (status_code, parsed_json_body)."""
         if _USE_REQUESTS:
-            return requests.post(url, headers=headers, timeout=5).status_code
+            resp = requests.get(url, headers=headers, timeout=5)
+            try:
+                body = resp.json()
+            except Exception:
+                body = {}
+            return resp.status_code, body
 
-        req = urllib.request.Request(url, method="POST", headers=headers, data=b"")
+        req = urllib.request.Request(url, method="GET", headers=headers)
         try:
             with urllib.request.urlopen(req, timeout=5) as resp:
-                return resp.status
+                raw = resp.read()
+                try:
+                    body = json.loads(raw)
+                except Exception:
+                    body = {}
+                return resp.status, body
         except urllib.error.HTTPError as exc:
-            return exc.code     # 4xx / 5xx — not a network failure
+            return exc.code, {}
+
+    @staticmethod
+    def _http_post_json(url: str, headers: dict, body) -> tuple[int, dict]:
+        """
+        POST url with optional JSON body.
+        Returns (status_code, parsed_json_body).
+        Raises on network/timeout errors.
+        """
+        if _USE_REQUESTS:
+            resp = requests.post(url, headers=headers, json=body, timeout=5)
+            try:
+                data = resp.json()
+            except Exception:
+                data = {}
+            return resp.status_code, data
+
+        payload = json.dumps(body).encode() if body is not None else b""
+        h = dict(headers)
+        h.setdefault("Content-Type", "application/json")
+        req = urllib.request.Request(url, method="POST", headers=h, data=payload)
+        try:
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                raw = resp.read()
+                try:
+                    data = json.loads(raw)
+                except Exception:
+                    data = {}
+                return resp.status, data
+        except urllib.error.HTTPError as exc:
+            return exc.code, {}
 
 
 # ── Error classifier (module-level, no state needed) ──────────────────────── #

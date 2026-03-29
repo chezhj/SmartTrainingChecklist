@@ -5,7 +5,7 @@ from checklist.export_view import ExportChecklistView
 from . import views
 from .api_views import check_view, poll_view, uncheck_view
 from .auth_views import account_profile_view, delete_account_view
-from .plugin_views import plugin_check_next, plugin_state
+from .plugin_views import plugin_check_next, plugin_session, plugin_state
 
 app_name = "checklist"
 urlpatterns = [
@@ -22,5 +22,6 @@ urlpatterns = [
     path("api/check/", check_view, name="api_check"),
     path("api/uncheck/", uncheck_view, name="api_uncheck"),
     path("api/plugin/check-next/", plugin_check_next, name="api_plugin_check_next"),
+    path("api/plugin/session/", plugin_session, name="api_plugin_session"),
     path("api/plugin/state/", plugin_state, name="api_plugin_state"),
 ]
