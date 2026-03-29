@@ -5,14 +5,15 @@ All endpoints in this file are called by the xFlow X-Plane plugin,
 not by the browser. Auth is via Bearer token, not Django session.
 """
 
+import functools
 import json
 import logging
 from datetime import datetime, timezone
 
 from django.contrib.auth.hashers import check_password
 from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt  # used inside require_api_key
+from django.views.decorators.http import require_GET, require_POST
 
 from .models import (
     CheckItem,
@@ -27,22 +28,29 @@ from .rules import collect_datarefs, evaluate_rule
 logger = logging.getLogger(__name__)
 
 
-def _get_profile_from_api_key(request):
+def require_api_key(view_func):
     """
-    Resolve a UserProfile from an Authorization: Bearer <raw_key> header.
-    Returns the profile on success, None on any failure.
+    Decorator for plugin endpoints. Resolves the UserProfile from an
+    Authorization: Bearer <raw_key> header and attaches it to
+    request.plugin_profile. Returns 401 if the key is missing or invalid.
+
+    Also applies @csrf_exempt — plugin requests have no CSRF token.
     """
-    auth = request.headers.get("Authorization", "")
-    if not auth.startswith("Bearer "):
-        return None
-    raw_key = auth[7:]
-    for profile in UserProfile.objects.exclude(api_key_hash=None):
-        if check_password(raw_key, profile.api_key_hash):
-            return profile
-    return None
+    @functools.wraps(view_func)
+    @csrf_exempt
+    def wrapper(request, *args, **kwargs):
+        auth = request.headers.get("Authorization", "")
+        if auth.startswith("Bearer "):
+            raw_key = auth[7:]
+            for profile in UserProfile.objects.exclude(api_key_hash=None):
+                if check_password(raw_key, profile.api_key_hash):
+                    request.plugin_profile = profile
+                    return view_func(request, *args, **kwargs)
+        return JsonResponse({}, status=401)
+    return wrapper
 
 
-@csrf_exempt
+@require_api_key
 @require_POST
 def plugin_check_next(request):
     """
@@ -57,9 +65,7 @@ def plugin_check_next(request):
         401  bad or missing API key
         404  no active session, or no active phase, or procedure not found
     """
-    profile = _get_profile_from_api_key(request)
-    if profile is None:
-        return JsonResponse({}, status=401)
+    profile = request.plugin_profile
 
     session = FlightSession.objects.filter(
         user_profile=profile, is_active=True
@@ -122,6 +128,32 @@ def plugin_check_next(request):
     return JsonResponse({"checked": next_item.action_label}, status=200)
 
 
+@require_api_key
+@require_GET
+def plugin_session(request):
+    """
+    GET /api/plugin/session/
+
+    Returns the active FlightSession id and current active_phase for the
+    authenticated user. The plugin calls this on startup to obtain the
+    session_id it must include in every /api/plugin/state/ POST.
+
+    Responses:
+        200  {"session_id": <int>, "active_phase": "<slug>"}
+        401  bad or missing API key
+        404  no active session found
+    """
+    profile = request.plugin_profile
+
+    session = FlightSession.objects.filter(
+        user_profile=profile, is_active=True
+    ).first()
+    if session is None:
+        return JsonResponse({}, status=404)
+
+    return JsonResponse({"session_id": session.pk, "active_phase": session.active_phase})
+
+
 def _parse_body(request):
     """
     Parse JSON request body. Returns (data, error_response).
@@ -133,7 +165,7 @@ def _parse_body(request):
         return None, JsonResponse({"detail": "Invalid JSON."}, status=400)
 
 
-@csrf_exempt
+@require_api_key
 @require_POST
 def plugin_state(request):
     """
@@ -149,9 +181,7 @@ def plugin_state(request):
         401  bad or missing API key
         404  session not found or doesn't belong to this user
     """
-    profile = _get_profile_from_api_key(request)
-    if profile is None:
-        return JsonResponse({}, status=401)
+    profile = request.plugin_profile
 
     data, err = _parse_body(request)
     if err:
