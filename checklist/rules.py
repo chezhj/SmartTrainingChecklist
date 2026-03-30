@@ -16,8 +16,12 @@ def collect_datarefs(rule: dict) -> list:
         for r in rule["any"]:
             result.extend(collect_datarefs(r))
         return result
-    dr = rule.get("dataref")
-    return [dr] if dr else []
+    result = []
+    if dr := rule.get("dataref"):
+        result.append(dr)
+    if ref := rule.get("ref"):          # live-dataref comparison value
+        result.append(ref)
+    return result
 
 
 _OPS = {
@@ -47,10 +51,19 @@ def evaluate_rule(rule: dict, state: dict) -> bool:
 
     dataref = rule.get("dataref")
     op      = rule.get("op")
-    value   = rule.get("value")
 
     if dataref not in state:
         return False
+
+    # "ref" allows comparing against a live dataref value instead of a constant.
+    # An optional "delta" is added to the ref value before comparison.
+    if "ref" in rule:
+        ref = rule["ref"]
+        if ref not in state:
+            return False
+        value = state[ref] + rule.get("delta", 0)
+    else:
+        value = rule.get("value")
 
     fn = _OPS.get(op)
     if fn is None:
