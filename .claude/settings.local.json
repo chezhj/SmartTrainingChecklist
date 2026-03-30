@@ -6,7 +6,8 @@
       "Bash(python -m pytest checklist/tests/test_models.py checklist/tests/test_views.py checklist/tests/test_auth.py -x -q)",
       "Bash(python -m pytest -q)",
       "Bash(python -m pytest checklist/tests/test_simbrief.py -v -q)",
-      "Bash(python manage.py check)"
+      "Bash(python manage.py check)",
+      "Bash(python3:*)"
     ]
   }
 }
