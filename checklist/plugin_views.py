@@ -98,15 +98,15 @@ def plugin_check_next(request):
         ).values_list("attribute_id", flat=True)
     )
 
-    checked_ids = set(
+    done_ids = set(
         FlightItemState.objects.filter(
-            flight_session=session, status="checked"
+            flight_session=session, status__in=("checked", "skipped")
         ).values_list("checklist_item_id", flat=True)
     )
 
     next_item = None
     for item in CheckItem.objects.filter(procedure=procedure).order_by("step"):
-        if item.pk in checked_ids:
+        if item.pk in done_ids:
             continue
         if item.shouldshow(active_attr_ids):
             next_item = item
@@ -195,6 +195,7 @@ def plugin_state(request):
     if not isinstance(datarefs, dict):
         return JsonResponse({"detail": "datarefs must be an object."}, status=400)
 
+
     try:
         session = FlightSession.objects.get(
             pk=session_id, user_profile=profile, is_active=True
@@ -205,7 +206,12 @@ def plugin_state(request):
     now = datetime.now(tz=timezone.utc)
     FlightSession.objects.filter(pk=session.pk).update(last_plugin_contact=now)
 
+    # Attribute ID that marks items as optional (non-blocking for the sequence gate).
+    # Items WITHOUT this attribute are "required" and form the gate boundary.
+    _OPTIONAL_ATTR = 4
+
     newly_checked = []
+    newly_skipped = []
     watch = []
 
     if session.active_phase:
@@ -220,24 +226,66 @@ def plugin_state(request):
                     flight_session=session, is_active=True
                 ).values_list("attribute_id", flat=True)
             )
-            checked_ids = set(
+            done_ids = set(
                 FlightItemState.objects.filter(
-                    flight_session=session, status="checked"
+                    flight_session=session, status__in=("checked", "skipped")
                 ).values_list("checklist_item_id", flat=True)
             )
 
-            for item in CheckItem.objects.filter(
-                procedure=procedure, auto_check_rule__isnull=False
-            ).order_by("step"):
-                if not item.shouldshow(active_attr_ids):
+            # Visible items in step order, attributes prefetched to avoid N+1
+            all_items = list(
+                CheckItem.objects.filter(procedure=procedure)
+                .prefetch_related("attributes")
+                .order_by("step")
+            )
+            visible_items = [i for i in all_items if i.shouldshow(active_attr_ids)]
+
+            def is_optional(item):
+                return any(a.pk == _OPTIONAL_ATTR for a in item.attributes.all())
+
+            # Gate: first visible, not-done, required (no attr 4) item
+            gate_step = None
+            for item in visible_items:
+                if item.pk not in done_ids and not is_optional(item):
+                    gate_step = item.step
+                    break
+
+            # Active zone: not-done items up to and including the gate
+            active_items = [
+                i for i in visible_items
+                if i.pk not in done_ids and (gate_step is None or i.step <= gate_step)
+            ]
+
+            for item in active_items:
+                if item.auto_check_rule is None:
                     continue
 
-                watch.extend(collect_datarefs(item.auto_check_rule))
+                item_drefs = collect_datarefs(item.auto_check_rule)
+                watch.extend(item_drefs)
 
-                if item.pk in checked_ids:
-                    continue
+                item_values = {p: datarefs.get(p, "<missing>") for p in item_drefs}
+                logger.debug("next item: [%s] %s | %s", item.pk, item.item, item_values)
 
                 if evaluate_rule(item.auto_check_rule, datarefs):
+                    # Auto-skip unchecked optional items that precede this item
+                    for candidate in visible_items:
+                        if candidate.step >= item.step:
+                            break
+                        if candidate.pk in done_ids:
+                            continue
+                        if is_optional(candidate):
+                            FlightItemState.objects.update_or_create(
+                                flight_session=session,
+                                checklist_item=candidate,
+                                defaults={
+                                    "status": "skipped",
+                                    "source": "auto",
+                                    "checked_at": now,
+                                },
+                            )
+                            newly_skipped.append(candidate.pk)
+                            done_ids.add(candidate.pk)
+
                     FlightItemState.objects.update_or_create(
                         flight_session=session,
                         checklist_item=item,
@@ -248,8 +296,9 @@ def plugin_state(request):
                         },
                     )
                     newly_checked.append(item.pk)
+                    done_ids.add(item.pk)
 
-    # Deduplicate while preserving order
+    # Deduplicate watch list while preserving order
     seen = set()
     unique_watch = []
     for path in watch:
@@ -257,4 +306,9 @@ def plugin_state(request):
             seen.add(path)
             unique_watch.append(path)
 
-    return JsonResponse({"status": "ok", "checked": newly_checked, "watch": unique_watch})
+    return JsonResponse({
+        "status": "ok",
+        "checked": newly_checked,
+        "skipped": newly_skipped,
+        "watch": unique_watch,
+    })
