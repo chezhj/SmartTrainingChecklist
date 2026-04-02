@@ -4584,7 +4584,7 @@
     "fields": {
       "item": "Isa Dev",
       "procedure": 10,
-      "step": 26,
+      "step": 27,
       "setting": "Enter ISA DEV from OFP",
       "action_label": "SET",
       "dataref_expression": "",
@@ -4620,7 +4620,7 @@
     "fields": {
       "item": "Trans Alt",
       "procedure": 10,
-      "step": 25,
+      "step": 26,
       "setting": "Verify with departure airport",
       "action_label": "VERIFIED",
       "dataref_expression": "",
@@ -4659,7 +4659,7 @@
     "fields": {
       "item": "Execute",
       "procedure": 10,
-      "step": 27,
+      "step": 28,
       "setting": "press",
       "action_label": "EXECUTED",
       "dataref_expression": "",
@@ -4725,7 +4725,7 @@
     "fields": {
       "item": "CLB Thrust",
       "procedure": 10,
-      "step": 33,
+      "step": 34,
       "setting": "is selected based on TO thrust",
       "action_label": "SET",
       "dataref_expression": "",
