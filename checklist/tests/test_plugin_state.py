@@ -285,6 +285,46 @@ class TestPluginStateRuleEvaluation(_Base):
         resp = _post(self.client, {"session_id": self.session.pk, "datarefs": datarefs}, key=self.raw_key)
         self.assertIn(item.pk, resp.json()["checked"])
 
+    def test_fmc_line_contains_fires_when_substring_present(self):
+        rule = {"fmc_line": "laminar/B738/fmc1/Line02_L", "contains": "EHAM"}
+        item = CheckItemFactory(procedure=self.procedure, step=1, auto_check_rule=rule)
+        datarefs = {"laminar/B738/fmc1/Line02_L": "EHAM"}
+        resp = _post(self.client, {"session_id": self.session.pk, "datarefs": datarefs}, key=self.raw_key)
+        self.assertIn(item.pk, resp.json()["checked"])
+
+    def test_fmc_line_contains_does_not_fire_when_substring_absent(self):
+        rule = {"fmc_line": "laminar/B738/fmc1/Line02_L", "contains": "EHAM"}
+        item = CheckItemFactory(procedure=self.procedure, step=1, auto_check_rule=rule)
+        datarefs = {"laminar/B738/fmc1/Line02_L": "----"}
+        resp = _post(self.client, {"session_id": self.session.pk, "datarefs": datarefs}, key=self.raw_key)
+        self.assertNotIn(item.pk, resp.json()["checked"])
+
+    def test_fmc_line_not_contains_fires_when_substring_absent(self):
+        rule = {"fmc_line": "laminar/B738/fmc1/Line02_L", "not_contains": "----"}
+        item = CheckItemFactory(procedure=self.procedure, step=1, auto_check_rule=rule)
+        datarefs = {"laminar/B738/fmc1/Line02_L": "EHAM"}
+        resp = _post(self.client, {"session_id": self.session.pk, "datarefs": datarefs}, key=self.raw_key)
+        self.assertIn(item.pk, resp.json()["checked"])
+
+    def test_fmc_line_not_contains_does_not_fire_when_substring_present(self):
+        rule = {"fmc_line": "laminar/B738/fmc1/Line02_L", "not_contains": "----"}
+        item = CheckItemFactory(procedure=self.procedure, step=1, auto_check_rule=rule)
+        datarefs = {"laminar/B738/fmc1/Line02_L": "----"}
+        resp = _post(self.client, {"session_id": self.session.pk, "datarefs": datarefs}, key=self.raw_key)
+        self.assertNotIn(item.pk, resp.json()["checked"])
+
+    def test_fmc_line_dataref_appears_in_watch(self):
+        rule = {"fmc_line": "laminar/B738/fmc1/Line02_L", "not_contains": "----"}
+        CheckItemFactory(procedure=self.procedure, step=1, auto_check_rule=rule)
+        resp = _post(self.client, self._valid_body(), key=self.raw_key)
+        self.assertIn("laminar/B738/fmc1/Line02_L", resp.json()["watch"])
+
+    def test_fmc_line_missing_from_state_does_not_check_item(self):
+        rule = {"fmc_line": "laminar/B738/fmc1/Line02_L", "not_contains": "----"}
+        item = CheckItemFactory(procedure=self.procedure, step=1, auto_check_rule=rule)
+        resp = _post(self.client, self._valid_body(), key=self.raw_key)
+        self.assertNotIn(item.pk, resp.json()["checked"])
+
 
 class TestPluginStateAttributeFiltering(_Base):
 

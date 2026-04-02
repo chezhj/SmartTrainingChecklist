@@ -21,10 +21,13 @@ from __future__ import annotations
 
 import configparser
 import json
+import re
 import threading
 import urllib.error
 import urllib.request
 from pathlib import Path
+
+_ARRAY_RE = re.compile(r'^(.+)\[(\d+)\]$')
 
 try:
     from XPPython3 import xp
@@ -114,7 +117,7 @@ class PythonInterface:
         self._drefs: dict[str, object] = {}   # path → xp.findDataRef() result
 
         # Last sent values — used to detect changes before POSTing
-        self._last_values: dict[str, float] = {}
+        self._last_values: dict[str, float | str] = {}
 
         # Serialise all HTTP work onto one daemon thread
         self._lock = threading.Lock()
@@ -150,37 +153,60 @@ class PythonInterface:
     def _flight_loop(self, since_last: float, elapsed: float, counter: int, ref) -> float:
         """
         Called by X-Plane at ~1 Hz. Reads the current watch list datarefs
-        and, if any value changed since the last call, fires a background POST
-        to /api/plugin/state/. Always re-schedules at _LOOP_INTERVAL.
+        and POSTs to /api/plugin/state/. If the watch list is empty the POST
+        still fires (with datarefs: {}) so the server can return the initial
+        watch list and record last_plugin_contact (keeps the connection badge alive).
         """
-        if not self._watch or self._session_id is None:
+        if self._session_id is None:
             return _LOOP_INTERVAL
 
-        state: dict[str, float] = {}
+        state: dict[str, float | str] = {}
         changed = False
 
         for path in self._watch:
-            dref = self._drefs.get(path)
-            if dref is None:
-                dref = xp.findDataRef(path)
+            m = _ARRAY_RE.match(path)
+            if m:
+                base, idx = m.group(1), int(m.group(2))
+                dref = self._drefs.get(path)
                 if dref is None:
-                    self._log("DEBUG", f"dataref not found: {path}")
-                    continue
-                self._drefs[path] = dref
+                    dref = xp.findDataRef(base)
+                    if dref is None:
+                        self._log("DEBUG", f"dataref not found: {base}")
+                        continue
+                    self._drefs[path] = dref
+                buf = [0.0] * (idx + 1)
+                xp.getDatavf(dref, buf, 0, idx + 1)
+                val = buf[idx]
+            else:
+                dref = self._drefs.get(path)
+                if dref is None:
+                    dref = xp.findDataRef(path)
+                    if dref is None:
+                        self._log("DEBUG", f"dataref not found: {path}")
+                        continue
+                    self._drefs[path] = dref
+                # xp.Type_Data (32) = byte-array / string dataref (CDU lines etc.)
+                if xp.getDataRefTypes(dref) & 32:
+                    buf = bytearray(64)
+                    xp.getDatas(dref, buf, 0, 64)
+                    val = buf.decode("latin-1").rstrip("\x00").strip()
+                else:
+                    val = xp.getDataf(dref)
 
-            val = xp.getDataf(dref)
             state[path] = val
             if self._last_values.get(path) != val:
                 changed = True
 
         self._last_values = state
 
-        if changed:
-            self._log("DEBUG", f"state changed — POSTing {len(state)} datarefs")
-            snapshot = dict(state)
-            threading.Thread(
-                target=self._post_state, args=(snapshot,), daemon=True
-            ).start()
+        # Always POST — keeps last_plugin_contact fresh (heartbeat) and
+        # bootstraps the watch list on first tick. Dataref data is small enough
+        # that 1 POST/s to a local server is negligible.
+        self._log("DEBUG", f"POSTing {len(state)} datarefs (changed={changed})")
+        snapshot = dict(state)
+        threading.Thread(
+            target=self._post_state, args=(snapshot,), daemon=True
+        ).start()
 
         return _LOOP_INTERVAL
 
@@ -260,7 +286,6 @@ class PythonInterface:
             if newly_checked:
                 self._log("DEBUG", f"auto-checked items: {newly_checked}")
             if new_watch != self._watch:
-                self._log("DEBUG", f"watch list updated: {new_watch}")
                 with self._lock:
                     self._watch = new_watch
                     # Clear stale dref handles for paths no longer watched

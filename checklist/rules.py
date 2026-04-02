@@ -16,6 +16,8 @@ def collect_datarefs(rule: dict) -> list:
         for r in rule["any"]:
             result.extend(collect_datarefs(r))
         return result
+    if "fmc_line" in rule:
+        return [rule["fmc_line"]]
     result = []
     if dr := rule.get("dataref"):
         result.append(dr)
@@ -48,6 +50,20 @@ def evaluate_rule(rule: dict, state: dict) -> bool:
 
     if "any" in rule:
         return any(evaluate_rule(r, state) for r in rule["any"])
+
+    # fmc_line: check CDU screen-buffer string datarefs.
+    # Rule shape: {"fmc_line": "<dataref>", "contains": "<substr>"}
+    #          or {"fmc_line": "<dataref>", "not_contains": "<substr>"}
+    if "fmc_line" in rule:
+        path = rule["fmc_line"]
+        if path not in state:
+            return False
+        text = str(state[path])
+        if "contains" in rule:
+            return rule["contains"] in text
+        if "not_contains" in rule:
+            return rule["not_contains"] not in text
+        return False
 
     dataref = rule.get("dataref")
     op      = rule.get("op")
