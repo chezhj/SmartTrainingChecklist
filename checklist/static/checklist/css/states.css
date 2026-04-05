@@ -25,6 +25,15 @@
   color: var(--color-teal-bright);
 }
 
+/* Initializing — blue-grey static dot: plugin connected, datarefs not yet flowing */
+.sim-dot.sim-initializing {
+  background: #6B8FA8;
+}
+
+.conn-status-text.sim-initializing {
+  color: #6B8FA8;
+}
+
 /* Reconnecting — amber static dot */
 .sim-dot.sim-reconnecting {
   background: var(--color-amber);

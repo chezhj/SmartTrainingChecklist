@@ -294,13 +294,18 @@
     };
 
     /* ── updateConnectionBadge: called by polling JS ── */
-    /* disconnected = was connected before but lost >30 s ago (vs never connected) */
-    window.updateConnectionBadge = function (simConnected, aircraft, reconnecting, disconnected) {
+    /* States (mutually exclusive, checked in priority order):
+       simConnected   — live, datarefs flowing (<5 s ago)
+       reconnecting   — was live, brief gap (5–30 s)
+       initializing   — plugin fetched session but no datarefs yet (<15 s)
+       disconnected   — was seen before, now lost (>30 s)
+       else           — never connected (manual only) */
+    window.updateConnectionBadge = function (simConnected, aircraft, reconnecting, initializing, disconnected) {
         var dot    = document.getElementById('sim-dot');
         var status = document.getElementById('conn-status');
 
-        dot.classList.remove('sim-connected', 'sim-reconnecting');
-        status.classList.remove('sim-connected', 'sim-reconnecting');
+        dot.classList.remove('sim-connected', 'sim-reconnecting', 'sim-initializing');
+        status.classList.remove('sim-connected', 'sim-reconnecting', 'sim-initializing');
 
         if (simConnected) {
             dot.classList.add('sim-connected');
@@ -313,6 +318,10 @@
             dot.classList.add('sim-reconnecting');
             status.classList.add('sim-reconnecting');
             status.textContent = 'Reconnecting\u2026';
+        } else if (initializing) {
+            dot.classList.add('sim-initializing');
+            status.classList.add('sim-initializing');
+            status.textContent = 'X-Plane initializing\u2026';
         } else if (disconnected) {
             status.textContent = 'Simulator disconnected';
         } else {
@@ -335,16 +344,17 @@
 
             data.checked_items.forEach(function (item) { markItem(item.id, item.source); });
 
-            /* Derive 4-state badge: connected / reconnecting (10–30 s) / disconnected (>30 s) / manual */
+            /* Derive 5-state badge: connected / reconnecting / initializing / disconnected / manual */
             var age          = data.last_seen > 0 ? (Date.now() / 1000 - data.last_seen) : Infinity;
             var reconnecting = !data.sim_connected && data.last_seen > 0 && age < 30;
             var disconnected = !data.sim_connected && data.last_seen > 0 && age >= 30;
-            updateConnectionBadge(data.sim_connected, null, reconnecting, disconnected);
+            updateConnectionBadge(data.sim_connected, null, reconnecting, data.sim_initializing, disconnected);
         } catch (e) {
-            updateConnectionBadge(false, null, false, false);
+            updateConnectionBadge(false, null, false, false, false);
         }
     }
 
+    pollChecklist();
     var pollTimer = setInterval(pollChecklist, POLL_INTERVAL);
 
     /* Pause when tab is hidden; catch up immediately on return */

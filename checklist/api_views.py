@@ -64,14 +64,17 @@ def poll_view(request):
 
     last_seen = 0
     sim_connected = False
+    sim_initializing = False
     if session.last_plugin_contact:
         last_seen = int(session.last_plugin_contact.timestamp())
         age = (datetime.now(tz=timezone.utc) - session.last_plugin_contact).total_seconds()
         sim_connected = age < 5
+        sim_initializing = not sim_connected and age < 15
 
     return JsonResponse({
         "checked_items": checked_items,
         "sim_connected": sim_connected,
+        "sim_initializing": sim_initializing,
         "last_seen": last_seen,
     })
 

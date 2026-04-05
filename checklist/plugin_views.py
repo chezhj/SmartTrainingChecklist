@@ -151,6 +151,11 @@ def plugin_session(request):
     if session is None:
         return JsonResponse({}, status=404)
 
+    # Stamp last_plugin_contact so the browser badge shows "Initializing"
+    # even before the first state POST arrives.
+    now = datetime.now(tz=timezone.utc)
+    FlightSession.objects.filter(pk=session.pk).update(last_plugin_contact=now)
+
     return JsonResponse({"session_id": session.pk, "active_phase": session.active_phase})
 
 
