@@ -54,16 +54,21 @@ def evaluate_rule(rule: dict, state: dict) -> bool:
     # fmc_line: check CDU screen-buffer string datarefs.
     # Rule shape: {"fmc_line": "<dataref>", "contains": "<substr>"}
     #          or {"fmc_line": "<dataref>", "not_contains": "<substr>"}
+    # Optional "tail": N  — check only last N chars of the line.
+    # Optional "count_gte": N  — require contains substring ≥ N times.
     if "fmc_line" in rule:
         path = rule["fmc_line"]
         if path not in state:
             return False
         text = str(state[path])
-        if "contains" in rule:
-            return rule["contains"] in text
+        if "tail" in rule:
+            text = text[-rule["tail"]:]
         if "not_contains" in rule:
             return rule["not_contains"] not in text
-        return False
+        substr = rule.get("contains", "")
+        if "count_gte" in rule:
+            return text.count(substr) >= rule["count_gte"]
+        return substr in text
 
     dataref = rule.get("dataref")
     op      = rule.get("op")
@@ -82,7 +87,4 @@ def evaluate_rule(rule: dict, state: dict) -> bool:
         value = rule.get("value")
 
     fn = _OPS.get(op)
-    if fn is None:
-        return False
-
-    return fn(state[dataref], value)
+    return fn is not None and fn(state[dataref], value)
