@@ -3068,7 +3068,11 @@
       "action_label": "DONE",
       "dataref_expression": "",
       "role": "FO",
-      "auto_check_rule": null,
+      "auto_check_rule": {
+        "dataref": "laminar/B738/airstairs_hide",
+        "op": "eq",
+        "value": 0
+      },
       "attributes": [
         4
       ]
@@ -3146,7 +3150,9 @@
           }
         ]
       },
-      "attributes": []
+      "attributes": [
+        4
+      ]
     }
   },
   {
@@ -3176,7 +3182,7 @@
       "dataref_expression": "sim/flightmodel/weight/m_fuel_total:><0",
       "role": "FO",
       "auto_check_rule": {
-        "dataref": "sim/flightmodel/weight/m_fuel_total",
+        "dataref": "laminar/b738/tabx/req_fuel",
         "op": "gt",
         "value": 0
       },
@@ -3615,19 +3621,9 @@
       "dataref_expression": "(sim/cockpit2/switches/generic_lights_switch[5]:1)||(sim/cockpit2/switches/generic_lights_switch[0]:1)||(sim/cockpit2/switches/generic_lights_switch[1]:1)||(laminar/B738/toggle_switch/electric_hydro_pumps1_pos:0:1)||(laminar/B738/toggle_switch/electric_hydro_pumps2_pos:0:1)||(laminar/B738/toggle_switch/electric_hydro_pumps1_pos:1)||(laminar/B738/toggle_switch/electric_hydro_pumps2_pos:1)",
       "role": "FO",
       "auto_check_rule": {
-        "any": [
-          {
-            "dataref": "sim/cockpit2/switches/generic_lights_switch[5]",
-            "op": "eq",
-            "value": 1
-          },
-          {
-            "dataref": "sim/cockpit2/switches/generic_lights_switch[0]",
-            "op": "eq",
-            "value": 0
-          }
-
-        ]
+        "dataref": "laminar/B738/toggle_switch/wheel_light",
+        "op": "eq",
+        "value": 1
       },
       "attributes": [
         4
@@ -3892,7 +3888,10 @@
       "action_label": "VERIFIED",
       "dataref_expression": "",
       "role": "C",
-      "auto_check_rule": null,
+      "auto_check_rule": {
+        "fmc_line": "laminar/B738/fmc1/Line01_L",
+        "contains": "737-800W.1"
+      },
       "attributes": []
     }
   },
@@ -3924,7 +3923,11 @@
       "action_label": "SET",
       "dataref_expression": "",
       "role": "C",
-      "auto_check_rule": {"fmc_line": "laminar/B738/fmc1/Line02_L", "not_contains": "----"},
+      "auto_check_rule": {
+        "dataref": "laminar/B738/FMS/irs_pos_fmc_set",
+        "op": "eq",
+        "value": 1
+      },
       "attributes": []
     }
   },
@@ -3939,7 +3942,13 @@
       "action_label": "SET",
       "dataref_expression": "",
       "role": "C",
-      "auto_check_rule": {"fmc_line": "laminar/B738/fmc1/Line02_L", "not_contains": "----"},
+      "auto_check_rule": {
+        "all": [
+          {"fmc_line": "laminar/B738/fmc1/Line00_C", "contains": "RTE"},
+          {"fmc_line": "laminar/B738/fmc1/Line00_S", "contains": "1/2"},
+          {"fmc_line": "laminar/B738/fmc1/Line01_L", "not_contains": "----"}
+        ]
+      },
       "attributes": [4]
     }
   },
@@ -3954,7 +3963,13 @@
       "action_label": "SET",
       "dataref_expression": "",
       "role": "C",
-      "auto_check_rule": {"fmc_line": "laminar/B738/fmc1/Line02_R", "not_contains": "----"},
+      "auto_check_rule": {
+        "all": [
+          {"fmc_line": "laminar/B738/fmc1/Line00_C", "contains": "RTE"},
+          {"fmc_line": "laminar/B738/fmc1/Line00_S", "contains": "1/2"},
+          {"fmc_line": "laminar/B738/fmc1/Line01_L", "not_contains": "****"}
+        ]
+      },
       "attributes": []
     }
   },
@@ -3969,7 +3984,11 @@
       "action_label": "SET",
       "dataref_expression": "",
       "role": "C",
-      "auto_check_rule": {"fmc_line": "laminar/B738/fmc1/Line04_L", "not_contains": "----"},
+      "auto_check_rule": {
+        "fmc_line": "laminar/B738/fmc1/Line02_L",
+        "tail": 8,
+        "not_contains": "----"
+      },
       "attributes": [
         4
       ]
@@ -4003,7 +4022,12 @@
       "action_label": "SET",
       "dataref_expression": "",
       "role": "C",
-      "auto_check_rule": {"fmc_line": "laminar/B738/fmc1/Line02_L", "not_contains": "----"},
+      "auto_check_rule": {
+        "all": [
+          {"fmc_line": "laminar/B738/fmc1/Line00_L", "contains": "DEPARTURES"},
+          {"fmc_line": "laminar/B738/fmc1/Line01_L", "contains": "<SEL>"}
+        ]
+      },
       "attributes": []
     }
   },
@@ -4018,8 +4042,13 @@
       "action_label": "SET",
       "dataref_expression": "",
       "role": "C",
-      "auto_check_rule": {"fmc_line": "laminar/B738/fmc1/Line04_L", "not_contains": "----"},
-      "attributes": []
+      "auto_check_rule": {
+        "all": [
+          {"fmc_line": "laminar/B738/fmc1/Line00_L", "contains": "DEPARTURES"},
+          {"fmc_line": "laminar/B738/fmc1/Line01_L", "contains": "<SEL>", "count_gte": 2}
+        ]
+      },
+      "attributes": [4]
     }
   },
   {
@@ -4048,7 +4077,12 @@
       "action_label": "SET",
       "dataref_expression": "",
       "role": "C",
-      "auto_check_rule": {"fmc_line": "laminar/B738/fmc1/Line02_L", "not_contains": "----"},
+      "auto_check_rule": {
+        "all": [
+          {"fmc_line": "laminar/B738/fmc1/Line00_L", "contains": "ARRIVALS"},
+          {"fmc_line": "laminar/B738/fmc1/Line01_L", "contains": "<SEL>"}
+        ]
+      },
       "attributes": []
     }
   },
@@ -4063,7 +4097,12 @@
       "action_label": "SET",
       "dataref_expression": "",
       "role": "C",
-      "auto_check_rule": {"fmc_line": "laminar/B738/fmc1/Line04_L", "not_contains": "----"},
+      "auto_check_rule": {
+        "all": [
+          {"fmc_line": "laminar/B738/fmc1/Line00_L", "contains": "ARRIVALS"},
+          {"fmc_line": "laminar/B738/fmc1/Line01_L", "contains": "<SEL>", "count_gte": 2}
+        ]
+      },
       "attributes": []
     }
   },
