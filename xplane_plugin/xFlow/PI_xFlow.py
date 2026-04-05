@@ -186,10 +186,9 @@ class PythonInterface:
                         continue
                     self._drefs[path] = dref
                 # xp.Type_Data (32) = byte-array / string dataref (CDU lines etc.)
+                # getDatas(dataRef, offset, count) returns a str directly.
                 if xp.getDataRefTypes(dref) & 32:
-                    buf = bytearray(64)
-                    xp.getDatas(dref, buf, 0, 64)
-                    val = buf.decode("latin-1").rstrip("\x00").strip()
+                    val = xp.getDatas(dref, 0, 64).rstrip("\x00").strip()
                 else:
                     val = xp.getDataf(dref)
 
