@@ -55,6 +55,7 @@ def evaluate_rule(rule: dict, state: dict) -> bool:
     # Rule shape: {"fmc_line": "<dataref>", "contains": "<substr>"}
     #          or {"fmc_line": "<dataref>", "not_contains": "<substr>"}
     # Optional "tail": N  — check only last N chars of the line.
+    # Optional "head": N  — check only first N chars of the line.
     # Optional "count_gte": N  — require contains substring ≥ N times.
     if "fmc_line" in rule:
         path = rule["fmc_line"]
@@ -63,6 +64,8 @@ def evaluate_rule(rule: dict, state: dict) -> bool:
         text = str(state[path])
         if "tail" in rule:
             text = text[-rule["tail"]:]
+        elif "head" in rule:
+            text = text[:rule["head"]]
         if "not_contains" in rule:
             return rule["not_contains"] not in text
         substr = rule.get("contains", "")

@@ -344,6 +344,24 @@ class TestPluginStateRuleEvaluation(_Base):
         resp = _post(self.client, {"session_id": self.session.pk, "datarefs": datarefs}, key=self.raw_key)
         self.assertNotIn(item.pk, resp.json()["checked"])
 
+    def test_fmc_line_head_not_contains_fires_when_prefix_clean(self):
+        """head: 8 + not_contains: '----' fires when first 8 chars have no dashes."""
+        path = "laminar/B738/fmc1/Line02_L"
+        rule = {"fmc_line": path, "head": 8, "not_contains": "----"}
+        item = CheckItemFactory(procedure=self.procedure, step=1, auto_check_rule=rule)
+        datarefs = {path: "EHAM    ----"}
+        resp = _post(self.client, {"session_id": self.session.pk, "datarefs": datarefs}, key=self.raw_key)
+        self.assertIn(item.pk, resp.json()["checked"])
+
+    def test_fmc_line_head_not_contains_does_not_fire_when_prefix_dashed(self):
+        """head: 8 checks only the first 8 chars — dashes in prefix block firing."""
+        path = "laminar/B738/fmc1/Line02_L"
+        rule = {"fmc_line": path, "head": 8, "not_contains": "----"}
+        item = CheckItemFactory(procedure=self.procedure, step=1, auto_check_rule=rule)
+        datarefs = {path: "----EHAM"}
+        resp = _post(self.client, {"session_id": self.session.pk, "datarefs": datarefs}, key=self.raw_key)
+        self.assertNotIn(item.pk, resp.json()["checked"])
+
     def test_fmc_line_count_gte_fires_when_substring_appears_enough_times(self):
         """count_gte: 2 fires when '<SEL>' appears at least twice."""
         path = "laminar/B738/fmc1/Line01_L"

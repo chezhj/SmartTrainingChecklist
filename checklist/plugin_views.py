@@ -25,6 +25,51 @@ from .models import (
 )
 from .rules import collect_datarefs, evaluate_rule
 
+
+def _rule_rows(rule: dict, datarefs: dict) -> list:
+    """
+    Flatten a rule dict into a list of (path, criteria_str, value_str) tuples
+    for human-readable debug logging.
+    """
+    if "all" in rule:
+        rows = []
+        for r in rule["all"]:
+            rows.extend(_rule_rows(r, datarefs))
+        return rows
+    if "any" in rule:
+        rows = []
+        for r in rule["any"]:
+            rows.extend(_rule_rows(r, datarefs))
+        return rows
+    if "fmc_line" in rule:
+        path = rule["fmc_line"]
+        parts = []
+        if "head" in rule:
+            parts.append(f"head:{rule['head']}")
+        if "tail" in rule:
+            parts.append(f"tail:{rule['tail']}")
+        if "not_contains" in rule:
+            parts.append(f"not_contains '{rule['not_contains']}'")
+        elif "contains" in rule:
+            substr = rule["contains"]
+            if "count_gte" in rule:
+                parts.append(f"contains '{substr}' >={rule['count_gte']}x")
+            else:
+                parts.append(f"contains '{substr}'")
+        criteria = "  ".join(parts) if parts else "fmc_line"
+        value = str(datarefs.get(path, "<missing>"))
+        return [(path, criteria, value)]
+    path = rule.get("dataref", "?")
+    op   = rule.get("op", "?")
+    if "ref" in rule:
+        ref_val = datarefs.get(rule["ref"], "<missing>")
+        delta   = rule.get("delta", 0)
+        criteria = f"{op} @{rule['ref']}({ref_val}+{delta})"
+    else:
+        criteria = f"{op} {rule.get('value', '?')}"
+    value = str(datarefs.get(path, "<missing>"))
+    return [(path, criteria, value)]
+
 logger = logging.getLogger(__name__)
 
 
@@ -100,7 +145,7 @@ def plugin_check_next(request):
 
     done_ids = set(
         FlightItemState.objects.filter(
-            flight_session=session, status="checked"
+            flight_session=session, status__in=("checked", "skipped")
         ).values_list("checklist_item_id", flat=True)
     )
 
@@ -267,13 +312,27 @@ def plugin_state(request):
                 if item.auto_check_rule is not None:
                     watch.extend(collect_datarefs(item.auto_check_rule))
 
+            if logger.isEnabledFor(logging.DEBUG) and active_items:
+                col_w = (45, 30)
+                header = (
+                    f"  {'Variable':<{col_w[0]}}{'Criteria':<{col_w[1]}}Value"
+                )
+                rows = [header, "  " + "-" * (col_w[0] + col_w[1] + 20)]
+                for it in active_items:
+                    if it.auto_check_rule is None:
+                        continue
+                    rows.append(f"  [{it.item}]")
+                    for path, criteria, value in _rule_rows(it.auto_check_rule, datarefs):
+                        rows.append(
+                            f"  {path:<{col_w[0]}}{criteria:<{col_w[1]}}{value}"
+                        )
+                logger.debug("active items:\n%s", "\n".join(rows))
+
             for item in active_items:
                 if item.auto_check_rule is None:
                     continue
 
                 item_drefs = collect_datarefs(item.auto_check_rule)
-                item_values = {p: datarefs.get(p, "<missing>") for p in item_drefs}
-                logger.debug("next item: [%s] %s | %s", item.pk, item.item, item_values)
 
                 if evaluate_rule(item.auto_check_rule, datarefs):
                     # Auto-skip unchecked optional items that precede this item
