@@ -100,7 +100,7 @@ def plugin_check_next(request):
 
     done_ids = set(
         FlightItemState.objects.filter(
-            flight_session=session, status__in=("checked", "skipped")
+            flight_session=session, status="checked"
         ).values_list("checklist_item_id", flat=True)
     )
 
@@ -261,13 +261,17 @@ def plugin_state(request):
                 if i.pk not in done_ids and (gate_step is None or i.step <= gate_step)
             ]
 
+            # Collect watch datarefs from all visible items with rules (not just
+            # active ones) so the plugin keeps streaming them even when already done.
+            for item in visible_items:
+                if item.auto_check_rule is not None:
+                    watch.extend(collect_datarefs(item.auto_check_rule))
+
             for item in active_items:
                 if item.auto_check_rule is None:
                     continue
 
                 item_drefs = collect_datarefs(item.auto_check_rule)
-                watch.extend(item_drefs)
-
                 item_values = {p: datarefs.get(p, "<missing>") for p in item_drefs}
                 logger.debug("next item: [%s] %s | %s", item.pk, item.item, item_values)
 
