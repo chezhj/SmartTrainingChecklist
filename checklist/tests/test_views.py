@@ -602,7 +602,7 @@ class TestProcedureDetailView(ViewTestCase):
         items = response.context_data["check_items"]
         self.assertEqual(items[0].checked_css, "")
 
-    def test_skipped_item_annotated_as_unchecked(self):
+    def test_skipped_item_annotated_as_ci_skipped(self):
         attr = AttributeFactory()
         item = CheckItemFactory(attributes=[attr])
         request = self.create_request_with_session("/")
@@ -615,7 +615,7 @@ class TestProcedureDetailView(ViewTestCase):
         )
         response = procedure_detail(request, slug=item.procedure.slug)
         items = response.context_data["check_items"]
-        self.assertEqual(items[0].checked_css, "")
+        self.assertEqual(items[0].checked_css, "ci-skipped")
 
 
 class TestUpdateSessionRole(TestCase):

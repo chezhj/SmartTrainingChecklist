@@ -154,9 +154,10 @@
         + ' stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
     var totalItems       = document.querySelectorAll('.ci').length;
-    var checkedCount     = document.querySelectorAll('.ci-manual, .ci-auto').length;
+    var checkedCount     = document.querySelectorAll('.ci-manual, .ci-auto, .ci-skipped').length;
     var autoCount        = document.querySelectorAll('.ci-auto').length;
     var manualCount      = document.querySelectorAll('.ci-manual').length;
+    var skippedCount     = document.querySelectorAll('.ci-skipped').length;
     var allowAutoAdvance = false; /* true only after an item is checked this visit */
     var CIRCUMFERENCE = 119.4;
 
@@ -230,7 +231,7 @@
                 manualCount  += 1;
                 updateProgress();
             });
-        } else if (!row.classList.contains('ci-auto')) {
+        } else if (!row.classList.contains('ci-auto') && !row.classList.contains('ci-skipped')) {
             row.classList.add('ci-manual');
             box.innerHTML = TICK_SVG;
             checkedCount += 1;
@@ -271,24 +272,29 @@
         var row = document.querySelector('[data-item-id="' + id + '"]');
         if (!row) return;
 
-        var alreadyCounted = row.classList.contains('ci-manual') || row.classList.contains('ci-auto');
+        var alreadyCounted = row.classList.contains('ci-manual') || row.classList.contains('ci-auto') || row.classList.contains('ci-skipped');
 
-        row.classList.remove('ci-manual', 'ci-auto');
+        row.classList.remove('ci-manual', 'ci-auto', 'ci-skipped');
         var box = row.querySelector('.check-box');
         box.innerHTML = '';
 
         if (source === 'MANUAL') {
             row.classList.add('ci-manual');
             box.innerHTML = TICK_SVG;
+        } else if (source === 'SKIPPED') {
+            row.classList.add('ci-skipped');
+            /* em-dash rendered by states.css ::after */
         } else {
             row.classList.add('ci-auto');
-            /* dot is rendered by states.css ::after */
+            /* dot rendered by states.css ::after */
         }
 
         if (!alreadyCounted) {
             checkedCount += 1;
-            if (source === 'AUTO') { autoCount += 1; } else { manualCount += 1; }
-            allowAutoAdvance = true;
+            if (source === 'AUTO') { autoCount += 1; }
+            else if (source === 'MANUAL') { manualCount += 1; }
+            else if (source === 'SKIPPED') { skippedCount += 1; }
+            if (source !== 'SKIPPED') { allowAutoAdvance = true; }
             updateProgress();
         }
     };

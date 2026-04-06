@@ -53,12 +53,15 @@ def poll_view(request):
 
     states = FlightItemState.objects.filter(
         flight_session=session,
-        status="checked",
+        status__in=("checked", "skipped"),
         checked_at__gt=since_dt,
     ).select_related("checklist_item")
 
     checked_items = [
-        {"id": s.checklist_item.pk, "source": s.source.upper()}
+        {
+            "id": s.checklist_item.pk,
+            "source": "SKIPPED" if s.status == "skipped" else s.source.upper(),
+        }
         for s in states
     ]
 

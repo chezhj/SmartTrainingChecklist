@@ -104,6 +104,38 @@
 }
 
 
+/* ── Checklist item: skipped (optional item auto-skipped by gate) ── */
+
+.ci.ci-skipped {
+  background: var(--color-bg);
+  border-color: var(--color-border);
+  opacity: 0.55;
+}
+
+.ci.ci-skipped .check-box {
+  background: transparent;
+  border-color: var(--color-ink-faint);
+}
+
+/* Em-dash: "not applicable" symbol */
+.ci.ci-skipped .check-box::after {
+  content: '\2014';
+  font-size: 13px;
+  line-height: 1;
+  color: var(--color-ink-faint);
+  position: absolute;
+}
+
+.ci.ci-skipped .ci-name {
+  color: var(--color-ink-faint);
+  font-style: italic;
+}
+
+.ci.ci-skipped .ci-setting {
+  color: var(--color-ink-faint);
+}
+
+
 /* ── Lowlight: item not applicable to current role ──────────────── */
 
 .ci.lowlight {

@@ -524,8 +524,10 @@ def procedure_detail(request, slug=None, pk=None):
         state = state_map.get(item.id)
         if state and state.status == "checked":
             item.checked_css = f"ci-{state.source}"  # "ci-manual" or "ci-auto"
+        elif state and state.status == "skipped":
+            item.checked_css = "ci-skipped"
         else:
-            item.checked_css = ""  # skipped/pending/absent → unchecked
+            item.checked_css = ""  # pending/absent → unchecked
 
     time_finished = time()
     query_time = round(time_finished - time_start, 3)
