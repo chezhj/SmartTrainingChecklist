@@ -300,6 +300,13 @@ def profile_view(request):
         # Create a new session (no active session found)
         simbrief_data = _get_simbrief_session_data(request)
         _deactivate_current_session(request)
+        # Also deactivate any other active sessions for this user_profile —
+        # e.g. from a different browser or a stale session key. Ensures the
+        # plugin's state POST with the old session_id gets a 404 and re-fetches.
+        if user_profile:
+            FlightSession.objects.filter(
+                user_profile=user_profile, is_active=True
+            ).update(is_active=False)
 
         session = _create_flight_session(
             user_profile=user_profile,

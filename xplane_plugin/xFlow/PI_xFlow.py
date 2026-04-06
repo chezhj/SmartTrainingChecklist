@@ -119,6 +119,14 @@ class PythonInterface:
         # Last sent values — used to detect changes before POSTing
         self._last_values: dict[str, float | str] = {}
 
+        # Ticks since last session-fetch attempt (used to retry when no session)
+        self._no_session_ticks: int = 0
+        self._SESSION_RETRY_TICKS: int = 30  # retry every ~30 s when session_id is None
+
+        # Ticks since last session re-validation (catches server-side session replacement)
+        self._active_ticks: int = 0
+        self._SESSION_REVALIDATE_TICKS: int = 300  # re-check every ~5 min when connected
+
         # Serialise all HTTP work onto one daemon thread
         self._lock = threading.Lock()
 
@@ -158,7 +166,19 @@ class PythonInterface:
         watch list and record last_plugin_contact (keeps the connection badge alive).
         """
         if self._session_id is None:
+            self._no_session_ticks += 1
+            if self._no_session_ticks >= self._SESSION_RETRY_TICKS:
+                self._no_session_ticks = 0
+                self._log("INFO", "no session — retrying session lookup")
+                threading.Thread(target=self._fetch_session, daemon=True).start()
             return _LOOP_INTERVAL
+
+        self._no_session_ticks = 0
+        self._active_ticks += 1
+        if self._active_ticks >= self._SESSION_REVALIDATE_TICKS:
+            self._active_ticks = 0
+            self._log("INFO", "re-validating session with server")
+            threading.Thread(target=self._fetch_session, daemon=True).start()
 
         state: dict[str, float | str] = {}
         changed = False
@@ -241,8 +261,16 @@ class PythonInterface:
         self._log("DEBUG", f"session response status {status}")
 
         if status == 200:
+            new_id = body.get("session_id")
             with self._lock:
-                self._session_id = body.get("session_id")
+                if new_id != self._session_id:
+                    self._log("INFO", f"session changed {self._session_id} → {new_id}, resetting watch list")
+                    self._session_id = new_id
+                    self._watch = []
+                    self._drefs = {}
+                    self._last_values = {}
+                else:
+                    self._session_id = new_id
             self._log("INFO", f"session {self._session_id} — phase: {body.get('active_phase')}")
         elif status == 404:
             self._log("INFO", "no active session — waiting for pilot to start checklist")

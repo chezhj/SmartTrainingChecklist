@@ -193,8 +193,8 @@ class TestPluginCheckNextHappyPath(TestCase):
             FlightItemState.objects.filter(flight_session=self.session).count(), 2
         )
 
-    def test_existing_skipped_state_overwritten_by_manual_check(self):
-        # A skipped row exists for item1 — manual press should promote it to checked
+    def test_skipped_item1_is_bypassed_check_next_checks_item2(self):
+        # item1 is already skipped — check_next should advance past it to item2
         FlightItemState.objects.create(
             flight_session=self.session,
             checklist_item=self.item1,
@@ -204,11 +204,18 @@ class TestPluginCheckNextHappyPath(TestCase):
         )
         response = _post(self.client, self.raw_key)
         self.assertEqual(response.status_code, 200)
-        state = FlightItemState.objects.get(
-            flight_session=self.session, checklist_item=self.item1
+        # item1 stays skipped, item2 gets checked
+        self.assertEqual(
+            FlightItemState.objects.get(
+                flight_session=self.session, checklist_item=self.item1
+            ).status,
+            "skipped",
         )
-        self.assertEqual(state.status, "checked")
-        self.assertEqual(state.source, "manual")
+        self.assertTrue(
+            FlightItemState.objects.filter(
+                flight_session=self.session, checklist_item=self.item2, status="checked"
+            ).exists()
+        )
 
 
 class TestPluginCheckNextAttributeFiltering(TestCase):
