@@ -1078,12 +1078,12 @@
             "value": 1
           },
           {
-            "dataref": "laminar/B738/annunciator/source_off1x",
+            "dataref": "laminar/B738/annunciator/source_off1",
             "op": "eq",
             "value": 0
           },
           {
-            "dataref": "laminar/B738/annunciator/source_off2x",
+            "dataref": "laminar/B738/annunciator/source_off2",
             "op": "eq",
             "value": 0
           }
@@ -3134,6 +3134,11 @@
             "op": "eq",
             "value": 1
           },
+                    {
+            "dataref": "laminar/B738/annunciator/ground_power_avail",
+            "op": "eq",
+            "value": 1
+          },
           {
             "all": [
               {
@@ -3166,7 +3171,11 @@
       "action_label": "SET",
       "dataref_expression": "",
       "role": "FO",
-      "auto_check_rule": null,
+      "auto_check_rule": {
+        "dataref": "laminar/B738/tab/req_fuel",
+        "op": "gt",
+        "ref": "sim/flightmodel/weight/m_fuel_total"
+      },
       "attributes": []
     }
   },
@@ -3182,9 +3191,9 @@
       "dataref_expression": "sim/flightmodel/weight/m_fuel_total:><0",
       "role": "FO",
       "auto_check_rule": {
-        "dataref": "laminar/b738/tabx/req_fuel",
+        "dataref": "laminar/B738/fueltruck_operate",
         "op": "gt",
-        "value": 0
+        "value": 1
       },
       "attributes": []
     }
@@ -3906,7 +3915,12 @@
       "action_label": "SET",
       "dataref_expression": "",
       "role": "C",
-      "auto_check_rule": {"fmc_line": "laminar/B738/fmc1/Line02_L", "not_contains": "----"},
+      "auto_check_rule": {
+        "all": [
+          {"fmc_line": "laminar/B738/fmc1/Line00_L", "contains": "POS INIT"},
+          {"fmc_line": "laminar/B738/fmc1/Line02_L", "not_contains": "----"}
+        ]
+      },
       "attributes": [
         4
       ]
@@ -3925,8 +3939,8 @@
       "role": "C",
       "auto_check_rule": {
         "dataref": "laminar/B738/FMS/irs_pos_fmc_set",
-        "op": "eq",
-        "value": 1
+        "op": "neq",
+        "value": ""
       },
       "attributes": []
     }
@@ -3945,7 +3959,7 @@
       "auto_check_rule": {
         "all": [
           {"fmc_line": "laminar/B738/fmc1/Line00_C", "contains": "RTE"},
-          {"fmc_line": "laminar/B738/fmc1/Line00_S", "contains": "1/2"},
+          
           {"fmc_line": "laminar/B738/fmc1/Line01_L", "not_contains": "----"}
         ]
       },
@@ -3966,7 +3980,7 @@
       "auto_check_rule": {
         "all": [
           {"fmc_line": "laminar/B738/fmc1/Line00_C", "contains": "RTE"},
-          {"fmc_line": "laminar/B738/fmc1/Line00_S", "contains": "1/2"},
+          
           {"fmc_line": "laminar/B738/fmc1/Line01_L", "not_contains": "****"}
         ]
       },
@@ -3985,9 +3999,13 @@
       "dataref_expression": "",
       "role": "C",
       "auto_check_rule": {
-        "fmc_line": "laminar/B738/fmc1/Line02_L",
-        "tail": 8,
-        "not_contains": "----"
+        "all": [
+          {
+            "fmc_line": "laminar/B738/fmc1/Line02_L",
+            "head": 8,
+            "not_contains": "----"
+          }
+        ]
       },
       "attributes": [
         4
@@ -4361,7 +4379,7 @@
       "dataref_expression": "",
       "role": "",
       "auto_check_rule": {
-        "dataref": "sim/cockpit/switches/fasten_seat_belts",
+        "dataref": "sim/B738/toggle_switch/seatbelt_sign_pos",
         "op": "gte",
         "value": 1
       },
@@ -4528,7 +4546,7 @@
       "action_label": "VERIFIED",
       "dataref_expression": "",
       "role": "BOTH",
-      "auto_check_rule": {"fmc_line": "laminar/B738/fmc1/Line08_R", "contains": "STEP"},
+      "auto_check_rule": {"fmc_line": "laminar/B738/fmc1/Line06_L", "contains": "STEP"},
       "attributes": []
     }
   },
