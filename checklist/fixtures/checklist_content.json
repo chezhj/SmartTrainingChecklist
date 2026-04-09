@@ -168,6 +168,20 @@
     }
   },
   {
+    "model": "checklist.attribute",
+    "pk": 14,
+    "fields": {
+      "title": "VA",
+      "label": "Virtual Airline",
+      "order": 5,
+      "description": "You are flying a flight for your VA",
+      "show": true,
+      "is_user_preference": false,
+      "over_ruled_by": null,
+      "btn_color": "#7B5EA7"
+    }
+  },
+  {
     "model": "checklist.procedure",
     "pk": 1,
     "fields": {
@@ -456,6 +470,11 @@
             "dataref": "laminar/B738/fuel/fuel_tank_pos_ctr2",
             "op": "eq",
             "value": 1
+          },
+          {
+            "dataref": "laminar/B738/fuel/center_tank_kgs",
+            "op": "gt",
+            "value": 450
           }
         ]
       },
@@ -580,9 +599,10 @@
       "dataref_expression": "(sim/cockpit2/switches/yaw_damper_on:0)",
       "role": "FO",
       "auto_check_rule": {
-        "dataref": "sim/cockpit2/switches/yaw_damper_on",
-        "op": "eq",
-        "value": 0
+        "all": [
+          {"dataref": "laminar/B738/toggle_switch/yaw_dumper_pos", "op": "eq", "value": 1},
+          {"dataref": "laminar/B738/annunciator/yaw_damp", "op": "eq", "value": 0}
+        ]
       },
       "attributes": []
     }
@@ -2246,9 +2266,9 @@
       "dataref_expression": "(laminar/B738/toggle_switch/taxi_light_brightness_pos:>0)&&(sim/operation/failures/rel_lites_taxi:0)",
       "role": "PM",
       "auto_check_rule": {
-        "dataref": "sim/cockpit/electrical/taxi_light_on",
-        "op": "eq",
-        "value": 1
+        "dataref": "laminar/B738/toggle_switch/taxi_light_brightness_pos",
+        "op": "gt",
+        "value": 0
       },
       "attributes": [
         4
@@ -3193,7 +3213,7 @@
       "auto_check_rule": {
         "dataref": "laminar/B738/fueltruck_operate",
         "op": "gt",
-        "value": 1
+        "value": 0.5
       },
       "attributes": []
     }
@@ -3659,8 +3679,8 @@
           },
           {
             "dataref": "laminar/B738/annunciator/takeoff_config",
-            "op": "eq",
-            "value": 1
+            "op": "gt",
+            "value": 0.2
           },
           {
             "dataref": "laminar/B738/axis/throttle2",
@@ -3736,7 +3756,7 @@
       "role": "",
       "auto_check_rule": null,
       "attributes": [
-        2
+        14
       ]
     }
   },
@@ -4000,9 +4020,10 @@
       "role": "C",
       "auto_check_rule": {
         "all": [
+          {"fmc_line": "laminar/B738/fmc1/Line00_C", "contains": "RTE"},
           {
             "fmc_line": "laminar/B738/fmc1/Line02_L",
-            "head": 8,
+            "tail": 8,
             "not_contains": "----"
           }
         ]
@@ -4023,7 +4044,16 @@
       "action_label": "SET",
       "dataref_expression": "",
       "role": "C",
-      "auto_check_rule": null,
+      "auto_check_rule": {
+        "all": [
+          {"fmc_line": "laminar/B738/fmc1/Line00_C", "contains": "RTE"},
+          {
+            "fmc_line": "laminar/B738/fmc1/Line02_L",
+            "head": 12,
+            "not_contains": "----"
+          }
+        ]
+      },
       "attributes": [
         4
       ]
@@ -4090,7 +4120,7 @@
     "fields": {
       "item": "ARR PAGE",
       "procedure": 10,
-      "step": 12,
+      "step": 11,
       "setting": "Select RWY",
       "action_label": "SET",
       "dataref_expression": "",
@@ -4110,7 +4140,7 @@
     "fields": {
       "item": "ARR PAGE",
       "procedure": 10,
-      "step": 11,
+      "step": 12,
       "setting": "Select STAR",
       "action_label": "SET",
       "dataref_expression": "",
@@ -4141,11 +4171,29 @@
   },
   {
     "model": "checklist.checkitem",
+    "pk": 312,
+    "fields": {
+      "item": "Activate",
+      "procedure": 10,
+      "step": 14,
+      "setting": "press",
+      "action_label": "ACTIVATED",
+      "dataref_expression": "",
+      "role": "C",
+      "auto_check_rule": {
+        "fmc_line": "laminar/B738/fmc1/Line06_L",
+        "not_contains": "ACTIVATE"
+      },
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
     "pk": 180,
     "fields": {
       "item": "Execute",
       "procedure": 10,
-      "step": 14,
+      "step": 15,
       "setting": "press",
       "action_label": "EXECUTED",
       "dataref_expression": "",
@@ -4310,7 +4358,13 @@
       "action_label": "",
       "dataref_expression": "",
       "role": "",
-      "auto_check_rule": null,
+      "auto_check_rule": {
+        "all": [
+          {"fmc_line": "laminar/B738/fmc1/Line00_L", "contains": "RTE"},
+          {"fmc_line": "laminar/B738/fmc1/Line00_L", "contains": "DATA"},
+          {"fmc_line": "laminar/B738/fmc1/Line01_X", "contains": "WIND"}
+        ]
+      },
       "attributes": [
         4
       ]
@@ -4450,7 +4504,7 @@
       "role": "PF",
       "auto_check_rule": null,
       "attributes": [
-        2
+        14
       ]
     }
   },
@@ -4541,7 +4595,7 @@
     "fields": {
       "item": "Verify LEGS page",
       "procedure": 10,
-      "step": 15,
+      "step": 16,
       "setting": "Verify for discontinuities",
       "action_label": "VERIFIED",
       "dataref_expression": "",
@@ -4562,9 +4616,10 @@
       "dataref_expression": "",
       "role": "C",
       "auto_check_rule": {
-        "dataref": "laminar/B738/fms/no_perf",
-        "op": "eq",
-        "value": 0
+        "all": [
+          {"fmc_line": "laminar/B738/fmc1/Line00_L", "contains": "PERF INIT"},
+          {"fmc_line": "laminar/B738/fmc1/Line06_L", "contains": "LIMIT>"}
+        ]
       },
       "attributes": []
     }
@@ -4581,9 +4636,11 @@
       "dataref_expression": "laminar/B738/FMS/fmc_gw_app:>0",
       "role": "C",
       "auto_check_rule": {
-        "dataref": "laminar/B738/FMS/fmc_gw_app",
-        "op": "gt",
-        "value": 0
+        "all": [
+          {"fmc_line": "laminar/B738/fmc1/Line00_L", "contains": "PERF INIT"},
+          {"fmc_line": "laminar/B738/fmc1/Line03_X", "contains": "ZFW"},
+          {"fmc_line": "laminar/B738/fmc1/Line03_L", "not_contains": "****"}
+        ]
       },
       "attributes": []
     }
@@ -4599,7 +4656,7 @@
       "action_label": "DONE",
       "dataref_expression": "",
       "role": "C",
-      "auto_check_rule": {"dataref": "laminar/B738/FMS/fmc_reserve", "op": "gt", "value": 0},
+      "auto_check_rule": {"fmc_line": "laminar/B738/fmc1/Line04_L", "head": 5, "not_contains": "**"},
       "attributes": []
     }
   },
@@ -4614,7 +4671,7 @@
       "action_label": "SET",
       "dataref_expression": "",
       "role": "C",
-      "auto_check_rule": {"dataref": "laminar/B738/fms/cost_index", "op": "gte", "value": 0},
+      "auto_check_rule": {"fmc_line": "laminar/B738/fmc1/Line05_L", "not_contains": "**"},
       "attributes": []
     }
   },
@@ -4629,7 +4686,7 @@
       "action_label": "SET",
       "dataref_expression": "",
       "role": "C",
-      "auto_check_rule": null,
+      "auto_check_rule": {"fmc_line": "laminar/B738/fmc1/Line01_L", "tail": 5, "not_contains": "*"},
       "attributes": [
         4
       ]
@@ -4663,11 +4720,7 @@
       "action_label": "SET",
       "dataref_expression": "",
       "role": "C",
-      "auto_check_rule": {
-        "dataref": "laminar/B738/autopilot/fmc_cruise_alt",
-        "op": "gt",
-        "value": 0
-      },
+      "auto_check_rule": {"fmc_line": "laminar/B738/fmc1/Line01_L", "tail": 5, "not_contains": "*"},
       "attributes": []
     }
   },
@@ -4699,7 +4752,7 @@
     "fields": {
       "item": "Wind",
       "procedure": 10,
-      "step": 16,
+      "step": 17,
       "setting": "Enroute winds",
       "action_label": "SET",
       "dataref_expression": "",
@@ -4740,7 +4793,12 @@
       "action_label": "DONE",
       "dataref_expression": "",
       "role": "C",
-      "auto_check_rule": null,
+      "auto_check_rule": {
+        "all": [
+          {"fmc_line": "laminar/B738/fmc1/Line00_L", "contains": "LIMIT"},
+          {"fmc_line": "laminar/B738/fmc1/Line06_L", "contains": "TAKEOFF>"}
+        ]
+      },
       "attributes": []
     }
   },
@@ -4755,8 +4813,8 @@
       "action_label": "DONE",
       "dataref_expression": "",
       "role": "C",
-      "auto_check_rule": {"dataref": "laminar/B738/FMS/oat", "op": "neq", "value": 0},
-      "attributes": []
+      "auto_check_rule": {"dataref": "laminar/B738/FMS/fmc_oat_temp", "op": "neq", "value": 0},
+      "attributes": []                 
     }
   },
   {
@@ -4804,7 +4862,12 @@
       "action_label": "SELECTED",
       "dataref_expression": "",
       "role": "C",
-      "auto_check_rule": null,
+      "auto_check_rule": {
+        "all": [
+          {"fmc_line": "laminar/B738/fmc1/Line00_L", "contains": "TAKEOFF REF"},
+          {"fmc_line": "laminar/B738/fmc1/Line00_S", "contains": "1/2"}
+        ]
+      },
       "attributes": []
     }
   },
@@ -4868,7 +4931,12 @@
       "action_label": "SELECTED",
       "dataref_expression": "",
       "role": "C",
-      "auto_check_rule": null,
+      "auto_check_rule": {
+        "all": [
+          {"fmc_line": "laminar/B738/fmc1/Line00_L", "contains": "TAKEOFF REF"},
+          {"fmc_line": "laminar/B738/fmc1/Line00_S", "contains": "2/2"}
+        ]
+      },
       "attributes": [
         4
       ]
@@ -4952,7 +5020,7 @@
       "action_label": "SET",
       "dataref_expression": "",
       "role": "C",
-      "auto_check_rule": null,
+      "auto_check_rule": {"dataref": "laminar/B738/FMS/fmc_sel_temp", "op": "neq", "value": 0},
       "attributes": [
         4
       ]
@@ -5064,7 +5132,7 @@
       "action_label": "",
       "dataref_expression": "",
       "role": "PM",
-      "auto_check_rule": null,
+      "auto_check_rule": {"fmc_line": "laminar/B738/fmc1/Line02_L", "tail": 8, "not_contains": "-"},
       "attributes": []
     }
   },
@@ -6231,7 +6299,26 @@
       "action_label": "COMPLETE",
       "dataref_expression": "",
       "role": "PF",
-      "auto_check_rule": null,
+            "auto_check_rule": {
+        "all": [
+          {
+            "dataref": "laminar/B738/axis/throttle1",
+            "op": "gt",
+            "value": 0.40
+          },
+          {
+            "dataref": "laminar/B738/annunciator/takeoff_config",
+            "op": "lt",
+            "value": 0.2
+          },
+          {
+            "dataref": "laminar/B738/axis/throttle2",
+            "op": "gt",
+            "value": 0.40
+          }
+        ]
+      },
+      
       "attributes": [
         4,
         7
