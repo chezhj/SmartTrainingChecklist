@@ -24,10 +24,14 @@ body {
 /* ── Connection bar ─────────────────────────────────────────────── */
 /* Dark strip pinned to the top; never scrolls away */
 
-/* Brand: hidden on mobile; display: block override is in the ≥600px block below */
+/* Brand: always visible; text hidden on mobile, shown tablet+ */
 .conn-brand {
-  display: none;
+  display: flex;
   flex-shrink: 0;
+}
+
+.conn-brand-text {
+  display: none;
 }
 
 .conn-bar {
@@ -147,8 +151,8 @@ body {
 
 /* ── Tablet (≥600px) ────────────────────────────────────────────── */
 @media (min-width: 600px) {
-  .conn-brand {
-    display: block;
+  .conn-brand-text {
+    display: inline;
   }
 
   .conn-logo {

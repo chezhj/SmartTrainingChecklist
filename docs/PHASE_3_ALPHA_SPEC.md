@@ -1,6 +1,6 @@
 # Phase 3-Alpha Specification — Plugin Bootstrap & Manual Next Item
 
-**Project**: fly.vdwaal.net  
+**Project**: SimFlow  
 **Version**: v2.0 — Phase 3-alpha  
 **Date**: 2026-03-24  
 **Status**: Ready for implementation  

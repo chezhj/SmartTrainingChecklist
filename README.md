@@ -1,6 +1,6 @@
-# smart_training_checklist
+# SimFlow
 
-My attempt to create a dynamic checklist for sim flying (737)
+X-Plane procedure companion for sim flying (737). Stay in the flow.
 
 
 

@@ -706,14 +706,30 @@
 /* display/visibility is in layout.css (mobile-first hide + ≥600px show) */
 
 .conn-brand {
+  display: flex;
+  align-items: center;
+  gap: 7px;
   font-family: var(--font-mono);
   font-size: 12px;
   letter-spacing: 0.15em;
-  color: var(--color-teal-bright);
+  color: #fff;
   text-decoration: none;
 }
 
+.conn-brand img {
+  display: block;
+  flex-shrink: 0;
+}
+
+.conn-brand-flow {
+  color: var(--color-teal-bright);
+}
+
 .conn-brand:hover {
+  color: #fff;
+}
+
+.conn-brand:hover .conn-brand-flow {
   color: #fff;
 }
 

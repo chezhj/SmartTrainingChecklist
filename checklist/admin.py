@@ -14,6 +14,9 @@ class ProcedureAdmin(admin.ModelAdmin):
     prepopulated_fields = {"slug": ("title",)}
 
 
+admin.site.site_header = "SimFlow Admin"
+admin.site.site_title = "SimFlow"
+
 # Register your models here.
 admin.site.register(Procedure, ProcedureAdmin)
 admin.site.register(CheckItem)

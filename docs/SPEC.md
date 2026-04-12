@@ -1,4 +1,4 @@
-# fly.vdwaal.net v2.0 — Implementation Specification
+# SimFlow v2.0 — Implementation Specification
 
 ## Purpose
 
