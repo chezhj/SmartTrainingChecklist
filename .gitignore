@@ -6,3 +6,4 @@ coverage.lcov
 **/static/admin
 **/static/colorfield
 smart_training_checklist/settings/.env
+logs/

@@ -9,7 +9,9 @@ import functools
 import json
 import logging
 from datetime import datetime, timezone
+from pathlib import Path
 
+from django.conf import settings
 from django.contrib.auth.hashers import check_password
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt  # used inside require_api_key
@@ -25,52 +27,26 @@ from .models import (
 )
 from .rules import collect_datarefs, evaluate_rule
 
-
-def _rule_rows(rule: dict, datarefs: dict) -> list:
-    """
-    Flatten a rule dict into a list of (path, criteria_str, value_str) tuples
-    for human-readable debug logging.
-    """
-    if "all" in rule:
-        rows = []
-        for r in rule["all"]:
-            rows.extend(_rule_rows(r, datarefs))
-        return rows
-    if "any" in rule:
-        rows = []
-        for r in rule["any"]:
-            rows.extend(_rule_rows(r, datarefs))
-        return rows
-    if "fmc_line" in rule:
-        path = rule["fmc_line"]
-        parts = []
-        if "head" in rule:
-            parts.append(f"head:{rule['head']}")
-        if "tail" in rule:
-            parts.append(f"tail:{rule['tail']}")
-        if "not_contains" in rule:
-            parts.append(f"not_contains '{rule['not_contains']}'")
-        elif "contains" in rule:
-            substr = rule["contains"]
-            if "count_gte" in rule:
-                parts.append(f"contains '{substr}' >={rule['count_gte']}x")
-            else:
-                parts.append(f"contains '{substr}'")
-        criteria = "  ".join(parts) if parts else "fmc_line"
-        value = str(datarefs.get(path, "<missing>"))
-        return [(path, criteria, value)]
-    path = rule.get("dataref", "?")
-    op   = rule.get("op", "?")
-    if "ref" in rule:
-        ref_val = datarefs.get(rule["ref"], "<missing>")
-        delta   = rule.get("delta", 0)
-        criteria = f"{op} @{rule['ref']}({ref_val}+{delta})"
-    else:
-        criteria = f"{op} {rule.get('value', '?')}"
-    value = str(datarefs.get(path, "<missing>"))
-    return [(path, criteria, value)]
-
 logger = logging.getLogger(__name__)
+
+_LOG_DIR = Path(settings.BASE_DIR) / "logs"
+
+# Last dataref snapshot received per session (session_id → datarefs dict).
+# Updated on every plugin_state POST; read by plugin_check_next to provide
+# context for manual check events without changing the plugin protocol.
+_last_datarefs: dict[int, dict] = {}
+
+
+def _session_log(session_id: int, entry: dict) -> None:
+    """
+    Append one JSON line to logs/session_<id>.jsonl.
+    Called only when an item is actually auto-checked or auto-skipped,
+    so the file is a compact post-session audit trail.
+    """
+    _LOG_DIR.mkdir(exist_ok=True)
+    log_file = _LOG_DIR / f"session_{session_id}.jsonl"
+    with open(log_file, "a", encoding="utf-8") as f:
+        f.write(json.dumps(entry) + "\n")
 
 
 def require_api_key(view_func):
@@ -170,6 +146,21 @@ def plugin_check_next(request):
         },
     )
 
+    last_state = _last_datarefs.get(session.pk, {})
+    rule = next_item.auto_check_rule
+    log_entry = {
+        "ts": now.isoformat(),
+        "event": "manual_checked",
+        "item_id": next_item.pk,
+        "item": next_item.item,
+        "action": next_item.action_label,
+        "rule": rule,
+    }
+    if rule is not None:
+        watched_paths = collect_datarefs(rule)
+        log_entry["datarefs"] = {p: last_state.get(p, "<missing>") for p in watched_paths}
+    _session_log(session.pk, log_entry)
+
     return JsonResponse({"checked": next_item.action_label}, status=200)
 
 
@@ -256,6 +247,9 @@ def plugin_state(request):
     now = datetime.now(tz=timezone.utc)
     FlightSession.objects.filter(pk=session.pk).update(last_plugin_contact=now)
 
+    # Cache the latest dataref snapshot for use by plugin_check_next logging.
+    _last_datarefs[session.pk] = datarefs
+
     # Attribute ID that marks items as optional (non-blocking for the sequence gate).
     # Items WITHOUT this attribute are "required" and form the gate boundary.
     _OPTIONAL_ATTR = 4
@@ -312,29 +306,14 @@ def plugin_state(request):
                 if item.auto_check_rule is not None:
                     watch.extend(collect_datarefs(item.auto_check_rule))
 
-            if logger.isEnabledFor(logging.DEBUG) and active_items:
-                col_w = (45, 30)
-                header = (
-                    f"  {'Variable':<{col_w[0]}}{'Criteria':<{col_w[1]}}Value"
-                )
-                rows = [header, "  " + "-" * (col_w[0] + col_w[1] + 20)]
-                for it in active_items:
-                    if it.auto_check_rule is None:
-                        continue
-                    rows.append(f"  [{it.item}]")
-                    for path, criteria, value in _rule_rows(it.auto_check_rule, datarefs):
-                        rows.append(
-                            f"  {path:<{col_w[0]}}{criteria:<{col_w[1]}}{value}"
-                        )
-                logger.debug("active items:\n%s", "\n".join(rows))
-
             for item in active_items:
                 if item.auto_check_rule is None:
                     continue
 
-                item_drefs = collect_datarefs(item.auto_check_rule)
-
                 if evaluate_rule(item.auto_check_rule, datarefs):
+                    watched_paths = collect_datarefs(item.auto_check_rule)
+                    watched_values = {p: datarefs.get(p, "<missing>") for p in watched_paths}
+
                     # Auto-skip unchecked optional items that precede this item
                     for candidate in visible_items:
                         if candidate.step >= item.step:
@@ -353,6 +332,15 @@ def plugin_state(request):
                             )
                             newly_skipped.append(candidate.pk)
                             done_ids.add(candidate.pk)
+                            _session_log(session.pk, {
+                                "ts": now.isoformat(),
+                                "event": "auto_skipped",
+                                "item_id": candidate.pk,
+                                "item": candidate.item,
+                                "action": candidate.action_label,
+                                "triggered_by_item_id": item.pk,
+                                "triggered_by_item": item.item,
+                            })
 
                     FlightItemState.objects.update_or_create(
                         flight_session=session,
@@ -365,6 +353,15 @@ def plugin_state(request):
                     )
                     newly_checked.append(item.pk)
                     done_ids.add(item.pk)
+                    _session_log(session.pk, {
+                        "ts": now.isoformat(),
+                        "event": "auto_checked",
+                        "item_id": item.pk,
+                        "item": item.item,
+                        "action": item.action_label,
+                        "rule": item.auto_check_rule,
+                        "datarefs": watched_values,
+                    })
 
     # Deduplicate watch list while preserving order
     seen = set()
