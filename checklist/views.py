@@ -77,6 +77,29 @@ def _get_user_default_ids(user_profile) -> set[int]:
     )
 
 
+def _resolve_active_ids(
+    selected_attr_ids: list[int],
+    ofp_attr_ids: set[int],
+    user_default_ids: set[int],
+) -> set[int]:
+    """
+    Compute the final set of active attribute IDs.
+
+    Starts from the explicitly chosen set (selected + OFP-derived + user defaults),
+    then auto-activates invisible defaults (show=False) whose over_ruled_by attribute
+    is not already active. This mirrors the old update_profile logic for the
+    Django session but is applied to FlightSession attribute seeding.
+
+    Example: AboveZero (show=False, over_ruled_by=Anti-Ice Normal) is activated
+    automatically whenever Anti-Ice Normal is not selected.
+    """
+    active = set(selected_attr_ids) | ofp_attr_ids | user_default_ids
+    for attr in Attribute.objects.filter(show=False):
+        if attr.over_ruled_by_id is None or attr.over_ruled_by_id not in active:
+            active.add(attr.id)
+    return active
+
+
 def _update_session_attributes(
     flight_session,
     selected_attr_ids: list[int],
@@ -85,12 +108,9 @@ def _update_session_attributes(
 ) -> None:
     """Apply attribute form choices to an existing FlightSession in-place."""
     selected_set = set(selected_attr_ids)
+    active_ids = _resolve_active_ids(selected_attr_ids, ofp_attr_ids, user_default_ids)
     for attr in Attribute.objects.all():
-        is_active = (
-            attr.id in selected_set
-            or attr.id in ofp_attr_ids
-            or attr.id in user_default_ids
-        )
+        is_active = attr.id in active_ids
         if attr.id in ofp_attr_ids:
             source = "ofp_derived"
         elif attr.id in selected_set and attr.id not in user_default_ids:
@@ -135,17 +155,14 @@ def _create_flight_session(
     )
 
     # Create one row per Attribute (eager seeding)
-    all_attributes = Attribute.objects.all()
+    active_ids = _resolve_active_ids(selected_attr_ids, ofp_attr_ids, user_default_ids)
+    selected_set = set(selected_attr_ids)
     session_attrs = []
-    for attr in all_attributes:
-        is_active = (
-            attr.id in selected_attr_ids
-            or attr.id in ofp_attr_ids
-            or attr.id in user_default_ids
-        )
+    for attr in Attribute.objects.all():
+        is_active = attr.id in active_ids
         if attr.id in ofp_attr_ids:
             source = "ofp_derived"
-        elif attr.id in selected_attr_ids and attr.id not in user_default_ids:
+        elif attr.id in selected_set and attr.id not in user_default_ids:
             source = "pilot_override"
         else:
             source = "user_default"
