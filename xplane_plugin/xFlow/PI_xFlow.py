@@ -127,6 +127,15 @@ class PythonInterface:
         self._active_ticks: int = 0
         self._SESSION_REVALIDATE_TICKS: int = 300  # re-check every ~5 min when connected
 
+        # Exponential backoff for state POST network errors.
+        # _post_error_count counts consecutive failures; _post_skip_ticks is the
+        # number of flight-loop ticks to skip before spawning the next POST.
+        # Schedule: 10s → 20s → 40s → 60s cap. Resets to 0 on first success.
+        # Written by _post_state (background thread), read+decremented by
+        # _flight_loop (XP main thread) — both under _lock.
+        self._post_error_count: int = 0
+        self._post_skip_ticks: int = 0
+
         # Serialise all HTTP work onto one daemon thread
         self._lock = threading.Lock()
 
@@ -218,6 +227,12 @@ class PythonInterface:
 
         self._last_values = state
 
+        # Backoff: skip POST if a previous network error set a cooldown.
+        with self._lock:
+            if self._post_skip_ticks > 0:
+                self._post_skip_ticks -= 1
+                return _LOOP_INTERVAL
+
         # Always POST — keeps last_plugin_contact fresh (heartbeat) and
         # bootstraps the watch list on first tick. Dataref data is small enough
         # that 1 POST/s to a local server is negligible.
@@ -302,7 +317,12 @@ class PythonInterface:
         try:
             status, data = self._http_post_json(url, headers, body)
         except Exception as exc:
-            self._log("ERROR", _classify_error(exc))
+            with self._lock:
+                self._post_error_count += 1
+                n = self._post_error_count
+                backoff = min(10 * (2 ** (n - 1)), 60)  # 10 → 20 → 40 → 60s cap
+                self._post_skip_ticks = int(backoff)
+            self._log("ERROR", f"{_classify_error(exc)} — retry in {backoff}s (error #{n})")
             return
 
         self._log("DEBUG", f"state response status {status}")
@@ -312,8 +332,12 @@ class PythonInterface:
             new_watch     = data.get("watch", [])
             if newly_checked:
                 self._log("DEBUG", f"auto-checked items: {newly_checked}")
-            if new_watch != self._watch:
-                with self._lock:
+            with self._lock:
+                if self._post_error_count > 0:
+                    self._log("INFO", "connection restored after network errors")
+                    self._post_error_count = 0
+                    self._post_skip_ticks  = 0
+                if new_watch != self._watch:
                     self._watch = new_watch
                     # Clear stale dref handles for paths no longer watched
                     self._drefs = {p: v for p, v in self._drefs.items() if p in new_watch}
