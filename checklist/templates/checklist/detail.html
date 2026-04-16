@@ -257,6 +257,7 @@
             manualCount  += 1;
             allowAutoAdvance = true;
             updateProgress();
+            scrollToFirstUncheckedAfter(row);
             fetch('/api/check/', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCsrf()},
@@ -270,6 +271,20 @@
             });
         }
         // ci-auto: no action — auto state cleared only by session reset (Phase 2)
+    }
+
+    /* ── Scroll to first unchecked item at or after a given row ── */
+    function scrollToFirstUncheckedAfter(startRow) {
+        var rows     = Array.from(document.querySelectorAll('.ci'));
+        var startIdx = startRow ? rows.indexOf(startRow) + 1 : 0;
+        for (var i = startIdx; i < rows.length; i++) {
+            if (!rows[i].classList.contains('ci-manual')
+             && !rows[i].classList.contains('ci-auto')
+             && !rows[i].classList.contains('ci-skipped')) {
+                rows[i].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                return;
+            }
+        }
     }
 
     /* ── Wire up click / keyboard handlers ── */
@@ -356,6 +371,11 @@
 
     /* Initial progress render */
     updateProgress();
+
+    /* Scroll to resume point if procedure is partially complete */
+    if (checkedCount > 0 && checkedCount < totalItems) {
+        scrollToFirstUncheckedAfter(null);
+    }
 
     /* ── Polling loop ── */
     var POLL_INTERVAL = {{ poll_interval_ms }};
