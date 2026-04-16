@@ -3480,7 +3480,9 @@
     "dataref_expression": "",
     "role": "FO",
     "auto_check_rule": null,
-    "attributes": []
+    "attributes": [
+      15
+    ]
   }
 },
 {
