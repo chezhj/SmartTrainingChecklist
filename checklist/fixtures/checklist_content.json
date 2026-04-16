@@ -3479,8 +3479,22 @@
     "action_label": "ON",
     "dataref_expression": "",
     "role": "FO",
-    "auto_check_rule": null,
+    "auto_check_rule": {
+      "all": [
+        {
+          "dataref": "laminar/B738/fuel/fuel_tank_pos_ctr1",
+          "op": "eq",
+          "value": 1
+        },
+        {
+          "dataref": "laminar/B738/fuel/center_tank_kgs",
+          "op": "gt",
+          "value": 450
+        }
+      ]
+    },
     "attributes": [
+      4,
       15
     ]
   }
