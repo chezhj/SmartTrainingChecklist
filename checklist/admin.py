@@ -14,10 +14,24 @@ class ProcedureAdmin(admin.ModelAdmin):
     prepopulated_fields = {"slug": ("title",)}
 
 
+class AttributeAdmin(admin.ModelAdmin):
+    list_display = ["title", "order", "show", "live_rule_mode"]
+    list_filter = ["show", "live_rule_mode", "is_user_preference"]
+    fieldsets = [
+        (None, {
+            "fields": ["title", "label", "order", "description", "show",
+                       "is_user_preference", "over_ruled_by", "btn_color"],
+        }),
+        ("Live Rule", {
+            "fields": ["live_rule", "live_rule_mode", "prompt_message"],
+            "classes": ["collapse"],
+        }),
+    ]
+
+
 admin.site.site_header = "SimFlow Admin"
 admin.site.site_title = "SimFlow"
 
-# Register your models here.
 admin.site.register(Procedure, ProcedureAdmin)
 admin.site.register(CheckItem)
-admin.site.register(Attribute)
+admin.site.register(Attribute, AttributeAdmin)

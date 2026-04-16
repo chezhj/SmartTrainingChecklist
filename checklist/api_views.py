@@ -6,7 +6,8 @@ from datetime import datetime, timezone
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET, require_POST
 
-from .models import CheckItem, FlightItemState, FlightSession
+from .models import Attribute, CheckItem, FlightItemState, FlightSession, FlightSessionAttribute
+from .rules import evaluate_rule
 
 
 def _get_flight_session(request):
@@ -161,3 +162,79 @@ def uncheck_view(request):
     ).delete()
 
     return JsonResponse({"status": "ok", "id": item_id})
+
+
+@require_GET
+def attribute_transition_view(request):
+    """
+    GET /api/attribute-transition/
+
+    Evaluates Attribute.live_rule for every attribute that has one, using the
+    latest cached dataref snapshot from the plugin. Called by the browser
+    before navigating to a new procedure.
+
+    Responses:
+        200  {
+               "applied":  [<attr_id>, ...],   # silently activated (activate_only)
+               "prompts":  [                   # returned to browser for pilot to confirm
+                 {
+                   "attr_id": <int>,
+                   "attr_title": "<str>",
+                   "prompt_message": "<str>",
+                   "currently_active": <bool>,
+                   "suggested_active": <bool>
+                 }, ...
+               ]
+             }
+
+    Attributes already in session.pilot_overrides are skipped (pilot decided
+    this session). Attributes without live_rule or live_rule_mode are ignored.
+    """
+    from .plugin_views import _last_datarefs  # in-process cache, no DB round-trip
+
+    session = _get_flight_session(request)
+    if session is None:
+        return JsonResponse({"applied": [], "prompts": []})
+
+    datarefs = _last_datarefs.get(session.pk, {})
+    overrides = session.pilot_overrides  # {str(attr_id): bool}
+
+    applied = []
+    prompts = []
+
+    attrs = Attribute.objects.exclude(live_rule=None).exclude(live_rule_mode="")
+    for attr in attrs:
+        if not attr.live_rule_mode:
+            continue
+
+        attr_id_str = str(attr.pk)
+        if attr_id_str in overrides:
+            continue  # pilot has already decided for this session
+
+        rule_fires = evaluate_rule(attr.live_rule, datarefs)
+
+        fsa = FlightSessionAttribute.objects.filter(
+            flight_session=session, attribute=attr
+        ).first()
+        currently_active = fsa.is_active if fsa else False
+
+        if attr.live_rule_mode == "activate_only":
+            if rule_fires and not currently_active:
+                FlightSessionAttribute.objects.update_or_create(
+                    flight_session=session,
+                    attribute=attr,
+                    defaults={"is_active": True, "source": "live_rule"},
+                )
+                applied.append(attr.pk)
+
+        elif attr.live_rule_mode == "prompt_on_change":
+            if rule_fires != currently_active:
+                prompts.append({
+                    "attr_id": attr.pk,
+                    "attr_title": attr.label or attr.title,
+                    "prompt_message": attr.prompt_message,
+                    "currently_active": currently_active,
+                    "suggested_active": rule_fires,
+                })
+
+    return JsonResponse({"applied": applied, "prompts": prompts})

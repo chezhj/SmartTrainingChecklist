@@ -169,6 +169,11 @@ class FlightSession(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     last_plugin_contact = models.DateTimeField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
+    pilot_overrides = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Session-wide pilot decisions on live_rule suggestions. {str(attr_id): bool}",
+    )
 
     class Meta:
         ordering = ["-created_at"]
@@ -207,6 +212,7 @@ class FlightSessionAttribute(models.Model):
         ("user_default", "User Default"),
         ("ofp_derived", "OFP Derived"),
         ("pilot_override", "Pilot Override"),
+        ("live_rule", "Live Rule"),
     ]
 
     flight_session = models.ForeignKey(
@@ -262,6 +268,11 @@ class Attribute(models.Model):
     The order is used to sort
     """
 
+    LIVE_RULE_MODE_CHOICES = [
+        ("activate_only", "Activate Only"),
+        ("prompt_on_change", "Prompt on Change"),
+    ]
+
     title = models.CharField(max_length=30)
     label = models.CharField(
         max_length=60,
@@ -279,6 +290,23 @@ class Attribute(models.Model):
         "self", on_delete=models.SET_NULL, blank=True, null=True
     )
     btn_color = ColorField(default="#194D33")
+    live_rule = models.JSONField(
+        blank=True,
+        null=True,
+        help_text="Dataref rule evaluated at procedure transitions to auto-activate or prompt.",
+    )
+    live_rule_mode = models.CharField(
+        max_length=20,
+        choices=LIVE_RULE_MODE_CHOICES,
+        blank=True,
+        null=True,
+        help_text="activate_only: apply silently. prompt_on_change: ask the pilot.",
+    )
+    prompt_message = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text="Message shown to pilot when live_rule triggers in prompt_on_change mode.",
+    )
 
     def __str__(self) -> str:
         return self.title.__str__()

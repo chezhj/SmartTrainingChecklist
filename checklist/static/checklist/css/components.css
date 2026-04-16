@@ -2065,3 +2065,81 @@
   justify-content: space-between;
   align-items: center;
 }
+
+
+/* ── Attribute transition modal ──────────────────────────────────── */
+
+.attr-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(13, 21, 18, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+}
+.attr-modal.js-hidden { display: none; }
+
+.attr-modal-box {
+  background: var(--color-card);
+  border-radius: var(--radius-lg);
+  max-width: 480px;
+  width: 100%;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.24);
+}
+
+.attr-modal-header {
+  padding: var(--space-5) var(--space-6) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+.attr-modal-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-ink);
+  margin: 0;
+}
+
+.attr-modal-body {
+  padding: var(--space-4) var(--space-6);
+}
+.attr-modal-intro {
+  font-size: 0.875rem;
+  color: var(--color-ink-mid);
+  margin: 0 0 var(--space-4);
+}
+
+.attr-prompt-row {
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.attr-prompt-row:last-child { border-bottom: none; }
+
+.attr-prompt-msg {
+  font-size: 0.875rem;
+  color: var(--color-ink);
+  margin-bottom: var(--space-2);
+}
+.attr-prompt-choices {
+  display: flex;
+  gap: var(--space-5);
+}
+.attr-prompt-choices label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.8125rem;
+  color: var(--color-ink-mid);
+  cursor: pointer;
+}
+.attr-prompt-choices input[type="radio"] {
+  accent-color: var(--color-teal-mid);
+}
+
+.attr-modal-footer {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-6) var(--space-5);
+  border-top: 1px solid var(--color-border);
+  justify-content: flex-end;
+}

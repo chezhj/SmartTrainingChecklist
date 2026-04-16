@@ -4181,8 +4181,10 @@
       "dataref_expression": "",
       "role": "C",
       "auto_check_rule": {
-        "fmc_line": "laminar/B738/fmc1/Line06_L",
-        "not_contains": "ACTIVATE"
+        "all": [
+          {"fmc_line": "laminar/B738/fmc1/Line00_C", "contains": "RTE"},
+          {"fmc_line": "laminar/B738/fmc1/Line06_L", "not_contains": "ACTIVATE"}
+        ]
       },
       "attributes": []
     }

@@ -18,6 +18,7 @@ from django.views.decorators.csrf import csrf_exempt  # used inside require_api_
 from django.views.decorators.http import require_GET, require_POST
 
 from .models import (
+    Attribute,
     CheckItem,
     FlightItemState,
     FlightSession,
@@ -362,6 +363,11 @@ def plugin_state(request):
                         "rule": item.auto_check_rule,
                         "datarefs": watched_values,
                     })
+
+    # Include live_rule datarefs from all attributes — always streamed so
+    # attribute_transition can evaluate rules even before a phase is active.
+    for attr in Attribute.objects.exclude(live_rule=None):
+        watch.extend(collect_datarefs(attr.live_rule))
 
     # Deduplicate watch list while preserving order
     seen = set()

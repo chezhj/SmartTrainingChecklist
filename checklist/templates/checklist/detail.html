@@ -40,7 +40,7 @@
 
         <div class="proc-sidebar-list">
             {% for proc in all_procedures %}
-                <a class="proc-sidebar-item {% if proc.slug == procedure.slug %}active{% elif proc.step < active_phase_step %}done{% endif %}"
+                <a class="proc-sidebar-item js-nav-btn {% if proc.slug == procedure.slug %}active{% elif proc.step < active_phase_step %}done{% endif %}"
                    href="{% url 'checklist:detail' proc.slug %}">
                     <span class="proc-sidebar-name">{{ proc.title }}</span>
                     <span class="proc-sidebar-badge">{{ proc.step }}</span>
@@ -124,21 +124,40 @@
 
         <div class="nav-bar">
             {% if prevproc %}
-                <a class="nav-btn" href="{% url 'checklist:detail' prevproc.slug %}">← Prev</a>
+                <a class="nav-btn js-nav-btn" href="{% url 'checklist:detail' prevproc.slug %}">← Prev</a>
             {% else %}
-                <span> </span>
+                <span>&nbsp;</span>
             {% endif %}
 
             <span class="nav-label">{{ procedure.step }} / {{ all_procedures|length }}</span>
 
             {% if nextproc %}
-                <a class="nav-btn nav-btn-primary nav-btn-next"
+                <a class="nav-btn nav-btn-primary nav-btn-next js-nav-btn"
                    href="{% url 'checklist:detail' nextproc.slug %}">Next →</a>
             {% else %}
-                <span> </span>
+                <span>&nbsp;</span>
             {% endif %}
         </div>
 
+    </div>
+</div>
+
+<!-- Attribute transition modal -->
+<div id="attr-modal" class="attr-modal js-hidden"
+     role="dialog" aria-modal="true" aria-labelledby="attr-modal-title">
+    <div class="attr-modal-box">
+        <div class="attr-modal-header">
+            <h2 id="attr-modal-title" class="attr-modal-title">Configuration update</h2>
+        </div>
+        <div class="attr-modal-body">
+            <p class="attr-modal-intro">New conditions detected. Review and confirm:</p>
+            <div id="attr-modal-list"></div>
+        </div>
+        <div class="attr-modal-footer">
+            <button class="btn-setup-secondary" id="attr-modal-cancel" type="button">Keep current</button>
+            <button class="btn-setup-secondary" id="attr-modal-accept-all" type="button">Accept all</button>
+            <button class="btn-setup-primary" id="attr-modal-confirm" type="button">Confirm</button>
+        </div>
     </div>
 </div>
 {% endblock content %}
@@ -387,6 +406,91 @@
             updateSessionRoles(function () { location.reload(); });
         });
     }
+
+    /* ── Attribute transition: intercept nav clicks ── */
+
+    function escHtml(s) {
+        return String(s)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    async function navigateWithTransition(targetUrl) {
+        try {
+            var res = await fetch('{% url "checklist:api_attribute_transition" %}', {
+                headers: {'X-CSRFToken': getCsrf()}
+            });
+            var data = await res.json();
+            if (data.prompts && data.prompts.length > 0) {
+                showTransitionModal(data.prompts, targetUrl);
+                return;
+            }
+        } catch (_) { /* on error fall through to plain navigate */ }
+        window.location.href = targetUrl;
+    }
+
+    function showTransitionModal(prompts, targetUrl) {
+        var modal = document.getElementById('attr-modal');
+        var list  = document.getElementById('attr-modal-list');
+        list.innerHTML = '';
+        prompts.forEach(function (p) {
+            var action   = p.suggested_active ? 'Activate' : 'Deactivate';
+            var override = p.suggested_active ? 'Keep inactive' : 'Keep active';
+            var row = document.createElement('div');
+            row.className = 'attr-prompt-row';
+            row.dataset.attrId = p.attr_id;
+            row.innerHTML =
+                '<div class="attr-prompt-msg">' + escHtml(p.prompt_message || p.attr_title) + '</div>' +
+                '<div class="attr-prompt-choices">' +
+                    '<label><input type="radio" name="attr_' + p.attr_id + '" value="accept" checked> '
+                        + escHtml(action) + '</label>' +
+                    '<label><input type="radio" name="attr_' + p.attr_id + '" value="reject"> '
+                        + escHtml(override) + '</label>' +
+                '</div>';
+            list.appendChild(row);
+        });
+        modal._targetUrl = targetUrl;
+        modal.classList.remove('js-hidden');
+    }
+
+    document.getElementById('attr-modal-accept-all').addEventListener('click', function () {
+        document.querySelectorAll('#attr-modal-list input[value="accept"]')
+            .forEach(function (r) { r.checked = true; });
+    });
+
+    document.getElementById('attr-modal-cancel').addEventListener('click', function () {
+        document.getElementById('attr-modal').classList.add('js-hidden');
+    });
+
+    document.getElementById('attr-modal-confirm').addEventListener('click', async function () {
+        var modal     = document.getElementById('attr-modal');
+        var targetUrl = modal._targetUrl;
+        var decisions = [];
+        modal.querySelectorAll('.attr-prompt-row').forEach(function (row) {
+            decisions.push({
+                attr_id:  parseInt(row.dataset.attrId, 10),
+                accepted: row.querySelector('input[value="accept"]').checked
+            });
+        });
+        try {
+            await fetch(targetUrl, {
+                method:  'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCsrf()},
+                body:    JSON.stringify({decisions: decisions})
+            });
+        } catch (_) { /* navigate anyway */ }
+        modal.classList.add('js-hidden');
+        window.location.href = targetUrl;
+    });
+
+    document.querySelectorAll('.js-nav-btn').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+            var target = btn.getAttribute('href');
+            if (!target || target === '#') return;
+            e.preventDefault();
+            navigateWithTransition(target);
+        });
+    });
 
 }());
 </script>

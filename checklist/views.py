@@ -2,6 +2,7 @@
 Base views for checklist
 """
 
+import json
 from time import time
 
 from django.conf import settings
@@ -23,6 +24,7 @@ from .models import (
     UserAttributeDefault,
     UserProfile,
 )
+from .rules import evaluate_rule
 
 
 # ── SimBrief helpers ──────────────────────────────────────────────────────────
@@ -475,8 +477,71 @@ def _clear_flight_session_keys(request):
 # ── Checklist views ───────────────────────────────────────────────────────────
 
 
+def _apply_attribute_overrides(request):
+    """
+    Handle POST to procedure_detail. Receives pilot decisions from the
+    attribute-transition modal and persists them to the flight session.
+
+    Body: {"decisions": [{"attr_id": <int>, "accepted": <bool>}, ...]}
+    - accepted=True  → re-evaluate live_rule and apply result to FlightSessionAttribute
+    - accepted=False → record rejection in pilot_overrides, leave attribute state unchanged
+
+    All decisions are merged into FlightSession.pilot_overrides for the duration
+    of the session so the same attribute is never prompted again.
+    """
+    from .plugin_views import _last_datarefs  # in-process cache
+
+    session_key = request.session.get("flight_session_key")
+    if not session_key:
+        return JsonResponse({"status": "error", "detail": "No session."}, status=403)
+    try:
+        flight_session = FlightSession.objects.get(session_key=session_key, is_active=True)
+    except FlightSession.DoesNotExist:
+        return JsonResponse({"status": "error", "detail": "Session not found."}, status=403)
+
+    try:
+        data = json.loads(request.body)
+    except (json.JSONDecodeError, ValueError):
+        return JsonResponse({"status": "error", "detail": "Invalid JSON."}, status=400)
+
+    decisions = data.get("decisions", [])
+    if not isinstance(decisions, list):
+        return JsonResponse({"status": "error", "detail": "decisions must be a list."}, status=400)
+
+    datarefs = _last_datarefs.get(flight_session.pk, {})
+    overrides = dict(flight_session.pilot_overrides)
+
+    for decision in decisions:
+        attr_id = decision.get("attr_id")
+        accepted = decision.get("accepted")
+        if not isinstance(attr_id, int) or not isinstance(accepted, bool):
+            continue
+
+        overrides[str(attr_id)] = accepted
+
+        if accepted:
+            try:
+                attr = Attribute.objects.get(pk=attr_id)
+            except Attribute.DoesNotExist:
+                continue
+            if attr.live_rule:
+                new_active = evaluate_rule(attr.live_rule, datarefs)
+                FlightSessionAttribute.objects.update_or_create(
+                    flight_session=flight_session,
+                    attribute=attr,
+                    defaults={"is_active": new_active, "source": "live_rule"},
+                )
+
+    flight_session.pilot_overrides = overrides
+    flight_session.save(update_fields=["pilot_overrides"])
+    return JsonResponse({"status": "ok"})
+
+
 def procedure_detail(request, slug=None, pk=None):
     """Show all check items for the given procedure slug."""
+    if request.method == "POST":
+        return _apply_attribute_overrides(request)
+
     time_start = time()
 
     if slug:
