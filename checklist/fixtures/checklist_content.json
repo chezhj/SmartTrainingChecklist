@@ -261,9 +261,22 @@
     "is_user_preference": false,
     "over_ruled_by": null,
     "btn_color": "#4E7BCC",
-    "live_rule": null,
-    "live_rule_mode": null,
-    "prompt_message": ""
+    "live_rule": {
+      "all": [
+        {
+          "dataref": "sim/weather/temperature_sealevel_c",
+          "op": "lt",
+          "value": 0
+        },
+        {
+          "dataref": "sim/flightmodel/position/y_agl",
+          "op": "lt",
+          "value": 152
+        }
+      ]
+    },
+    "live_rule_mode": "prompt_on_change",
+    "prompt_message": "OAT below 0 °C — Anti-Ice Normal procedures active?"
   }
 },
 {
@@ -295,9 +308,27 @@
     "is_user_preference": false,
     "over_ruled_by": null,
     "btn_color": "#88DBF5",
-    "live_rule": null,
-    "live_rule_mode": null,
-    "prompt_message": ""
+    "live_rule": {
+      "all": [
+        {
+          "dataref": "sim/weather/temperature_sealevel_c",
+          "op": "gt",
+          "value": 0
+        },
+        {
+          "dataref": "sim/weather/temperature_sealevel_c",
+          "op": "lte",
+          "value": 10
+        },
+        {
+          "dataref": "sim/flightmodel/position/y_agl",
+          "op": "lt",
+          "value": 152
+        }
+      ]
+    },
+    "live_rule_mode": "prompt_on_change",
+    "prompt_message": "OAT 0–10 °C — Zero-to-Ten temperature procedures active?"
   }
 },
 {
@@ -382,6 +413,27 @@
     "btn_color": "#7B5EA7",
     "live_rule": null,
     "live_rule_mode": null,
+    "prompt_message": ""
+  }
+},
+{
+  "model": "checklist.attribute",
+  "pk": 15,
+  "fields": {
+    "title": "CenterTanks",
+    "label": "Center Tanks Loaded",
+    "order": 99,
+    "description": "Center fuel tanks contain usable fuel. Activates Center Fuel Pump items.",
+    "show": false,
+    "is_user_preference": false,
+    "over_ruled_by": null,
+    "btn_color": "#194D33",
+    "live_rule": {
+      "dataref": "laminar/B738/fuel/fuel_tank_center_kg",
+      "op": "gt",
+      "value": 100
+    },
+    "live_rule_mode": "activate_only",
     "prompt_message": ""
   }
 },
@@ -1297,7 +1349,9 @@
         }
       ]
     },
-    "attributes": []
+    "attributes": [
+      15
+    ]
   }
 },
 {
