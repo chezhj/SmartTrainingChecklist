@@ -26,7 +26,7 @@ from .models import (
     Procedure,
     UserProfile,
 )
-from .rules import collect_datarefs, evaluate_rule
+from .rules import collect_datarefs, collect_leaf_evaluations, evaluate_rule
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +36,9 @@ _LOG_DIR = Path(settings.BASE_DIR) / "logs"
 # Updated on every plugin_state POST; read by plugin_check_next to provide
 # context for manual check events without changing the plugin protocol.
 _last_datarefs: dict[int, dict] = {}
+
+# Last gate item pk per session — used to detect gate changes for logging.
+_last_gate_item: dict[int, int | None] = {}
 
 
 def _session_log(session_id: int, entry: dict) -> None:
@@ -300,6 +303,34 @@ def plugin_state(request):
                 i for i in visible_items
                 if i.pk not in done_ids and (gate_step is None or i.step <= gate_step)
             ]
+
+            # Log when the blocking gate item changes (Option A debug aid).
+            gate_item = next(
+                (i for i in visible_items if i.pk not in done_ids and not is_optional(i)),
+                None,
+            )
+            prev_gate = _last_gate_item.get(session.pk, -1)
+            new_gate_pk = gate_item.pk if gate_item else None
+            if new_gate_pk != prev_gate:
+                _last_gate_item[session.pk] = new_gate_pk
+                if gate_item is not None:
+                    rule = gate_item.auto_check_rule
+                    entry = {
+                        "ts": now.isoformat(),
+                        "event": "gate_changed",
+                        "item_id": gate_item.pk,
+                        "item": gate_item.item,
+                        "rule": rule,
+                    }
+                    if rule is not None:
+                        entry["conditions"] = collect_leaf_evaluations(rule, datarefs)
+                    _session_log(session.pk, entry)
+                else:
+                    _session_log(session.pk, {
+                        "ts": now.isoformat(),
+                        "event": "gate_cleared",
+                        "last_gate_item_id": prev_gate,
+                    })
 
             # Collect watch datarefs from all visible items with rules (not just
             # active ones) so the plugin keeps streaming them even when already done.

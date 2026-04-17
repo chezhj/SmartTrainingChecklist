@@ -273,6 +273,77 @@
         // ci-auto: no action — auto state cleared only by session reset (Phase 2)
     }
 
+    /* ── Debug: render rule evaluation state in the info panel ── */
+    function renderDebugRules(rules, attrs) {
+        var section = document.getElementById('debug-rules-section');
+        var list    = document.getElementById('debug-rules-list');
+        if (!section || !list) return;
+
+        var hasContent = (rules && rules.length > 0) || (attrs && attrs.length > 0);
+        if (!hasContent) {
+            section.classList.add('js-hidden');
+            return;
+        }
+        section.classList.remove('js-hidden');
+
+        function conditionRows(conditions) {
+            return (conditions || []).map(function (c) {
+                var icon = c.pass
+                    ? '<span class="debug-pass">&#10003;</span>'
+                    : '<span class="debug-fail">&#10007;</span>';
+                var dr = String(c.dataref || '').split('/').pop();
+                return '<div class="debug-cond">'
+                    + icon
+                    + '<span class="debug-dr" title="' + escHtml(c.dataref) + '">' + escHtml(dr) + '</span>'
+                    + '<span class="debug-expr">' + escHtml(c.op) + ' ' + escHtml(String(c.required)) + '</span>'
+                    + '<span class="debug-actual">&#8594; ' + escHtml(String(c.actual)) + '</span>'
+                    + '</div>';
+            }).join('');
+        }
+
+        var html = '';
+
+        if (rules && rules.length > 0) {
+            html += '<div class="debug-group-title">Check items</div>';
+            html += rules.map(function (r) {
+                var gateTag = r.is_gate
+                    ? '<span class="debug-tag debug-tag-gate">GATE</span>'
+                    : '<span class="debug-tag debug-tag-opt">OPT</span>';
+                var overallIcon = r.rule_pass
+                    ? '<span class="debug-pass">&#10003;</span>'
+                    : '<span class="debug-fail">&#10007;</span>';
+                return '<div class="debug-item">'
+                    + '<div class="debug-item-header">'
+                    + gateTag + overallIcon
+                    + '<span class="debug-item-name">' + escHtml(r.item) + '</span>'
+                    + '</div>'
+                    + conditionRows(r.conditions)
+                    + '</div>';
+            }).join('');
+        }
+
+        if (attrs && attrs.length > 0) {
+            html += '<div class="debug-group-title">Attributes</div>';
+            html += attrs.map(function (a) {
+                var activeTag = a.is_active
+                    ? '<span class="debug-tag debug-tag-gate">ON</span>'
+                    : '<span class="debug-tag debug-tag-opt">OFF</span>';
+                var overallIcon = a.rule_pass
+                    ? '<span class="debug-pass">&#10003;</span>'
+                    : '<span class="debug-fail">&#10007;</span>';
+                return '<div class="debug-item">'
+                    + '<div class="debug-item-header">'
+                    + activeTag + overallIcon
+                    + '<span class="debug-item-name">' + escHtml(a.label || a.title) + '</span>'
+                    + '</div>'
+                    + conditionRows(a.conditions)
+                    + '</div>';
+            }).join('');
+        }
+
+        list.innerHTML = html;
+    }
+
     /* ── Scroll to first unchecked item at or after a given row ── */
     function scrollToFirstUncheckedAfter(startRow) {
         var rows     = Array.from(document.querySelectorAll('.ci'));
@@ -330,6 +401,7 @@
             else if (source === 'SKIPPED') { skippedCount += 1; }
             if (source !== 'SKIPPED') { allowAutoAdvance = true; }
             updateProgress();
+            scrollToFirstUncheckedAfter(row);
         }
     };
 
@@ -388,6 +460,7 @@
             lastPoll = Math.floor(Date.now() / 1000);
 
             data.checked_items.forEach(function (item) { markItem(item.id, item.source); });
+            if (data.debug_rules !== undefined) { renderDebugRules(data.debug_rules, data.debug_attributes || []); }
 
             /* Derive 5-state badge: connected / reconnecting / initializing / disconnected / manual */
             var age          = data.last_seen > 0 ? (Date.now() / 1000 - data.last_seen) : Infinity;

@@ -3,11 +3,12 @@
 import json
 from datetime import datetime, timezone
 
+from django.conf import settings
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET, require_POST
 
-from .models import Attribute, CheckItem, FlightItemState, FlightSession, FlightSessionAttribute
-from .rules import evaluate_rule
+from .models import Attribute, CheckItem, FlightItemState, FlightSession, FlightSessionAttribute, Procedure
+from .rules import collect_leaf_evaluations, evaluate_rule
 
 
 def _get_flight_session(request):
@@ -75,12 +76,93 @@ def poll_view(request):
         sim_connected = age < 5
         sim_initializing = not sim_connected and age < 15
 
-    return JsonResponse({
+    response = {
         "checked_items": checked_items,
         "sim_connected": sim_connected,
         "sim_initializing": sim_initializing,
         "last_seen": last_seen,
-    })
+    }
+
+    if settings.DEBUG and session is not None:
+        from .plugin_views import _last_datarefs
+        procedure_slug = request.GET.get("procedure", "")
+        last_state = _last_datarefs.get(session.pk, {})
+        debug_rules = []
+        if procedure_slug:
+            try:
+                procedure = Procedure.objects.get(slug=procedure_slug)
+                active_attr_ids = list(
+                    FlightSessionAttribute.objects.filter(
+                        flight_session=session, is_active=True
+                    ).values_list("attribute_id", flat=True)
+                )
+                done_ids = set(
+                    FlightItemState.objects.filter(
+                        flight_session=session, status__in=("checked", "skipped")
+                    ).values_list("checklist_item_id", flat=True)
+                )
+                all_items = list(
+                    CheckItem.objects.filter(procedure=procedure)
+                    .prefetch_related("attributes")
+                    .order_by("step")
+                )
+                visible_items = [i for i in all_items if i.shouldshow(active_attr_ids)]
+
+                _OPTIONAL_ATTR = 4
+
+                def _is_optional(item):
+                    return any(a.pk == _OPTIONAL_ATTR for a in item.attributes.all())
+
+                gate_step = None
+                for item in visible_items:
+                    if item.pk not in done_ids and not _is_optional(item):
+                        gate_step = item.step
+                        break
+
+                active_items = [
+                    i for i in visible_items
+                    if i.pk not in done_ids and (gate_step is None or i.step <= gate_step)
+                ]
+
+                for item in active_items:
+                    if item.auto_check_rule is None:
+                        continue
+                    debug_rules.append({
+                        "item_id": item.pk,
+                        "item": item.item,
+                        "step": item.step,
+                        "is_gate": item.step == gate_step and not _is_optional(item),
+                        "rule_pass": evaluate_rule(item.auto_check_rule, last_state),
+                        "conditions": collect_leaf_evaluations(item.auto_check_rule, last_state),
+                    })
+            except Exception:
+                pass
+        response["debug_rules"] = debug_rules
+
+        # Attribute live_rule evaluations
+        debug_attributes = []
+        try:
+            active_attr_ids_set = set(
+                FlightSessionAttribute.objects.filter(
+                    flight_session=session, is_active=True
+                ).values_list("attribute_id", flat=True)
+            )
+            for attr in Attribute.objects.exclude(live_rule=None).order_by("order"):
+                if not attr.live_rule:
+                    continue
+                debug_attributes.append({
+                    "attr_id": attr.pk,
+                    "title": attr.title,
+                    "label": attr.label,
+                    "is_active": attr.pk in active_attr_ids_set,
+                    "rule_pass": evaluate_rule(attr.live_rule, last_state),
+                    "conditions": collect_leaf_evaluations(attr.live_rule, last_state),
+                })
+        except Exception:
+            pass
+        response["debug_attributes"] = debug_attributes
+
+    return JsonResponse(response)
 
 
 @require_POST

@@ -158,6 +158,13 @@
             </div>
         </div>
 
+        {% if 'DEBUG'|setting == True %}
+        <div class="debug-section js-hidden" id="debug-rules-section">
+            <div class="debug-section-title">Rule evaluator</div>
+            <div id="debug-rules-list"></div>
+        </div>
+        {% endif %}
+
         <div class="info-footer">
             SimFlow · Made by CheZHJ · Based on Skymatix checklist
         </div>
