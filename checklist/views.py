@@ -92,11 +92,16 @@ def _resolve_active_ids(
     is not already active. This mirrors the old update_profile logic for the
     Django session but is applied to FlightSession attribute seeding.
 
+    Attributes with live_rule_mode set are plugin-driven and intentionally excluded
+    from auto-activation — they start OFF and are turned on by the plugin.
+
     Example: AboveZero (show=False, over_ruled_by=Anti-Ice Normal) is activated
     automatically whenever Anti-Ice Normal is not selected.
     """
     active = set(selected_attr_ids) | ofp_attr_ids | user_default_ids
     for attr in Attribute.objects.filter(show=False):
+        if attr.live_rule_mode:
+            continue  # plugin-driven: starts OFF, activated by live_rule evaluation
         if attr.over_ruled_by_id is None or attr.over_ruled_by_id not in active:
             active.add(attr.id)
     return active
