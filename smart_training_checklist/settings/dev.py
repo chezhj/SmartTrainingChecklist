@@ -25,9 +25,10 @@ STATICFILES_DIRS = [
 ]
 
 # SIMBRIEF_URL = "https://www.simbrief.com/api/xml.fetcher.php?userid="
-SIMBRIEF_URL = (
-    "https://my-simbrief-mock.wiremockapi.cloud//simbrief/get_plan.php?userid="
-)
+# SIMBRIEF_URL = (
+#     "https://my-simbrief-mock.wiremockapi.cloud//simbrief/get_plan.php?userid="
+# )
+SIMBRIEF_URL = "https://www.simbrief.com/api/xml.fetcher.php?userid="
 
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
