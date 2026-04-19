@@ -4559,10 +4559,9 @@
     "dataref_expression": "",
     "role": "C",
     "auto_check_rule": {
-      "dataref": "laminar/B738/autopilot/heading_dial_deg_mag_pilot",
+      "dataref": "laminar/B738/autopilot/mcp_hdg_dial",
       "op": "abs_diff_lte",
-      "ref": "laminar/B738/fms/ref_list_rwy_hdg",
-      "ref_index": 2,
+      "ref": "TODO:legs_reference_dataref",
       "tolerance": 2
     },
     "attributes": []
