@@ -40,8 +40,9 @@
 
         <div class="proc-sidebar-list">
             {% for proc in all_procedures %}
-                <a class="proc-sidebar-item js-nav-btn {% if proc.slug == procedure.slug %}active{% elif proc.step < active_phase_step %}done{% endif %}"
-                   href="{% url 'checklist:detail' proc.slug %}">
+                <a class="proc-sidebar-item js-nav-btn {% if proc.slug == procedure.slug %}active{% elif proc.step < active_phase_step %}done{% endif %}{% if proc.show_rule %} js-hidden{% endif %}"
+                   href="{% url 'checklist:detail' proc.slug %}"
+                   {% if proc.show_rule %}data-conditional-slug="{{ proc.slug }}"{% endif %}>
                     <span class="proc-sidebar-name">{{ proc.title }}</span>
                     <span class="proc-sidebar-badge">{{ proc.step }}</span>
                 </a>
@@ -135,7 +136,8 @@
                 <a class="nav-btn nav-btn-primary nav-btn-next js-nav-btn"
                    href="{% url 'checklist:detail' nextproc.slug %}">Next →</a>
             {% else %}
-                <span>&nbsp;</span>
+                <a class="nav-btn nav-btn-next js-nav-btn"
+                   href="{% url 'checklist:idle' %}">Done →</a>
             {% endif %}
         </div>
 
@@ -177,7 +179,11 @@
     var autoCount        = document.querySelectorAll('.ci-auto').length;
     var manualCount      = document.querySelectorAll('.ci-manual').length;
     var skippedCount     = document.querySelectorAll('.ci-skipped').length;
-    var allowAutoAdvance = false; /* true only after an item is checked this visit */
+    var allowAutoAdvance        = false; /* true only after an item is checked this visit */
+    var autoContinue            = {{ procedure.auto_continue|lower }};
+    var isConditionalProcedure  = {% if procedure.show_rule %}true{% else %}false{% endif %};
+    var conditionalSlugs        = {{ conditional_proc_slugs_json }};
+    var revealedSlugs           = new Set();
     var CIRCUMFERENCE = 119.4;
 
     function updateProgress() {
@@ -212,14 +218,24 @@
         var labelEl = document.getElementById('label-completed');
         if (labelEl) labelEl.classList.toggle('js-hidden', checkedCount === 0);
 
-        /* Auto-advance when all items are checked this visit */
-        {% if nextproc %}
-        if (allowAutoAdvance && checkedCount === totalItems && totalItems > 0) {
+        /* Auto-advance when all items are checked this visit (requires auto_continue flag) */
+        if (autoContinue && allowAutoAdvance && checkedCount === totalItems && totalItems > 0) {
             setTimeout(function () {
+                {% if nextproc %}
                 window.location.href = '{% url "checklist:detail" nextproc.slug %}';
+                {% else %}
+                window.location.href = '{% url "checklist:idle" %}';
+                {% endif %}
             }, 600);
         }
-        {% endif %}
+
+        /* If this is a conditional procedure and all items are done, hide it
+           in the nav — it will re-appear when show_rule fires again. */
+        if (isConditionalProcedure && checkedCount === totalItems && totalItems > 0) {
+            var selfNav = document.querySelector('[data-conditional-slug="{{ procedure.slug }}"]');
+            if (selfNav) selfNav.classList.add('js-hidden');
+            revealedSlugs.delete('{{ procedure.slug }}');
+        }
     }
 
     /* ── CSRF token helper ── */
@@ -405,6 +421,28 @@
         }
     };
 
+    /* ── applyShowProcedures: reveal/hide conditional nav items ── */
+    function applyShowProcedures(slugs) {
+        if (!slugs) return;
+        /* Reveal newly active conditional procedures */
+        slugs.forEach(function (slug) {
+            if (revealedSlugs.has(slug)) return;
+            var el = document.querySelector('[data-conditional-slug="' + slug + '"]');
+            if (el) {
+                el.classList.remove('js-hidden');
+                revealedSlugs.add(slug);
+            }
+        });
+        /* Hide any previously revealed procedure no longer in the list */
+        revealedSlugs.forEach(function (slug) {
+            if (slugs.indexOf(slug) === -1) {
+                var el = document.querySelector('[data-conditional-slug="' + slug + '"]');
+                if (el) el.classList.add('js-hidden');
+                revealedSlugs.delete(slug);
+            }
+        });
+    }
+
     /* ── updateConnectionBadge: called by polling JS ── */
     /* States (mutually exclusive, checked in priority order):
        simConnected   — live, datarefs flowing (<5 s ago)
@@ -460,6 +498,7 @@
             lastPoll = Math.floor(Date.now() / 1000);
 
             data.checked_items.forEach(function (item) { markItem(item.id, item.source); });
+            applyShowProcedures(data.show_procedures || []);
             if (data.debug_rules !== undefined) { renderDebugRules(data.debug_rules, data.debug_attributes || []); }
 
             /* Derive 5-state badge: connected / reconnecting / initializing / disconnected / manual */

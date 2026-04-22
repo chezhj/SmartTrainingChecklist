@@ -1,0 +1,285 @@
+{% extends "checklist/base.html" %}
+{% load static %}
+{% load environment_tags %}
+
+{% block title %}In Flight — SimFlow{% endblock title %}
+
+{% block page_class %}page-checklist{% endblock page_class %}
+
+{% block head %}
+    <script src="{% static 'checklist/toggle_switches.js' %}"></script>
+{% endblock head %}
+
+{% block content %}
+<div class="proc-layout">
+
+    <nav class="proc-sidebar" aria-label="Procedures">
+        <div class="proc-sidebar-header">
+            <div class="proc-sidebar-title">Procedures</div>
+            <div class="proc-sidebar-sub">Boeing 737-800 · Zibo mod</div>
+        </div>
+
+        <div class="flight-info">
+            <div class="flight-info-card">
+                <div class="flight-info-label">Origin</div>
+                <div class="flight-info-value">{{ request.session.sb_origin|default:"—" }}</div>
+            </div>
+            <div class="flight-info-card">
+                <div class="flight-info-label">Runway</div>
+                <div class="flight-info-value">{{ request.session.sb_runway|default:"—" }}</div>
+            </div>
+            <div class="flight-info-card">
+                <div class="flight-info-label">Temp</div>
+                <div class="flight-info-value">{{ request.session.sb_temp|default:"—" }}</div>
+            </div>
+            <div class="flight-info-card">
+                <div class="flight-info-label">Flaps</div>
+                <div class="flight-info-value">{{ request.session.sb_flaps|default:"—" }}</div>
+            </div>
+        </div>
+
+        <div class="proc-sidebar-list">
+            {% for proc in all_procedures %}
+                <a class="proc-sidebar-item js-nav-btn{% if proc.show_rule %} js-hidden{% endif %}"
+                   href="{% url 'checklist:detail' proc.slug %}"
+                   {% if proc.show_rule %}data-conditional-slug="{{ proc.slug }}"{% endif %}>
+                    <span class="proc-sidebar-name">{{ proc.title }}</span>
+                    <span class="proc-sidebar-badge">{{ proc.step }}</span>
+                </a>
+            {% endfor %}
+        </div>
+
+        <a class="sidebar-export-link" href="{% url 'checklist:export' %}">Export xChecklist</a>
+    </nav>
+
+    <div class="proc-main">
+
+        <div class="proc-header">
+            <div class="proc-header-left">
+                <div class="proc-phase">In Flight</div>
+                <div class="proc-title">No active procedure</div>
+            </div>
+        </div>
+
+        <div class="checklist-scroll">
+            <div class="idle-live-values">
+                {% for v in live_values %}
+                <div class="idle-value-card">
+                    <div class="idle-value-label">{{ v.label }}</div>
+                    <div class="idle-value-number" data-idle-label="{{ v.label }}">{{ v.value }}</div>
+                    {% if v.unit %}<div class="idle-value-unit">{{ v.unit }}</div>{% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="nav-bar">
+            <span>&nbsp;</span>
+            <span class="nav-label">In Flight</span>
+            <span>&nbsp;</span>
+        </div>
+
+    </div>
+
+</div>
+
+<!-- Attribute transition modal (shared) -->
+<div id="attr-modal" class="attr-modal js-hidden"
+     role="dialog" aria-modal="true" aria-labelledby="attr-modal-title">
+    <div class="attr-modal-box">
+        <div class="attr-modal-title" id="attr-modal-title">Profile update</div>
+        <div id="attr-modal-list"></div>
+        <div class="attr-modal-actions">
+            <button id="attr-modal-accept-all" class="btn btn-ghost">Accept all</button>
+            <button id="attr-modal-cancel"     class="btn btn-ghost">Cancel</button>
+            <button id="attr-modal-confirm"    class="btn btn-primary">Confirm</button>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block end_script %}
+<script>
+(function () {
+    'use strict';
+
+    var conditionalSlugs = {{ conditional_proc_slugs_json }};
+    var revealedSlugs    = new Set();
+
+    function getCsrf() {
+        var m = document.cookie.match(/csrftoken=([^;]+)/);
+        return m ? m[1] : '';
+    }
+
+    /* ── updateConnectionBadge ── */
+    window.updateConnectionBadge = function (simConnected, aircraft, reconnecting, initializing, disconnected) {
+        var dot    = document.getElementById('sim-dot');
+        var status = document.getElementById('conn-status');
+        dot.classList.remove('sim-connected', 'sim-reconnecting', 'sim-initializing');
+        status.classList.remove('sim-connected', 'sim-reconnecting', 'sim-initializing');
+        if (simConnected) {
+            dot.classList.add('sim-connected');
+            status.classList.add('sim-connected');
+            status.textContent = 'X-Plane Live · 1 Hz';
+        } else if (reconnecting) {
+            dot.classList.add('sim-reconnecting');
+            status.classList.add('sim-reconnecting');
+            status.textContent = 'Reconnecting\u2026';
+        } else if (initializing) {
+            dot.classList.add('sim-initializing');
+            status.classList.add('sim-initializing');
+            status.textContent = 'X-Plane initializing\u2026';
+        } else if (disconnected) {
+            status.textContent = 'Simulator disconnected';
+        } else {
+            status.textContent = 'Manual only';
+        }
+    };
+
+    /* ── Update live values from poll show_live_values ── */
+    function applyLiveValues(values) {
+        if (!values) return;
+        values.forEach(function (v) {
+            var el = document.querySelector('[data-idle-label="' + v.label + '"]');
+            if (el) el.textContent = v.value;
+        });
+    }
+
+    /* ── Reveal conditional procedures from show_procedures ── */
+    function applyShowProcedures(slugs) {
+        if (!slugs) return;
+        slugs.forEach(function (slug) {
+            if (revealedSlugs.has(slug)) return;
+            var el = document.querySelector('[data-conditional-slug="' + slug + '"]');
+            if (el) {
+                el.classList.remove('js-hidden');
+                revealedSlugs.add(slug);
+            }
+        });
+        /* Hide any previously revealed procedure no longer in the list */
+        revealedSlugs.forEach(function (slug) {
+            if (slugs.indexOf(slug) === -1) {
+                var el = document.querySelector('[data-conditional-slug="' + slug + '"]');
+                if (el) el.classList.add('js-hidden');
+                revealedSlugs.delete(slug);
+            }
+        });
+    }
+
+    /* ── Polling loop ── */
+    var POLL_INTERVAL = {{ poll_interval_ms }};
+    var lastPoll = 0;
+
+    async function pollIdle() {
+        try {
+            var res  = await fetch('/api/poll/?since=' + lastPoll);
+            var data = await res.json();
+            lastPoll = Math.floor(Date.now() / 1000);
+
+            applyShowProcedures(data.show_procedures || []);
+            applyLiveValues(data.show_live_values || []);
+
+            var age          = data.last_seen > 0 ? (Date.now() / 1000 - data.last_seen) : Infinity;
+            var reconnecting = !data.sim_connected && data.last_seen > 0 && age < 30;
+            var disconnected = !data.sim_connected && data.last_seen > 0 && age >= 30;
+            updateConnectionBadge(data.sim_connected, null, reconnecting, data.sim_initializing, disconnected);
+        } catch (e) {
+            updateConnectionBadge(false, null, false, false, false);
+        }
+    }
+
+    pollIdle();
+    var pollTimer = setInterval(pollIdle, POLL_INTERVAL);
+
+    document.addEventListener('visibilitychange', function () {
+        if (document.hidden) {
+            clearInterval(pollTimer);
+        } else {
+            pollIdle();
+            pollTimer = setInterval(pollIdle, POLL_INTERVAL);
+        }
+    });
+
+    /* ── Attribute transition: intercept nav clicks ── */
+    function escHtml(s) {
+        return String(s)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    async function navigateWithTransition(targetUrl) {
+        try {
+            var res  = await fetch('{% url "checklist:api_attribute_transition" %}', {
+                headers: {'X-CSRFToken': getCsrf()}
+            });
+            var data = await res.json();
+            if (data.prompts && data.prompts.length > 0) {
+                showTransitionModal(data.prompts, targetUrl);
+                return;
+            }
+        } catch (_) { /* fall through */ }
+        window.location.href = targetUrl;
+    }
+
+    function showTransitionModal(prompts, targetUrl) {
+        var modal = document.getElementById('attr-modal');
+        var list  = document.getElementById('attr-modal-list');
+        list.innerHTML = '';
+        prompts.forEach(function (p) {
+            var action   = p.suggested_active ? 'Activate' : 'Deactivate';
+            var override = p.suggested_active ? 'Keep inactive' : 'Keep active';
+            var row = document.createElement('div');
+            row.className      = 'attr-prompt-row';
+            row.dataset.attrId = p.attr_id;
+            row.innerHTML =
+                '<div class="attr-prompt-msg">' + escHtml(p.prompt_message || p.attr_title) + '</div>' +
+                '<div class="attr-prompt-choices">' +
+                    '<label><input type="radio" name="attr_' + p.attr_id + '" value="accept" checked> ' + escHtml(action)   + '</label>' +
+                    '<label><input type="radio" name="attr_' + p.attr_id + '" value="reject"> '          + escHtml(override) + '</label>' +
+                '</div>';
+            list.appendChild(row);
+        });
+        modal._targetUrl = targetUrl;
+        modal.classList.remove('js-hidden');
+    }
+
+    document.getElementById('attr-modal-accept-all').addEventListener('click', function () {
+        document.querySelectorAll('#attr-modal-list input[value="accept"]')
+            .forEach(function (r) { r.checked = true; });
+    });
+    document.getElementById('attr-modal-cancel').addEventListener('click', function () {
+        document.getElementById('attr-modal').classList.add('js-hidden');
+    });
+    document.getElementById('attr-modal-confirm').addEventListener('click', async function () {
+        var modal     = document.getElementById('attr-modal');
+        var targetUrl = modal._targetUrl;
+        var decisions = [];
+        modal.querySelectorAll('.attr-prompt-row').forEach(function (row) {
+            decisions.push({
+                attr_id:  parseInt(row.dataset.attrId, 10),
+                accepted: row.querySelector('input[value="accept"]').checked
+            });
+        });
+        try {
+            await fetch(targetUrl, {
+                method:  'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCsrf()},
+                body:    JSON.stringify({decisions: decisions})
+            });
+        } catch (_) { /* navigate anyway */ }
+        modal.classList.add('js-hidden');
+        window.location.href = targetUrl;
+    });
+
+    document.querySelectorAll('.js-nav-btn').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+            var target = btn.getAttribute('href');
+            if (!target || target === '#') return;
+            e.preventDefault();
+            navigateWithTransition(target);
+        });
+    });
+
+}());
+</script>
+{% endblock end_script %}

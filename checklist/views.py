@@ -20,6 +20,7 @@ from .models import (
     FlightItemState,
     FlightSession,
     FlightSessionAttribute,
+    IdleDataref,
     Procedure,
     UserAttributeDefault,
     UserProfile,
@@ -554,11 +555,16 @@ def procedure_detail(request, slug=None, pk=None):
     else:
         procedure2view = get_object_or_404(Procedure, pk=pk)
 
+    # Conditional procedures (show_rule set) are not part of linear nav.
     nextproc = (
-        Procedure.objects.filter(step__gt=procedure2view.step).order_by("step").first()
+        Procedure.objects.filter(step__gt=procedure2view.step, show_rule__isnull=True)
+        .order_by("step")
+        .first()
     )
     prevproc = (
-        Procedure.objects.filter(step__lt=procedure2view.step).order_by("step").last()
+        Procedure.objects.filter(step__lt=procedure2view.step, show_rule__isnull=True)
+        .order_by("step")
+        .last()
     )
 
     # Require an active flight session
@@ -581,6 +587,14 @@ def procedure_detail(request, slug=None, pk=None):
         flight_session.active_phase = procedure2view.slug
         flight_session.save(update_fields=["active_phase"])
     active_phase_step = max(procedure2view.step, current_frontier_step)
+
+    # Reset: every visit starts with a clean slate for this procedure.
+    # The plugin's active_phase frontier stays forward-only; this only clears
+    # display state so the pilot always sees fresh check items.
+    FlightItemState.objects.filter(
+        flight_session=flight_session,
+        checklist_item__procedure=procedure2view,
+    ).delete()
 
     active_attr_ids = list(
         FlightSessionAttribute.objects.filter(
@@ -638,18 +652,68 @@ def procedure_detail(request, slug=None, pk=None):
                     reverse("checklist:detail", args=[nextproc.slug])
                 )
 
+    all_procedures = list(Procedure.objects.order_by("step"))
+    conditional_proc_slugs = [p.slug for p in all_procedures if p.show_rule is not None]
+
     context = {
         "procedure": procedure2view,
         "check_items": check_items,
         "nextproc": nextproc,
         "prevproc": prevproc,
         "proctime": query_time,
-        "all_procedures": Procedure.objects.order_by("step"),
+        "all_procedures": all_procedures,
+        "conditional_proc_slugs_json": json.dumps(conditional_proc_slugs),
         "flight_session": flight_session,
         "active_phase_step": active_phase_step,
         "poll_interval_ms": settings.POLL_INTERVAL_MS,
     }
     return TemplateResponse(request, "checklist/detail.html", context)
+
+
+def idle_view(request):
+    """
+    /checklist/idle/ — shown between procedures (no active checklist).
+    Displays live flight data (altitude, IAS, heading, VS) from the plugin's
+    last dataref snapshot and keeps the poll loop running so conditional
+    procedures can unlock into the nav bar.
+    """
+    session_key = request.session.get("flight_session_key")
+    if not session_key:
+        return HttpResponseRedirect(reverse("checklist:start"))
+    try:
+        flight_session = FlightSession.objects.get(
+            session_key=session_key, is_active=True
+        )
+    except FlightSession.DoesNotExist:
+        return HttpResponseRedirect(reverse("checklist:start"))
+
+    from .plugin_views import _last_datarefs
+    last_state = _last_datarefs.get(flight_session.pk, {})
+
+    idle_datarefs = IdleDataref.objects.all()
+    live_values = []
+    for dr in idle_datarefs:
+        raw = last_state.get(dr.dataref_path)
+        if raw is not None:
+            if dr.value_map and isinstance(raw, (int, float)):
+                display = dr.value_map.get(str(int(raw)), str(int(raw)))
+            else:
+                display = str(round(raw)) if isinstance(raw, float) else str(raw)
+        else:
+            display = "—"
+        live_values.append({"label": dr.label, "value": display, "unit": dr.unit})
+
+    all_procedures = list(Procedure.objects.order_by("step"))
+    conditional_proc_slugs = [p.slug for p in all_procedures if p.show_rule is not None]
+
+    context = {
+        "live_values": live_values,
+        "all_procedures": all_procedures,
+        "conditional_proc_slugs_json": json.dumps(conditional_proc_slugs),
+        "flight_session": flight_session,
+        "poll_interval_ms": settings.POLL_INTERVAL_MS,
+    }
+    return TemplateResponse(request, "checklist/idle.html", context)
 
 
 class IndexView(generic.ListView):

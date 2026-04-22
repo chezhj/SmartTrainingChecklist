@@ -38,12 +38,37 @@ class Procedure(models.Model):
     slug = models.SlugField(unique=True)
     show_expression = models.TextField(blank=True)
     auto_continue = models.BooleanField(default=False)
+    show_rule = models.JSONField(
+        null=True,
+        blank=True,
+        help_text="Rule evaluated against live datarefs. When true, procedure appears in nav. Null = always visible.",
+    )
 
     def __str__(self) -> str:
         return self.title.__str__()
 
     def get_absolute_url(self):
         return reverse("checklist:detail", kwargs={"slug": self.slug})
+
+
+class IdleDataref(models.Model):
+    """A live dataref displayed on the idle (between-procedures) page."""
+
+    label = models.CharField(max_length=40)
+    dataref_path = models.CharField(max_length=200)
+    unit = models.CharField(max_length=20, blank=True)
+    value_map = models.JSONField(
+        null=True,
+        blank=True,
+        help_text="Optional numeric-to-label mapping, e.g. {0: 'preflight', 1: 'taxi'}.",
+    )
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["order"]
+
+    def __str__(self) -> str:
+        return f"{self.label} ({self.dataref_path})"
 
 
 class CheckItem(models.Model):

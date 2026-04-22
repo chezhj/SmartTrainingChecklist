@@ -142,6 +142,80 @@ class TestPollView(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()["checked_items"]), 1)
 
+    def test_poll_always_returns_show_procedures_key(self):
+        _set_session_key(self.client, self.session.session_key)
+        data = _get_poll(self.client).json()
+        self.assertIn("show_procedures", data)
+        self.assertIsInstance(data["show_procedures"], list)
+
+    def test_poll_show_procedures_empty_when_no_conditional_procedures(self):
+        _set_session_key(self.client, self.session.session_key)
+        data = _get_poll(self.client).json()
+        self.assertEqual(data["show_procedures"], [])
+
+    def test_poll_show_procedures_contains_slug_when_rule_fires(self):
+        from checklist.plugin_views import _last_datarefs
+        cond_proc = Procedure.objects.create(
+            title="Go Around", step=99, slug="go-around-test",
+            show_rule={"dataref": "sim/test/go_around", "op": "eq", "value": 1},
+        )
+        _last_datarefs[self.session.pk] = {"sim/test/go_around": 1}
+        _set_session_key(self.client, self.session.session_key)
+        try:
+            data = _get_poll(self.client).json()
+            self.assertIn(cond_proc.slug, data["show_procedures"])
+        finally:
+            _last_datarefs.pop(self.session.pk, None)
+            cond_proc.delete()
+
+    def test_poll_show_procedures_excludes_slug_when_rule_false(self):
+        from checklist.plugin_views import _last_datarefs
+        cond_proc = Procedure.objects.create(
+            title="Go Around", step=99, slug="go-around-test2",
+            show_rule={"dataref": "sim/test/go_around", "op": "eq", "value": 1},
+        )
+        _last_datarefs[self.session.pk] = {"sim/test/go_around": 0}
+        _set_session_key(self.client, self.session.session_key)
+        try:
+            data = _get_poll(self.client).json()
+            self.assertNotIn(cond_proc.slug, data["show_procedures"])
+        finally:
+            _last_datarefs.pop(self.session.pk, None)
+            cond_proc.delete()
+
+    def test_poll_auto_resets_conditional_procedure_when_all_done_and_rule_fires(self):
+        """When show_rule fires and all items are already checked, states are deleted."""
+        from checklist.plugin_views import _last_datarefs
+        cond_proc = Procedure.objects.create(
+            title="Waypoint", step=98, slug="waypoint-test",
+            show_rule={"dataref": "sim/test/wp", "op": "eq", "value": 1},
+        )
+        item = CheckItemFactory(procedure=cond_proc)
+        state = FlightItemState.objects.create(
+            flight_session=self.session,
+            checklist_item=item,
+            status="checked",
+            source="manual",
+            checked_at=datetime.now(tz=timezone.utc),
+        )
+        _last_datarefs[self.session.pk] = {"sim/test/wp": 1}
+        _set_session_key(self.client, self.session.session_key)
+        try:
+            data = _get_poll(self.client).json()
+            # Procedure slug still returned (rule fired, reset happened)
+            self.assertIn(cond_proc.slug, data["show_procedures"])
+            # State was deleted (clean slate for next execution)
+            self.assertFalse(FlightItemState.objects.filter(pk=state.pk).exists())
+        finally:
+            _last_datarefs.pop(self.session.pk, None)
+            cond_proc.delete()
+
+    def test_poll_always_returns_show_live_values_key(self):
+        _set_session_key(self.client, self.session.session_key)
+        data = _get_poll(self.client).json()
+        self.assertIn("show_live_values", data)
+        self.assertIsInstance(data["show_live_values"], list)
+
 
 class TestCheckView(TestCase):
 
