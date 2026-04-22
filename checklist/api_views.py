@@ -7,8 +7,8 @@ from django.conf import settings
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET, require_POST
 
-from .models import Attribute, CheckItem, FlightItemState, FlightSession, FlightSessionAttribute, Procedure
-from .rules import collect_leaf_evaluations, evaluate_rule
+from .models import Attribute, CheckItem, FlightItemState, FlightSession, FlightSessionAttribute, IdleDataref, Procedure
+from .rules import collect_datarefs, collect_leaf_evaluations, evaluate_rule
 
 
 def _get_flight_session(request):
@@ -76,17 +76,68 @@ def poll_view(request):
         sim_connected = age < 5
         sim_initializing = not sim_connected and age < 15
 
+    # ── show_procedures: conditional procedures whose show_rule currently fires ─
+    # Also provides live values for the idle page and auto-resets any conditional
+    # procedure where the rule fires but all items are already done (re-trigger).
+    from .plugin_views import _last_datarefs
+    last_state = _last_datarefs.get(session.pk, {})
+
+    active_attr_ids_for_show = list(
+        FlightSessionAttribute.objects.filter(
+            flight_session=session, is_active=True
+        ).values_list("attribute_id", flat=True)
+    )
+    show_procedures = []
+    for proc in Procedure.objects.exclude(show_rule=None):
+        if not evaluate_rule(proc.show_rule, last_state):
+            continue
+        # Check whether all visible items are already done.
+        proc_items = list(
+            CheckItem.objects.filter(procedure=proc).prefetch_related("attributes")
+        )
+        visible_items = [i for i in proc_items if i.shouldshow(active_attr_ids_for_show)]
+        if visible_items:
+            done_ids = set(
+                FlightItemState.objects.filter(
+                    flight_session=session,
+                    checklist_item__in=visible_items,
+                    status__in=("checked", "skipped"),
+                ).values_list("checklist_item_id", flat=True)
+            )
+            all_done = all(i.pk in done_ids for i in visible_items)
+            if all_done:
+                # Auto-reset so the next activation starts clean.
+                FlightItemState.objects.filter(
+                    flight_session=session,
+                    checklist_item__procedure=proc,
+                ).delete()
+        show_procedures.append(proc.slug)
+
+    # Live values for the idle page.
+    idle_datarefs = IdleDataref.objects.all()
+    show_live_values = []
+    for dr in idle_datarefs:
+        raw = last_state.get(dr.dataref_path)
+        if raw is not None:
+            if dr.value_map and isinstance(raw, (int, float)):
+                display = dr.value_map.get(str(int(raw)), str(int(raw)))
+            else:
+                display = str(round(raw)) if isinstance(raw, float) else str(raw)
+        else:
+            display = "—"
+        show_live_values.append({"label": dr.label, "value": display, "unit": dr.unit})
+
     response = {
         "checked_items": checked_items,
         "sim_connected": sim_connected,
         "sim_initializing": sim_initializing,
         "last_seen": last_seen,
+        "show_procedures": show_procedures,
+        "show_live_values": show_live_values,
     }
 
     if settings.DEBUG and session is not None:
-        from .plugin_views import _last_datarefs
         procedure_slug = request.GET.get("procedure", "")
-        last_state = _last_datarefs.get(session.pk, {})
         debug_rules = []
         if procedure_slug:
             try:

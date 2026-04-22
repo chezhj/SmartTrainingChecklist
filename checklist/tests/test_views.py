@@ -18,6 +18,7 @@ from checklist.tests.testFactories import (
 from checklist.tests.ViewTestCase import ViewTestCase
 from checklist.views import (
     IndexView,
+    idle_view,
     procedure_detail,
     profile_view,
     update_session_role,
@@ -560,6 +561,7 @@ class TestProcedureDetailView(ViewTestCase):
         self.assertIn("active_phase_step", response.context_data)
 
     def test_checked_manual_item_annotated_with_ci_manual(self):
+        """Every GET resets the procedure — prior manually-checked state is cleared."""
         from datetime import datetime, timezone
         attr = AttributeFactory()
         item = CheckItemFactory(attributes=[attr])
@@ -574,9 +576,10 @@ class TestProcedureDetailView(ViewTestCase):
         )
         response = procedure_detail(request, slug=item.procedure.slug)
         items = response.context_data["check_items"]
-        self.assertEqual(items[0].checked_css, "ci-manual")
+        self.assertEqual(items[0].checked_css, "")
 
     def test_checked_auto_item_annotated_with_ci_auto(self):
+        """Every GET resets the procedure — prior auto-checked state is cleared."""
         from datetime import datetime, timezone
         attr = AttributeFactory()
         item = CheckItemFactory(attributes=[attr])
@@ -591,7 +594,7 @@ class TestProcedureDetailView(ViewTestCase):
         )
         response = procedure_detail(request, slug=item.procedure.slug)
         items = response.context_data["check_items"]
-        self.assertEqual(items[0].checked_css, "ci-auto")
+        self.assertEqual(items[0].checked_css, "")
 
     def test_unchecked_item_annotated_with_empty_string(self):
         attr = AttributeFactory()
@@ -603,6 +606,7 @@ class TestProcedureDetailView(ViewTestCase):
         self.assertEqual(items[0].checked_css, "")
 
     def test_skipped_item_annotated_as_ci_skipped(self):
+        """Every GET resets the procedure — prior skipped state is cleared."""
         attr = AttributeFactory()
         item = CheckItemFactory(attributes=[attr])
         request = self.create_request_with_session("/")
@@ -615,7 +619,25 @@ class TestProcedureDetailView(ViewTestCase):
         )
         response = procedure_detail(request, slug=item.procedure.slug)
         items = response.context_data["check_items"]
-        self.assertEqual(items[0].checked_css, "ci-skipped")
+        self.assertEqual(items[0].checked_css, "")
+
+    def test_procedure_detail_resets_item_states_on_get(self):
+        """GET always deletes existing FlightItemState for the procedure (clean slate)."""
+        from datetime import datetime, timezone
+        attr = AttributeFactory()
+        item = CheckItemFactory(attributes=[attr])
+        request = self.create_request_with_session("/")
+        session = _create_session_with_flight(request, [attr.id])
+        FlightItemState.objects.create(
+            flight_session=session,
+            checklist_item=item,
+            status="checked",
+            source="manual",
+            checked_at=datetime.now(tz=timezone.utc),
+        )
+        self.assertEqual(FlightItemState.objects.filter(flight_session=session).count(), 1)
+        procedure_detail(request, slug=item.procedure.slug)
+        self.assertEqual(FlightItemState.objects.filter(flight_session=session).count(), 0)
 
 
 class TestUpdateSessionRole(TestCase):
@@ -654,3 +676,70 @@ class TestUpdateSessionRole(TestCase):
         )
         self.assertEqual(request.session["pilot_role"], "PF")
         self.assertEqual(request.session["captain_role"], "C")
+
+
+class TestIdleView(ViewTestCase):
+
+    def test_redirects_to_start_without_session(self):
+        request = self.create_request_with_session("/idle/")
+        # No flight session in request.session
+        response = idle_view(request)
+        self.assertEqual(response.status_code, 302)
+
+    def test_renders_200_with_active_session(self):
+        request = self.create_request_with_session("/idle/")
+        _create_session_with_flight(request, [])
+        response = idle_view(request)
+        self.assertEqual(response.status_code, 200)
+
+    def test_context_contains_live_values(self):
+        request = self.create_request_with_session("/idle/")
+        _create_session_with_flight(request, [])
+        response = idle_view(request)
+        self.assertIn("live_values", response.context_data)
+        self.assertIsInstance(response.context_data["live_values"], list)
+
+    def test_context_contains_conditional_proc_slugs_json(self):
+        request = self.create_request_with_session("/idle/")
+        _create_session_with_flight(request, [])
+        response = idle_view(request)
+        import json
+        from checklist.models import Procedure
+        slugs = json.loads(response.context_data["conditional_proc_slugs_json"])
+        expected = list(Procedure.objects.exclude(show_rule=None).values_list("slug", flat=True))
+        self.assertEqual(sorted(slugs), sorted(expected))
+
+
+class TestNextprocSkipsConditional(ViewTestCase):
+
+    def test_nextproc_skips_conditional_procedure(self):
+        """nextproc must skip procedures that have a show_rule."""
+        from checklist.models import Procedure
+        proc_a = Procedure.objects.create(title="Step A", step=200, slug="step-a-skip-test")
+        CheckItemFactory(procedure=proc_a)  # proc_a needs an item to avoid redirect
+        cond   = Procedure.objects.create(
+            title="Conditional", step=201, slug="cond-skip-test",
+            show_rule={"dataref": "x", "op": "eq", "value": 1},
+        )
+        proc_b = Procedure.objects.create(title="Step B", step=202, slug="step-b-skip-test")
+        request = self.create_request_with_session("/")
+        _create_session_with_flight(request, [])
+        response = procedure_detail(request, slug=proc_a.slug)
+        nextproc = response.context_data["nextproc"]
+        self.assertEqual(nextproc.slug, proc_b.slug)
+        proc_a.delete(); cond.delete(); proc_b.delete()
+
+    def test_nextproc_is_none_when_only_conditional_follows(self):
+        """nextproc is None when the only following procedure is conditional."""
+        from checklist.models import Procedure
+        proc_a = Procedure.objects.create(title="Last Linear", step=210, slug="last-linear-test")
+        CheckItemFactory(procedure=proc_a)
+        cond   = Procedure.objects.create(
+            title="Conditional Only", step=211, slug="cond-only-test",
+            show_rule={"dataref": "x", "op": "eq", "value": 1},
+        )
+        request = self.create_request_with_session("/")
+        _create_session_with_flight(request, [])
+        response = procedure_detail(request, slug=proc_a.slug)
+        self.assertIsNone(response.context_data["nextproc"])
+        proc_a.delete(); cond.delete()

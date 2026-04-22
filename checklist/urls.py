@@ -4,12 +4,14 @@ from checklist.export_view import ExportChecklistView
 
 from . import views
 from .api_views import attribute_transition_view, check_view, poll_view, uncheck_view
+
 from .auth_views import account_profile_view, delete_account_view
 from .plugin_views import plugin_check_next, plugin_session, plugin_state
 
 app_name = "checklist"
 urlpatterns = [
     path("", views.profile_view, name="start"),
+    path("idle/", views.idle_view, name="idle"),
     path("procedures/", views.IndexView.as_view(), name="index"),
     path("<int:pk>/", views.procedure_detail, name="detailpk"),
     path("<slug:slug>", views.procedure_detail, name="detail"),

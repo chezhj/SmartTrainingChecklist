@@ -1,0 +1,46 @@
+[
+  {
+    "model": "checklist.idledataref",
+    "pk": 1,
+    "fields": {
+      "label": "Altitude",
+      "dataref_path": "sim/cockpit2/gauges/indicators/altitude_ft_pilot",
+      "unit": "ft",
+      "value_map": null,
+      "order": 1
+    }
+  },
+  {
+    "model": "checklist.idledataref",
+    "pk": 2,
+    "fields": {
+      "label": "IAS",
+      "dataref_path": "sim/cockpit2/gauges/indicators/airspeed_kts_pilot",
+      "unit": "kts",
+      "value_map": null,
+      "order": 2
+    }
+  },
+  {
+    "model": "checklist.idledataref",
+    "pk": 3,
+    "fields": {
+      "label": "Heading",
+      "dataref_path": "sim/cockpit2/gauges/indicators/heading_AHARS_deg_mag_pilot",
+      "unit": "\u00b0",
+      "value_map": null,
+      "order": 3
+    }
+  },
+  {
+    "model": "checklist.idledataref",
+    "pk": 4,
+    "fields": {
+      "label": "VS",
+      "dataref_path": "sim/cockpit2/gauges/indicators/vvi_fpm_pilot",
+      "unit": "fpm",
+      "value_map": null,
+      "order": 4
+    }
+  }
+]

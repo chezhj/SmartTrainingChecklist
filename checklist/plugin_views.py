@@ -23,6 +23,7 @@ from .models import (
     FlightItemState,
     FlightSession,
     FlightSessionAttribute,
+    IdleDataref,
     Procedure,
     UserProfile,
 )
@@ -261,6 +262,7 @@ def plugin_state(request):
     newly_checked = []
     newly_skipped = []
     watch = []
+    gate_item = None  # set inside the procedure block; used below for idle watch logic
 
     if session.active_phase:
         try:
@@ -399,6 +401,16 @@ def plugin_state(request):
     # attribute_transition can evaluate rules even before a phase is active.
     for attr in Attribute.objects.exclude(live_rule=None):
         watch.extend(collect_datarefs(attr.live_rule))
+
+    # Always stream idle-page display datarefs (altitude, IAS, heading, VS).
+    for dr in IdleDataref.objects.values_list("dataref_path", flat=True):
+        watch.append(dr)
+
+    # When the gate is clear (all required items done), also stream show_rule
+    # datarefs so conditional procedures can unlock while the pilot is idle.
+    if gate_item is None:
+        for proc in Procedure.objects.exclude(show_rule=None):
+            watch.extend(collect_datarefs(proc.show_rule))
 
     # Deduplicate watch list while preserving order
     seen = set()

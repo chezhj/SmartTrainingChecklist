@@ -415,3 +415,41 @@ class TestPluginStateAttributeFiltering(_Base):
         )
         resp = _post(self.client, self._valid_body(), key=self.raw_key)
         self.assertEqual(resp.json()["watch"], [])
+
+
+class TestPluginStateIdleAndShowRule(_Base):
+    """Watch list behaviour for idle page datarefs and show_rule procedures."""
+
+    def setUp(self):
+        super().setUp()
+        from checklist.models import IdleDataref
+        self.idle_dr = IdleDataref.objects.create(
+            label="TestAlt", dataref_path="sim/test/altitude_ft", unit="ft", order=99,
+        )
+        self.cond_proc = Procedure.objects.create(
+            title="Go Around Test", step=999, slug="go-around-watch-test",
+            show_rule={"dataref": "sim/test/go_around_watch", "op": "eq", "value": 1},
+        )
+
+    def tearDown(self):
+        self.idle_dr.delete()
+        self.cond_proc.delete()
+
+    def test_idle_dataref_always_in_watch(self):
+        resp = _post(self.client, self._valid_body(), key=self.raw_key)
+        self.assertIn("sim/test/altitude_ft", resp.json()["watch"])
+
+    def test_show_rule_dataref_in_watch_when_gate_cleared(self):
+        """show_rule datarefs appear when the active procedure has no blocking gate."""
+        # No items in the procedure → gate_item is None → idle → show_rule watched
+        resp = _post(self.client, self._valid_body(), key=self.raw_key)
+        self.assertIn("sim/test/go_around_watch", resp.json()["watch"])
+
+    def test_show_rule_dataref_not_in_watch_when_gate_active(self):
+        """show_rule datarefs are suppressed while a required item blocks the gate."""
+        item = CheckItemFactory(procedure=self.procedure, step=1, auto_check_rule=RULE_PARKING_BRAKE_ON)
+        resp = _post(self.client, self._valid_body(), key=self.raw_key)
+        watch = resp.json()["watch"]
+        self.assertIn(RULE_PARKING_BRAKE_ON["dataref"], watch)
+        self.assertNotIn("sim/test/go_around_watch", watch)
+        item.delete()
