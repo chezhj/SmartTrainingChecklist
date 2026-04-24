@@ -73,6 +73,29 @@
             </div>
         </div>
 
+        {% if next_linear_proc or has_conditional_procs %}
+        <div class="idle-next">
+            <div class="idle-next-heading">What's next?</div>
+            <div class="idle-next-list">
+                {% if next_linear_proc %}
+                <a class="idle-next-btn js-nav-btn"
+                   href="{% url 'checklist:detail' next_linear_proc.slug %}">
+                    <span>{{ next_linear_proc.title }}</span>
+                    <span class="idle-next-arrow">→</span>
+                </a>
+                {% endif %}
+                {% for proc in all_procedures %}{% if proc.show_rule %}
+                <a class="idle-next-btn idle-next-btn--conditional js-hidden js-nav-btn"
+                   href="{% url 'checklist:detail' proc.slug %}"
+                   data-conditional-slug="{{ proc.slug }}">
+                    <span>{{ proc.title }}</span>
+                    <span class="idle-next-arrow">→</span>
+                </a>
+                {% endif %}{% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
         <div class="nav-bar">
             <span>&nbsp;</span>
             <span class="nav-label">In Flight</span>

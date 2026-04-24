@@ -706,10 +706,22 @@ def idle_view(request):
     all_procedures = list(Procedure.objects.order_by("step"))
     conditional_proc_slugs = [p.slug for p in all_procedures if p.show_rule is not None]
 
+    active_phase_proc = Procedure.objects.filter(
+        slug=flight_session.active_phase
+    ).first()
+    active_phase_step = active_phase_proc.step if active_phase_proc else 0
+    next_linear_proc = (
+        Procedure.objects.filter(step__gt=active_phase_step, show_rule__isnull=True)
+        .order_by("step")
+        .first()
+    )
+
     context = {
         "live_values": live_values,
         "all_procedures": all_procedures,
         "conditional_proc_slugs_json": json.dumps(conditional_proc_slugs),
+        "has_conditional_procs": bool(conditional_proc_slugs),
+        "next_linear_proc": next_linear_proc,
         "flight_session": flight_session,
         "poll_interval_ms": settings.POLL_INTERVAL_MS,
     }

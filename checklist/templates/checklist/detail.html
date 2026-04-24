@@ -132,12 +132,12 @@
 
             <span class="nav-label">{{ procedure.step }} / {{ all_procedures|length }}</span>
 
-            {% if nextproc %}
+            {% if nextproc and procedure.auto_continue %}
                 <a class="nav-btn nav-btn-primary nav-btn-next js-nav-btn"
                    href="{% url 'checklist:detail' nextproc.slug %}">Next →</a>
             {% else %}
-                <a class="nav-btn nav-btn-next js-nav-btn"
-                   href="{% url 'checklist:idle' %}">Done →</a>
+                <a class="nav-btn nav-btn-primary nav-btn-next js-nav-btn"
+                   href="{% url 'checklist:idle' %}">{% if nextproc %}Next →{% else %}Done →{% endif %}</a>
             {% endif %}
         </div>
 
