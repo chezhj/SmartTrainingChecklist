@@ -115,7 +115,7 @@
     "step": 6,
     "slug": "cdu-preflight-procedure",
     "show_expression": "",
-    "auto_continue": false,
+    "auto_continue": true,
     "show_rule": null
   }
 },
