@@ -199,7 +199,11 @@
             var data = await res.json();
             lastPoll = Math.floor(Date.now() / 1000);
 
-            applyShowProcedures(data.show_procedures || []);
+            /* Manual fallback: no sim → reveal all conditional procedures */
+            var activeConditionals = data.sim_connected
+                ? (data.show_procedures || [])
+                : conditionalSlugs;
+            applyShowProcedures(activeConditionals);
             applyLiveValues(data.show_live_values || []);
 
             var age          = data.last_seen > 0 ? (Date.now() / 1000 - data.last_seen) : Infinity;
