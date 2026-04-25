@@ -150,9 +150,16 @@
     "title": "Go Around",
     "step": 30,
     "slug": "go-around",
-    "show_expression": "",
+    "show_expression": "(laminar/B738/FMS/approach_flaps_set:1)&&(laminar/B738/autopilot/left_toga_pos:1)&&(laminar/B738/FMS/fmc_trans_lvl:<18000)&&(sim/time/is_in_replay:0)||(laminar/B738/FMS/approach_flaps_set:1)&&(laminar/B738/autopilot/right_toga_pos:1)&&(laminar/B738/FMS/fmc_trans_lvl:<18000)&&(sim/time/is_in_replay:0)",
     "auto_continue": false,
-    "show_rule": null
+    "show_rule": {
+      "all": [
+        {"dataref": "laminar/B738/FMS/approach_flaps_set", "op": "eq", "value": 1},
+        {"dataref": "laminar/B738/autopilot/lock_throttle", "op": "eq", "value": 1},
+        {"dataref": "laminar/B738/FMS/fmc_trans_lvl", "op": "lt", "value": 18000},
+        {"dataref": "sim/time/is_in_replay", "op": "eq", "value": 0}
+      ]
+    }
   }
 },
 {
@@ -176,7 +183,13 @@
     "slug": "cruise-procedure-waypoint-reached",
     "show_expression": "(sim/cockpit2/gauges/indicators/altitude_ft_pilot:>10000)&&(laminar/B738/fms/lnav_dist_next:<5.0)&&(sim/time/is_in_replay:0)",
     "auto_continue": false,
-    "show_rule": null
+    "show_rule": {
+      "all": [
+        {"dataref": "sim/cockpit2/gauges/indicators/altitude_ft_pilot", "op": "gt", "value": 10000},
+        {"dataref": "laminar/B738/fms/lnav_dist_next", "op": "lt", "value": 5.0},
+        {"dataref": "sim/time/is_in_replay", "op": "eq", "value": 0}
+      ]
+    }
   }
 },
 {
@@ -1348,7 +1361,12 @@
     "action_label": "VERIFIED",
     "dataref_expression": "",
     "role": "FO",
-    "auto_check_rule": null,
+    "auto_check_rule": {
+      "all": [
+        {"dataref": "laminar/B738/annunciator/ram_door_open1_annun", "op": "eq", "value": 0.5},
+        {"dataref": "laminar/B738/annunciator/ram_door_open2_annun", "op": "eq", "value": 0.5}
+      ]
+    },
     "attributes": [
       4
     ]
