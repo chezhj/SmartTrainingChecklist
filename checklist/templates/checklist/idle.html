@@ -126,7 +126,7 @@
 (function () {
     'use strict';
 
-    var conditionalSlugs = {{ conditional_proc_slugs_json }};
+    var conditionalSlugs = {{ conditional_proc_slugs_json|safe }};
     var revealedSlugs    = new Set();
 
     function getCsrf() {

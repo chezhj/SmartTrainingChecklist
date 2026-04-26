@@ -38,6 +38,9 @@ _OFP_TEMP_RULES = [
 ]
 _OFP_BLEED_OFF_TITLE = "Short Runway"
 
+# Attributes that must never be set automatically from OFP data — always pilot-chosen.
+_OFP_NEVER_DERIVE = {"VA", "Online"}
+
 
 def _derive_ofp_attrib_ids(sb_temp: str, sb_bleed: str) -> set[int]:
     """
@@ -45,7 +48,11 @@ def _derive_ofp_attrib_ids(sb_temp: str, sb_bleed: str) -> set[int]:
     Looks up by title so PKs can vary across deployments.
     """
     derived: set[int] = set()
-    attr_by_title = {a.title: a.id for a in Attribute.objects.all()}
+    attr_by_title = {
+        a.title: a.id
+        for a in Attribute.objects.all()
+        if a.title not in _OFP_NEVER_DERIVE
+    }
 
     if sb_temp:
         try:

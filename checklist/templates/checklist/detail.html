@@ -182,7 +182,7 @@
     var allowAutoAdvance        = false; /* true only after an item is checked this visit */
     var autoContinue            = {{ procedure.auto_continue|lower }};
     var isConditionalProcedure  = {% if procedure.show_rule %}true{% else %}false{% endif %};
-    var conditionalSlugs        = {{ conditional_proc_slugs_json }};
+    var conditionalSlugs        = {{ conditional_proc_slugs_json|safe }};
     var revealedSlugs           = new Set();
     var CIRCUMFERENCE = 119.4;
 
