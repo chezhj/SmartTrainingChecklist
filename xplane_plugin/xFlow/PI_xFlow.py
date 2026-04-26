@@ -9,11 +9,13 @@ Installation:
   Edit config.ini:
     api_key     — paste your key from the simFlow profile page
     backend_url — leave as-is for local dev; change for production
-    log_level   — DEBUG / INFO / ERROR (default: INFO)
+    log_level   — DEBUG / INFO / WARNING / ERROR (default: INFO)
                   DEBUG shows watch list contents, dataref values, raw responses
+                  WARNING suppresses INFO but shows missing/broken datarefs
 
 Commands registered:
-  simflow/check_next_item
+  simflow/check_next_item  — manually check the next checklist item
+  simflow/dump_watch       — log current watch list and dataref values (INFO)
   Bind via X-Plane Settings → Keyboard or Joystick.
 """
 
@@ -27,7 +29,7 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-_ARRAY_RE = re.compile(r'^(.+)\[(\d+)\]$')
+_ARRAY_RE = re.compile(r"^(.+)\[(\d+)\]$")
 
 try:
     from XPPython3 import xp
@@ -36,6 +38,7 @@ except ImportError:
 
 try:
     import requests
+
     _USE_REQUESTS = True
 except ImportError:
     _USE_REQUESTS = False
@@ -43,7 +46,7 @@ except ImportError:
 # ── Plugin identity ────────────────────────────────────────────────────────── #
 
 plugin_name = "xFlow"
-plugin_sig  = "xppython3.simflow"
+plugin_sig = "xppython3.simflow"
 plugin_desc = "simFlow – X-Plane checklist integration"
 
 # ── Command ────────────────────────────────────────────────────────────────── #
@@ -51,13 +54,16 @@ plugin_desc = "simFlow – X-Plane checklist integration"
 _COMMAND_FULL = "simflow/check_next_item"
 _COMMAND_DESC = "simFlow – Check next checklist item"
 
+_DUMP_COMMAND_FULL = "simflow/dump_watch"
+_DUMP_COMMAND_DESC = "simFlow – Dump watch list and current dataref values to log"
+
 # ── Flight loop interval ───────────────────────────────────────────────────── #
 
-_LOOP_INTERVAL = 1.0   # seconds; reschedule rate returned from flight loop
+_LOOP_INTERVAL = 1.0  # seconds; reschedule rate returned from flight loop
 
 # ── Log levels ─────────────────────────────────────────────────────────────── #
 
-_LEVELS = {"DEBUG": 0, "INFO": 1, "ERROR": 2}
+_LEVELS = {"DEBUG": 0, "INFO": 1, "WARNING": 2, "ERROR": 3}
 
 # ── Config sentinel ────────────────────────────────────────────────────────── #
 #
@@ -68,6 +74,7 @@ PLACEHOLDER = "paste-your-key-here"
 
 
 # ── Command wrapper ────────────────────────────────────────────────────────── #
+
 
 class CheckCommand:
     """
@@ -93,6 +100,7 @@ class CheckCommand:
 
 # ── Plugin ─────────────────────────────────────────────────────────────────── #
 
+
 class PythonInterface:
 
     def __init__(self):
@@ -102,11 +110,18 @@ class PythonInterface:
         )
         cfg = configparser.ConfigParser()
         cfg.read(config_path)
-        self._api_key      = cfg.get("xflow", "api_key",     fallback=PLACEHOLDER)
-        self._backend_url  = cfg.get("xflow", "backend_url", fallback="http://cortado:8300")
-        raw_level          = cfg.get("xflow", "log_level",   fallback="INFO").upper()
-        self._log_level    = _LEVELS.get(raw_level, _LEVELS["INFO"])
-        self._check_cmd    = CheckCommand(_COMMAND_FULL, _COMMAND_DESC, self._on_check_next)
+        self._api_key = cfg.get("xflow", "api_key", fallback=PLACEHOLDER)
+        self._backend_url = cfg.get(
+            "xflow", "backend_url", fallback="http://cortado:8300"
+        )
+        raw_level = cfg.get("xflow", "log_level", fallback="INFO").upper()
+        self._log_level = _LEVELS.get(raw_level, _LEVELS["INFO"])
+        self._check_cmd = CheckCommand(
+            _COMMAND_FULL, _COMMAND_DESC, self._on_check_next
+        )
+        self._dump_cmd = CheckCommand(
+            _DUMP_COMMAND_FULL, _DUMP_COMMAND_DESC, self._on_dump_watch
+        )
 
         # Session state — populated by _fetch_session()
         self._session_id: int | None = None
@@ -114,7 +129,7 @@ class PythonInterface:
         # Watch list: dataref path → cached XP DataRef handle
         # Populated from server responses; starts empty.
         self._watch: list[str] = []
-        self._drefs: dict[str, object] = {}   # path → xp.findDataRef() result
+        self._drefs: dict[str, object] = {}  # path → xp.findDataRef() result
 
         # Last sent values — used to detect changes before POSTing
         self._last_values: dict[str, float | str] = {}
@@ -125,7 +140,9 @@ class PythonInterface:
 
         # Ticks since last session re-validation (catches server-side session replacement)
         self._active_ticks: int = 0
-        self._SESSION_REVALIDATE_TICKS: int = 300  # re-check every ~5 min when connected
+        self._SESSION_REVALIDATE_TICKS: int = (
+            300  # re-check every ~5 min when connected
+        )
 
         # Exponential backoff for state POST network errors.
         # _post_error_count counts consecutive failures; _post_skip_ticks is the
@@ -164,10 +181,13 @@ class PythonInterface:
 
     def XPluginStop(self):
         self._check_cmd.destroy()
+        self._dump_cmd.destroy()
 
     # ── Flight loop ────────────────────────────────────────────────────────── #
 
-    def _flight_loop(self, since_last: float, elapsed: float, counter: int, ref) -> float:
+    def _flight_loop(
+        self, since_last: float, elapsed: float, counter: int, ref
+    ) -> float:
         """
         Called by X-Plane at ~1 Hz. Reads the current watch list datarefs
         and POSTs to /api/plugin/state/. If the watch list is empty the POST
@@ -200,24 +220,34 @@ class PythonInterface:
                 if dref is None:
                     dref = xp.findDataRef(base)
                     if dref is None:
-                        self._log("DEBUG", f"dataref not found: {base}")
+                        self._log("WARNING", f"dataref not found: {base}")
                         continue
                     self._drefs[path] = dref
                 buf = [0.0] * (idx + 1)
                 xp.getDatavf(dref, buf, 0, idx + 1)
+                if idx >= len(buf):
+                    self._log(
+                        "WARNING",
+                        f"array too short for {path}: only {len(buf)} element(s)",
+                    )
+                    continue
                 val = buf[idx]
             else:
                 dref = self._drefs.get(path)
                 if dref is None:
                     dref = xp.findDataRef(path)
                     if dref is None:
-                        self._log("DEBUG", f"dataref not found: {path}")
+                        self._log("WARNING", f"dataref not found: {path}")
                         continue
                     self._drefs[path] = dref
-                # xp.Type_Data (32) = byte-array / string dataref (CDU lines etc.)
-                # getDatas(dataRef, offset, count) returns a str directly.
-                if xp.getDataRefTypes(dref) & 32:
+                # XPLM type bits: Int=1, Float=2, Double=4, FloatArray=8,
+                #                 IntArray=16, Data/string=32.
+                # Must use getDatai for int datarefs — getDataf returns 0.0 for them.
+                dtype = xp.getDataRefTypes(dref)
+                if dtype & 32:
                     val = xp.getDatas(dref, 0, 64).rstrip("\x00").strip()
+                elif dtype & 1:
+                    val = xp.getDatai(dref)
                 else:
                     val = xp.getDataf(dref)
 
@@ -238,18 +268,38 @@ class PythonInterface:
         # that 1 POST/s to a local server is negligible.
         self._log("DEBUG", f"POSTing {len(state)} datarefs (changed={changed})")
         snapshot = dict(state)
-        threading.Thread(
-            target=self._post_state, args=(snapshot,), daemon=True
-        ).start()
+        threading.Thread(target=self._post_state, args=(snapshot,), daemon=True).start()
 
         return _LOOP_INTERVAL
 
     # ── Command handler ────────────────────────────────────────────────────── #
 
     def _on_check_next(self, phase: int):
-        if phase != 0:      # 0=BEGIN (key down); ignore CONTINUE and END
+        if phase != 0:  # 0=BEGIN (key down); ignore CONTINUE and END
             return
         threading.Thread(target=self._post_check_next, daemon=True).start()
+
+    def _on_dump_watch(self, phase: int):
+        if phase != 0:
+            return
+        with self._lock:
+            watch = list(self._watch)
+            values = dict(self._last_values)
+            drefs = dict(self._drefs)
+        _TYPE_LABELS = {1: "int", 2: "float", 3: "int+float", 4: "double",
+                        8: "float[]", 16: "int[]", 32: "str"}
+        self._log("INFO", f"=== watch dump: {len(watch)} dataref(s) ===")
+        for path in watch:
+            val = values.get(path, "<not yet read>")
+            dref = drefs.get(path)
+            if dref is not None:
+                dtype = xp.getDataRefTypes(dref)
+                type_label = _TYPE_LABELS.get(dtype, f"type={dtype}")
+            else:
+                type_label = "not found"
+            self._log("INFO", f"  {path} = {val!r}  [{type_label}]")
+        if not watch:
+            self._log("INFO", "  (watch list is empty — no active session or no rules)")
 
     # ── HTTP workers (daemon threads) ──────────────────────────────────────── #
 
@@ -263,7 +313,7 @@ class PythonInterface:
             self._log("ERROR", "api_key not set — edit config.ini")
             return
 
-        url     = self._backend_url.rstrip("/") + "/api/plugin/session/"
+        url = self._backend_url.rstrip("/") + "/api/plugin/session/"
         headers = {"Authorization": f"Bearer {self._api_key}"}
 
         self._log("DEBUG", f"GET {url}")
@@ -279,16 +329,24 @@ class PythonInterface:
             new_id = body.get("session_id")
             with self._lock:
                 if new_id != self._session_id:
-                    self._log("INFO", f"session changed {self._session_id} → {new_id}, resetting watch list")
+                    self._log(
+                        "INFO",
+                        f"session changed {self._session_id} → {new_id}, resetting watch list",
+                    )
                     self._session_id = new_id
                     self._watch = []
                     self._drefs = {}
                     self._last_values = {}
                 else:
                     self._session_id = new_id
-            self._log("INFO", f"session {self._session_id} — phase: {body.get('active_phase')}")
+            self._log(
+                "INFO",
+                f"session {self._session_id} — phase: {body.get('active_phase')}",
+            )
         elif status == 404:
-            self._log("INFO", "no active session — waiting for pilot to start checklist")
+            self._log(
+                "INFO", "no active session — waiting for pilot to start checklist"
+            )
         elif status == 401:
             self._log("ERROR", "authentication failed — check api_key in config.ini")
         else:
@@ -306,12 +364,12 @@ class PythonInterface:
         if session_id is None:
             return
 
-        url     = self._backend_url.rstrip("/") + "/api/plugin/state/"
+        url = self._backend_url.rstrip("/") + "/api/plugin/state/"
         headers = {
             "Authorization": f"Bearer {self._api_key}",
             "Content-Type": "application/json",
         }
-        body    = {"session_id": session_id, "datarefs": state}
+        body = {"session_id": session_id, "datarefs": state}
 
         self._log("DEBUG", f"POST {url}")
         try:
@@ -322,25 +380,29 @@ class PythonInterface:
                 n = self._post_error_count
                 backoff = min(10 * (2 ** (n - 1)), 60)  # 10 → 20 → 40 → 60s cap
                 self._post_skip_ticks = int(backoff)
-            self._log("ERROR", f"{_classify_error(exc)} — retry in {backoff}s (error #{n})")
+            self._log(
+                "ERROR", f"{_classify_error(exc)} — retry in {backoff}s (error #{n})"
+            )
             return
 
         self._log("DEBUG", f"state response status {status}")
 
         if status == 200:
             newly_checked = data.get("checked", [])
-            new_watch     = data.get("watch", [])
+            new_watch = data.get("watch", [])
             if newly_checked:
                 self._log("DEBUG", f"auto-checked items: {newly_checked}")
             with self._lock:
                 if self._post_error_count > 0:
                     self._log("INFO", "connection restored after network errors")
                     self._post_error_count = 0
-                    self._post_skip_ticks  = 0
+                    self._post_skip_ticks = 0
                 if new_watch != self._watch:
                     self._watch = new_watch
                     # Clear stale dref handles for paths no longer watched
-                    self._drefs = {p: v for p, v in self._drefs.items() if p in new_watch}
+                    self._drefs = {
+                        p: v for p, v in self._drefs.items() if p in new_watch
+                    }
         elif status == 401:
             self._log("ERROR", "authentication failed — check api_key in config.ini")
         elif status == 404:
@@ -356,7 +418,7 @@ class PythonInterface:
             self._log("ERROR", "api_key not set — edit config.ini")
             return
 
-        url     = self._backend_url.rstrip("/") + "/api/plugin/check-next/"
+        url = self._backend_url.rstrip("/") + "/api/plugin/check-next/"
         headers = {"Authorization": f"Bearer {self._api_key}"}
 
         self._log("DEBUG", f"POST {url}")
@@ -437,6 +499,7 @@ class PythonInterface:
 
 
 # ── Error classifier (module-level, no state needed) ──────────────────────── #
+
 
 def _classify_error(exc: Exception) -> str:
     """
