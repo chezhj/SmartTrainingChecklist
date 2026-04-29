@@ -223,15 +223,28 @@ class PythonInterface:
                         self._log("WARNING", f"dataref not found: {base}")
                         continue
                     self._drefs[path] = dref
-                buf = [0.0] * (idx + 1)
-                xp.getDatavf(dref, buf, 0, idx + 1)
-                if idx >= len(buf):
-                    self._log(
-                        "WARNING",
-                        f"array too short for {path}: only {len(buf)} element(s)",
-                    )
+
+                dtype = xp.getDataRefTypes(dref)
+
+                if dtype & 16:
+                    ibuf = [0] * (idx + 1)
+                    n_read = xp.getDatavi(dref, ibuf, 0, idx + 1)
+                    if idx >= n_read:
+                        continue
+                    val = ibuf[idx]
+                elif dtype & 8:
+                    buf = [0.0] * (idx + 1)
+                    n_read = xp.getDatavf(dref, buf, 0, idx + 1)
+                    if idx >= n_read:
+                        continue
+                    val = buf[idx]
+                elif dtype & 1:
+                    # Scalar int with [idx] notation — treat as bitmask bit.
+                    scalar = xp.getDatai(dref)
+                    val = int(bool(scalar & (1 << idx)))
+                else:
+                    self._log("WARNING", f"unhandled XPLM type {dtype} for {path} — skipping")
                     continue
-                val = buf[idx]
             else:
                 dref = self._drefs.get(path)
                 if dref is None:
@@ -241,7 +254,7 @@ class PythonInterface:
                         continue
                     self._drefs[path] = dref
                 # XPLM type bits: Int=1, Float=2, Double=4, FloatArray=8,
-                #                 IntArray=16, Data/string=32.
+                #                 IntArray=16, Data/string=32. dd
                 # Must use getDatai for int datarefs — getDataf returns 0.0 for them.
                 dtype = xp.getDataRefTypes(dref)
                 if dtype & 32:
@@ -286,8 +299,15 @@ class PythonInterface:
             watch = list(self._watch)
             values = dict(self._last_values)
             drefs = dict(self._drefs)
-        _TYPE_LABELS = {1: "int", 2: "float", 3: "int+float", 4: "double",
-                        8: "float[]", 16: "int[]", 32: "str"}
+        _TYPE_LABELS = {
+            1: "int",
+            2: "float",
+            3: "int+float",
+            4: "double",
+            8: "float[]",
+            16: "int[]",
+            32: "str",
+        }
         self._log("INFO", f"=== watch dump: {len(watch)} dataref(s) ===")
         for path in watch:
             val = values.get(path, "<not yet read>")
