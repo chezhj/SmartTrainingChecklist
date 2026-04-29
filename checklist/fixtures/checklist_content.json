@@ -494,6 +494,23 @@
     }
   },
   {
+    "model": "checklist.attribute",
+    "pk": 16,
+    "fields": {
+      "title": "DualPilot",
+      "label": "",
+      "order": 999,
+      "description": "Active when dual-pilot (PF/PM) mode is enabled. Items tagged with this attribute are hidden in solo mode.",
+      "show": false,
+      "is_user_preference": false,
+      "over_ruled_by": null,
+      "btn_color": "#444444",
+      "live_rule": null,
+      "live_rule_mode": null,
+      "prompt_message": ""
+    }
+  },
+  {
     "model": "checklist.checkitem",
     "pk": 1,
     "fields": {
@@ -1221,7 +1238,20 @@
       "action_label": "ON",
       "dataref_expression": "",
       "role": "FO",
-      "auto_check_rule": null,
+      "auto_check_rule": {
+        "any": [
+          {
+            "dataref": "laminar/B738/fuel/fuel_tank_pos_lft1",
+            "op": "eq",
+            "value": 0
+          },
+          {
+            "dataref": "laminar/B738/fuel/fuel_tank_pos_lft2",
+            "op": "eq",
+            "value": 0
+          }
+        ]
+      },
       "attributes": [
         4
       ]
@@ -1606,7 +1636,12 @@
       "action_label": "SET",
       "dataref_expression": "",
       "role": "FO",
-      "auto_check_rule": null,
+      "auto_check_rule": {
+        "dataref": "laminar/B738/pressurization/knobs/landing_alt",
+        "op": "abs_diff_lte",
+        "ref": "laminar/B738/fms/des_icao_alt",
+        "tolerance": 35
+      },
       "attributes": []
     }
   },
@@ -2143,7 +2178,7 @@
       "auto_check_rule": {
         "all": [
           {
-            "dataref": "sim/cockpit2/electrical/generator_on[0]",
+            "dataref": "sim/cockpit/electrical/generator_on[0]",
             "op": "eq",
             "value": 1
           },
@@ -2153,7 +2188,7 @@
             "value": 0
           },
           {
-            "dataref": "sim/cockpit2/electrical/generator_on[1]",
+            "dataref": "sim/cockpit/electrical/generator_on[1]",
             "op": "eq",
             "value": 1
           },
@@ -2492,7 +2527,21 @@
       "action_label": "DONE",
       "dataref_expression": "",
       "role": "PM",
-      "auto_check_rule": null,
+      "auto_check_rule": {
+        "all": [
+          {
+            "dataref": "sim/cockpit2/switches/generic_lights_switch[2]",
+            "op": "eq",
+            "value": 1
+          },
+          {
+            "dataref": "sim/cockpit2/switches/generic_lights_switch[3]",
+            "op": "eq",
+            "value": 1
+          }
+        ]
+      },
+      
       "attributes": [
         4
       ]
@@ -2832,7 +2881,12 @@
       "action_label": "CHECKED",
       "dataref_expression": "",
       "role": "PF",
-      "auto_check_rule": null,
+      "auto_check_rule": {
+        "dataref": "laminar/B738/autopilot/mcp_hdg_dial",
+        "op": "abs_diff_lte",
+        "ref": "laminar/B738/fms/ref_runway_crs",
+        "tolerance": 2
+      },
       "attributes": [
         4
       ]
@@ -2977,7 +3031,7 @@
       "dataref_expression": "laminar/B738/autopilot/pfd_spd_mode:2",
       "role": "PF",
       "auto_check_rule": {
-        "dataref": "laminar/B738/autopilot/pfd_spd_mode",
+        "dataref": "laminar/B738/autopilot/pfd_spd_mode[1]",
         "op": "eq",
         "value": 2
       },
@@ -3125,7 +3179,7 @@
       "auto_check_rule": {
         "dataref": "laminar/B738/autobrake/autobrake_pos",
         "op": "eq",
-        "value": 0
+        "value": 1
       },
       "attributes": []
     }
@@ -3362,8 +3416,8 @@
           },
           {
             "dataref": "laminar/B738/annunciator/ground_power_avail",
-            "op": "eq",
-            "value": 1
+            "op": "gt",
+            "value": 0.2
           },
           {
             "all": [
@@ -4944,7 +4998,7 @@
           },
           {
             "fmc_line": "laminar/B738/fmc1/Line03_L",
-            "not_contains": "****"
+            "not_contains": "**"
           }
         ]
       },
@@ -5422,7 +5476,7 @@
       "dataref_expression": "",
       "role": "PF",
       "auto_check_rule": {
-        "dataref": "laminar/b738/autopilot/pfd_spd_mode",
+        "dataref": "laminar/b738/autopilot/pfd_mode",
         "op": "eq",
         "value": 2
       },
@@ -6130,7 +6184,7 @@
       "auto_check_rule": {
         "all": [
           {
-            "dataref": "sim/cockpit2/electrical/generator_on[0]",
+            "dataref": "sim/cockpit/electrical/generator_on[0]",
             "op": "eq",
             "value": 1
           },
@@ -6140,7 +6194,7 @@
             "value": 0
           },
           {
-            "dataref": "sim/cockpit2/electrical/generator_on[1]",
+            "dataref": "sim/cockpit/electrical/generator_on[1]",
             "op": "eq",
             "value": 1
           },
@@ -7065,7 +7119,8 @@
       "role": "PF",
       "auto_check_rule": null,
       "attributes": [
-        4
+        4,
+        16
       ]
     }
   },
@@ -7082,7 +7137,8 @@
       "role": "PF",
       "auto_check_rule": null,
       "attributes": [
-        4
+        4,
+        16
       ]
     }
   },
@@ -7105,7 +7161,7 @@
           },
           {
             "fmc_line": "laminar/B738/fmc1/Line06_L",
-            "contains": "ACTIVATE"
+            "contains": "ERASE"
           },
           {
             "dataref": "laminar/B738/indicators/fms_exec_light_pilot",

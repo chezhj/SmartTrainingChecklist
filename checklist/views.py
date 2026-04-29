@@ -608,6 +608,8 @@ def procedure_detail(request, slug=None, pk=None):
             flight_session=flight_session, is_active=True
         ).values_list("attribute_id", flat=True)
     )
+    if flight_session.pilot_role != "SOLO":
+        active_attr_ids.append(16)  # DualPilot — show dual-pilot-only items
 
     allitems = procedure2view.checkitem_set.all()
     query_ids = [item.id for item in allitems if item.shouldshow(active_attr_ids)]
