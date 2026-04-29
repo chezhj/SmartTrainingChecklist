@@ -1220,9 +1220,18 @@
       "dataref_expression": "(laminar/B738/spring_toggle_switch/APU_start_pos:2)",
       "role": "FO",
       "auto_check_rule": {
-        "dataref": "laminar/B738/spring_toggle_switch/APU_start_pos",
-        "op": "eq",
-        "value": 2
+        "all": [
+          {
+            "dataref": "laminar/B738/spring_toggle_switch/APU_start_pos",
+            "op": "gt",
+            "value": 0
+          },
+          {
+            "dataref": "sim/cockpit2/electrical/APU_starter_switch",
+            "op": "eq",
+            "value": 1
+          }
+        ]
       },
       "attributes": []
     }
