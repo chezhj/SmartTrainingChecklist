@@ -445,11 +445,11 @@ class TestPluginStateIdleAndShowRule(_Base):
         resp = _post(self.client, self._valid_body(), key=self.raw_key)
         self.assertIn("sim/test/go_around_watch", resp.json()["watch"])
 
-    def test_show_rule_dataref_not_in_watch_when_gate_active(self):
-        """show_rule datarefs are suppressed while a required item blocks the gate."""
+    def test_show_rule_dataref_in_watch_when_gate_active(self):
+        """show_rule datarefs are always watched regardless of gate state."""
         item = CheckItemFactory(procedure=self.procedure, step=1, auto_check_rule=RULE_PARKING_BRAKE_ON)
         resp = _post(self.client, self._valid_body(), key=self.raw_key)
         watch = resp.json()["watch"]
         self.assertIn(RULE_PARKING_BRAKE_ON["dataref"], watch)
-        self.assertNotIn("sim/test/go_around_watch", watch)
+        self.assertIn("sim/test/go_around_watch", watch)
         item.delete()

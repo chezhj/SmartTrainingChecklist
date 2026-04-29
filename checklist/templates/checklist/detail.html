@@ -290,12 +290,12 @@
     }
 
     /* ── Debug: render rule evaluation state in the info panel ── */
-    function renderDebugRules(rules, attrs) {
+    function renderDebugRules(rules, attrs, showProcs) {
         var section = document.getElementById('debug-rules-section');
         var list    = document.getElementById('debug-rules-list');
         if (!section || !list) return;
 
-        var hasContent = (rules && rules.length > 0) || (attrs && attrs.length > 0);
+        var hasContent = (rules && rules.length > 0) || (attrs && attrs.length > 0) || (showProcs && showProcs.length > 0);
         if (!hasContent) {
             section.classList.add('js-hidden');
             return;
@@ -353,6 +353,22 @@
                     + '<span class="debug-item-name">' + escHtml(a.label || a.title) + '</span>'
                     + '</div>'
                     + conditionRows(a.conditions)
+                    + '</div>';
+            }).join('');
+        }
+
+        if (showProcs && showProcs.length > 0) {
+            html += '<div class="debug-group-title">Conditional procedures</div>';
+            html += showProcs.map(function (p) {
+                var overallIcon = p.rule_pass
+                    ? '<span class="debug-pass">&#10003;</span>'
+                    : '<span class="debug-fail">&#10007;</span>';
+                return '<div class="debug-item">'
+                    + '<div class="debug-item-header">'
+                    + overallIcon
+                    + '<span class="debug-item-name">' + escHtml(p.title) + '</span>'
+                    + '</div>'
+                    + conditionRows(p.conditions)
                     + '</div>';
             }).join('');
         }
@@ -422,22 +438,27 @@
     };
 
     /* ── applyShowProcedures: reveal/hide conditional nav items ── */
-    function applyShowProcedures(slugs) {
+    var currentSlug = '{{ procedure.slug }}';
+    function applyShowProcedures(slugs, autoNav) {
         if (!slugs) return;
         /* Reveal newly active conditional procedures */
         slugs.forEach(function (slug) {
             if (revealedSlugs.has(slug)) return;
-            var el = document.querySelector('[data-conditional-slug="' + slug + '"]');
-            if (el) {
+            document.querySelectorAll('[data-conditional-slug="' + slug + '"]').forEach(function (el) {
                 el.classList.remove('js-hidden');
-                revealedSlugs.add(slug);
+            });
+            revealedSlugs.add(slug);
+            /* Auto-navigate to the triggered procedure unless already on it */
+            if (autoNav && slug !== currentSlug) {
+                window.location.href = '/checklist/' + slug;
             }
         });
         /* Hide any previously revealed procedure no longer in the list */
         revealedSlugs.forEach(function (slug) {
             if (slugs.indexOf(slug) === -1) {
-                var el = document.querySelector('[data-conditional-slug="' + slug + '"]');
-                if (el) el.classList.add('js-hidden');
+                document.querySelectorAll('[data-conditional-slug="' + slug + '"]').forEach(function (el) {
+                    el.classList.add('js-hidden');
+                });
                 revealedSlugs.delete(slug);
             }
         });
@@ -498,8 +519,12 @@
             lastPoll = Math.floor(Date.now() / 1000);
 
             data.checked_items.forEach(function (item) { markItem(item.id, item.source); });
-            applyShowProcedures(data.show_procedures || []);
-            if (data.debug_rules !== undefined) { renderDebugRules(data.debug_rules, data.debug_attributes || []); }
+            /* Manual fallback: no sim → reveal all conditional procedures */
+            var activeConditionals = data.sim_connected
+                ? (data.show_procedures || [])
+                : conditionalSlugs;
+            applyShowProcedures(activeConditionals, data.sim_connected);
+            if (data.debug_rules !== undefined) { renderDebugRules(data.debug_rules, data.debug_attributes || [], data.debug_show_procedures || []); }
 
             /* Derive 5-state badge: connected / reconnecting / initializing / disconnected / manual */
             var age          = data.last_seen > 0 ? (Date.now() / 1000 - data.last_seen) : Infinity;

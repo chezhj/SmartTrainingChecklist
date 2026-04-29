@@ -169,21 +169,26 @@
     }
 
     /* ── Reveal conditional procedures from show_procedures ── */
-    function applyShowProcedures(slugs) {
+    /* autoNav=true only when the rule actually fired (sim connected); manual
+       fallback reveals buttons for manual access but does not redirect. */
+    function applyShowProcedures(slugs, autoNav) {
         if (!slugs) return;
         slugs.forEach(function (slug) {
             if (revealedSlugs.has(slug)) return;
-            var el = document.querySelector('[data-conditional-slug="' + slug + '"]');
-            if (el) {
+            document.querySelectorAll('[data-conditional-slug="' + slug + '"]').forEach(function (el) {
                 el.classList.remove('js-hidden');
-                revealedSlugs.add(slug);
+            });
+            revealedSlugs.add(slug);
+            if (autoNav) {
+                window.location.href = '/checklist/' + slug;
             }
         });
         /* Hide any previously revealed procedure no longer in the list */
         revealedSlugs.forEach(function (slug) {
             if (slugs.indexOf(slug) === -1) {
-                var el = document.querySelector('[data-conditional-slug="' + slug + '"]');
-                if (el) el.classList.add('js-hidden');
+                document.querySelectorAll('[data-conditional-slug="' + slug + '"]').forEach(function (el) {
+                    el.classList.add('js-hidden');
+                });
                 revealedSlugs.delete(slug);
             }
         });
@@ -199,11 +204,11 @@
             var data = await res.json();
             lastPoll = Math.floor(Date.now() / 1000);
 
-            /* Manual fallback: no sim → reveal all conditional procedures */
+            /* Manual fallback: no sim → reveal all conditional procedures (no auto-nav) */
             var activeConditionals = data.sim_connected
                 ? (data.show_procedures || [])
                 : conditionalSlugs;
-            applyShowProcedures(activeConditionals);
+            applyShowProcedures(activeConditionals, data.sim_connected);
             applyLiveValues(data.show_live_values || []);
 
             var age          = data.last_seen > 0 ? (Date.now() / 1000 - data.last_seen) : Infinity;

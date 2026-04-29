@@ -406,11 +406,10 @@ def plugin_state(request):
     for dr in IdleDataref.objects.values_list("dataref_path", flat=True):
         watch.append(dr)
 
-    # When the gate is clear (all required items done), also stream show_rule
-    # datarefs so conditional procedures can unlock while the pilot is idle.
-    if gate_item is None:
-        for proc in Procedure.objects.exclude(show_rule=None):
-            watch.extend(collect_datarefs(proc.show_rule))
+    # Always stream show_rule datarefs so conditional procedures can unlock
+    # at any point during flight, not only when the current gate is clear.
+    for proc in Procedure.objects.exclude(show_rule=None):
+        watch.extend(collect_datarefs(proc.show_rule))
 
     # Deduplicate watch list while preserving order
     seen = set()

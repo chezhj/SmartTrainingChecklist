@@ -190,6 +190,21 @@ def poll_view(request):
                 pass
         response["debug_rules"] = debug_rules
 
+        # show_rule evaluations for conditional procedures
+        debug_show_procedures = []
+        try:
+            for proc in Procedure.objects.exclude(show_rule=None):
+                debug_show_procedures.append({
+                    "proc_id": proc.pk,
+                    "title": proc.title,
+                    "slug": proc.slug,
+                    "rule_pass": evaluate_rule(proc.show_rule, last_state),
+                    "conditions": collect_leaf_evaluations(proc.show_rule, last_state),
+                })
+        except Exception:
+            pass
+        response["debug_show_procedures"] = debug_show_procedures
+
         # Attribute live_rule evaluations
         debug_attributes = []
         try:
