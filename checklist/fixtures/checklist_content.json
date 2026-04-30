@@ -54,7 +54,7 @@
       "title": "Before Takeoff Procedure",
       "step": 16,
       "slug": "before-takeoff-procedure",
-      "show_expression": "(sim/flightmodel/position/y_agl:<5)&&(laminar/b738/fmodpack/flightphase_landed:0)&&(laminar/b738/fmodpack/real_groundspeed:10:1)&&(sim/cockpit2/switches/navigation_lights_on:1)&&(sim/cockpit2/switches/strobe_lights_on:0)&&(sim/operation/failures/rel_lites_strobe:0)&&(sim/operation/failures/rel_lites_nav:0)&&(sim/cockpit/electrical/beacon_lights_on:1)&&(sim/time/is_in_replay:0)||(sim/flightmodel/position/y_agl:<5)&&(laminar/b738/fmodpack/flightphase_landed:0)&&(laminar/b738/fmodpack/real_groundspeed:>1)&&(sim/cockpit2/switches/navigation_lights_on:1)&&(sim/cockpit2/switches/strobe_lights_on:0:1)&&(sim/operation/failures/rel_lites_strobe:0)&&(sim/operation/failures/rel_lites_nav:0)&&(sim/cockpit/electrical/beacon_lights_on:1)&&(sim/time/is_in_replay:0)",
+      "show_expression": "(sim/flightmodel/position/y_agl:<5)&&(laminar/B738/fmodpack/flightphase_landed:0)&&(laminar/B738/fmodpack/real_groundspeed:10:1)&&(sim/cockpit2/switches/navigation_lights_on:1)&&(sim/cockpit2/switches/strobe_lights_on:0)&&(sim/operation/failures/rel_lites_strobe:0)&&(sim/operation/failures/rel_lites_nav:0)&&(sim/cockpit/electrical/beacon_lights_on:1)&&(sim/time/is_in_replay:0)||(sim/flightmodel/position/y_agl:<5)&&(laminar/B738/fmodpack/flightphase_landed:0)&&(laminar/B738/fmodpack/real_groundspeed:>1)&&(sim/cockpit2/switches/navigation_lights_on:1)&&(sim/cockpit2/switches/strobe_lights_on:0:1)&&(sim/operation/failures/rel_lites_strobe:0)&&(sim/operation/failures/rel_lites_nav:0)&&(sim/cockpit/electrical/beacon_lights_on:1)&&(sim/time/is_in_replay:0)",
       "auto_continue": true,
       "show_rule": null
     }
@@ -519,10 +519,10 @@
       "step": 1,
       "setting": "Welcome Onboard Message",
       "action_label": "PLAYED",
-      "dataref_expression": "laminar/b738/fmodpack/played_welcome_msg:1",
+      "dataref_expression": "laminar/B738/fmodpack/played_welcome_msg:1",
       "role": "C",
       "auto_check_rule": {
-        "dataref": "laminar/b738/fmodpack/played_welcome_msg",
+        "dataref": "laminar/B738/fmodpack/played_welcome_msg",
         "op": "eq",
         "value": 1
       },
@@ -3040,7 +3040,7 @@
       "dataref_expression": "laminar/B738/autopilot/pfd_spd_mode:2",
       "role": "PF",
       "auto_check_rule": {
-        "dataref": "laminar/B738/autopilot/pfd_spd_mode[1]",
+        "dataref": "laminar/B738/autopilot/pfd_mode",
         "op": "eq",
         "value": 2
       },
@@ -3376,10 +3376,10 @@
       "step": 3,
       "setting": "start loading",
       "action_label": "STARTED",
-      "dataref_expression": "laminar/b738/fmodpack/fmod_play_cargo:1",
+      "dataref_expression": "laminar/B738/fmodpack/fmod_play_cargo:1",
       "role": "FO",
       "auto_check_rule": {
-        "dataref": "laminar/b738/fmodpack/fmod_play_cargo",
+        "dataref": "laminar/B738/fmodpack/fmod_play_cargo",
         "op": "eq",
         "value": 1
       },
@@ -4038,10 +4038,10 @@
       "step": 23,
       "setting": "Stop",
       "action_label": "DONE",
-      "dataref_expression": "laminar/b738/fmodpack/fmod_play_cargo:0",
+      "dataref_expression": "laminar/B738/fmodpack/fmod_play_cargo:0",
       "role": "FO",
       "auto_check_rule": {
-        "dataref": "laminar/b738/fmodpack/fmod_play_cargo",
+        "dataref": "laminar/B738/fmodpack/fmod_play_cargo",
         "op": "eq",
         "value": 0
       },
@@ -4059,10 +4059,10 @@
       "step": 24,
       "setting": "Start",
       "action_label": "DONE",
-      "dataref_expression": "laminar/b738/fmodpack/fmod_start_leg:1",
+      "dataref_expression": "laminar/B738/fmodpack/fmod_start_leg:1",
       "role": "FO",
       "auto_check_rule": {
-        "dataref": "laminar/b738/fmodpack/fmod_start_leg",
+        "dataref": "laminar/B738/fmodpack/fmod_start_leg",
         "op": "eq",
         "value": 1
       },
@@ -5485,7 +5485,7 @@
       "dataref_expression": "",
       "role": "PF",
       "auto_check_rule": {
-        "dataref": "laminar/b738/autopilot/pfd_mode",
+        "dataref": "laminar/B738/autopilot/pfd_mode",
         "op": "eq",
         "value": 2
       },
@@ -6305,12 +6305,12 @@
       "step": 34,
       "setting": "Completed",
       "action_label": "TESTED",
-      "dataref_expression": "(laminar/B738/push_botton/cargo_fire_test:>0)&&(laminar/B738/annunciator/cargo_fire:>0)&&(laminar/B738/annunciator/fire_bell_annun:1)",
+      "dataref_expression": "(laminar/B738/push_button/cargo_fire_test:>0)&&(laminar/B738/annunciator/cargo_fire:>0)&&(laminar/B738/annunciator/fire_bell_annun:1)",
       "role": "FO",
       "auto_check_rule": {
         "all": [
           {
-            "dataref": "laminar/B738/push_botton/cargo_fire_test",
+            "dataref": "laminar/B738/push_button/cargo_fire_test",
             "op": "gt",
             "value": 0
           },
@@ -6361,12 +6361,12 @@
       "step": 40,
       "setting": "Completed",
       "action_label": "TESTED",
-      "dataref_expression": "(laminar/B738/push_botton/cargo_fire_test:>0)&&(laminar/B738/annunciator/cargo_fire:>0)&&(laminar/B738/annunciator/fire_bell_annun:1)",
+      "dataref_expression": "(laminar/B738/push_button/cargo_fire_test:>0)&&(laminar/B738/annunciator/cargo_fire:>0)&&(laminar/B738/annunciator/fire_bell_annun:1)",
       "role": "FO",
       "auto_check_rule": {
         "all": [
           {
-            "dataref": "laminar/B738/push_botton/cargo_fire_test",
+            "dataref": "laminar/B738/push_button/cargo_fire_test",
             "op": "gt",
             "value": 0
           },
