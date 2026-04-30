@@ -202,13 +202,14 @@ class TestProfileView(ViewTestCase):
         self.assertIn(pref_attr.id, response.context_data["user_default_ids"])
 
     def test_start_checklist_seeds_user_defaults_as_active(self):
+        # When the user keeps the pre-checked default (attribute appears in POST), it is active.
         from django.contrib.auth.models import User
         user = User.objects.create_user(username="pilot3", password="pass!")
         pref_attr = Attribute.objects.create(title="Safety Test", order=6, is_user_preference=True)
         UserAttributeDefault.objects.create(user_profile=user.profile, attribute=pref_attr)
 
         request = self.create_request_with_session(
-            "/", request_data={"action": "start_checklist"}
+            "/", request_data={"action": "start_checklist", "attributes": str(pref_attr.id)}
         )
         request.user = user
         profile_view(request)
@@ -219,6 +220,28 @@ class TestProfileView(ViewTestCase):
             FlightSessionAttribute.objects.filter(
                 flight_session=session, attribute=pref_attr, is_active=True
             ).exists()
+        )
+
+    def test_start_checklist_respects_deselection_of_user_default(self):
+        # When the user unchecks a default (attribute absent from POST), it must be inactive.
+        from django.contrib.auth.models import User
+        user = User.objects.create_user(username="pilot3b", password="pass!")
+        pref_attr = Attribute.objects.create(title="Safety Test B", order=6, is_user_preference=True)
+        UserAttributeDefault.objects.create(user_profile=user.profile, attribute=pref_attr)
+
+        request = self.create_request_with_session(
+            "/", request_data={"action": "start_checklist"}  # pref_attr intentionally absent
+        )
+        request.user = user
+        profile_view(request)
+
+        key = request.session["flight_session_key"]
+        session = FlightSession.objects.get(session_key=key)
+        self.assertFalse(
+            FlightSessionAttribute.objects.filter(
+                flight_session=session, attribute=pref_attr, is_active=True
+            ).exists(),
+            "A default that the user unchecked must not be seeded as active",
         )
 
     def test_start_checklist_user_default_source_is_user_default(self):
