@@ -377,6 +377,9 @@
     }
 
     /* ── Scroll to first unchecked item at or after a given row ── */
+    /* Positions the row just before the target at the top of the scroll area,
+       so the next unchecked item appears one row down — giving one item of
+       "just completed" context above. */
     function scrollToFirstUncheckedAfter(startRow) {
         var rows     = Array.from(document.querySelectorAll('.ci'));
         var startIdx = startRow ? rows.indexOf(startRow) + 1 : 0;
@@ -384,7 +387,14 @@
             if (!rows[i].classList.contains('ci-manual')
              && !rows[i].classList.contains('ci-auto')
              && !rows[i].classList.contains('ci-skipped')) {
-                rows[i].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                var container    = document.getElementById('checklist-scroll');
+                var anchor       = i > 0 ? rows[i - 1] : rows[i];
+                var containerTop = container.getBoundingClientRect().top;
+                var anchorTop    = anchor.getBoundingClientRect().top;
+                container.scrollTo({
+                    top:      container.scrollTop + (anchorTop - containerTop),
+                    behavior: 'smooth'
+                });
                 return;
             }
         }
