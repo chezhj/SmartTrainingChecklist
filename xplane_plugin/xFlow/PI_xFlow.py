@@ -261,6 +261,8 @@ class PythonInterface:
                     val = xp.getDatas(dref, 0, 64).rstrip("\x00").strip()
                 elif dtype & 1:
                     val = xp.getDatai(dref)
+                elif dtype & 4:
+                    val = xp.getDatad(dref)
                 else:
                     val = xp.getDataf(dref)
 
