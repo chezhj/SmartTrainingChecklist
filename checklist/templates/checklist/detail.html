@@ -183,7 +183,8 @@
     var autoContinue            = {{ procedure.auto_continue|lower }};
     var isConditionalProcedure  = {% if procedure.show_rule %}true{% else %}false{% endif %};
     var conditionalSlugs        = {{ conditional_proc_slugs_json|safe }};
-    var revealedSlugs           = new Set();
+    var revealedSlugs           = new Set();  /* display state */
+    var navigatedSlugs          = new Set();  /* prevents re-nav per page load */
     var CIRCUMFERENCE = 119.4;
 
     function updateProgress() {
@@ -453,13 +454,18 @@
         if (!slugs) return;
         /* Reveal newly active conditional procedures */
         slugs.forEach(function (slug) {
-            if (revealedSlugs.has(slug)) return;
-            document.querySelectorAll('[data-conditional-slug="' + slug + '"]').forEach(function (el) {
-                el.classList.remove('js-hidden');
-            });
-            revealedSlugs.add(slug);
-            /* Auto-navigate to the triggered procedure unless already on it */
-            if (autoNav && slug !== currentSlug) {
+            if (!revealedSlugs.has(slug)) {
+                document.querySelectorAll('[data-conditional-slug="' + slug + '"]').forEach(function (el) {
+                    el.classList.remove('js-hidden');
+                });
+                revealedSlugs.add(slug);
+            }
+            /* Auto-navigate to the triggered procedure unless already on it.
+               navigatedSlugs guards against re-firing on every poll tick, but is
+               NOT pre-populated by the manual fallback (autoNav=false), so the
+               first real sim-connected poll always triggers navigation. */
+            if (autoNav && slug !== currentSlug && !navigatedSlugs.has(slug)) {
+                navigatedSlugs.add(slug);
                 window.location.href = '/checklist/' + slug;
             }
         });
@@ -470,6 +476,7 @@
                     el.classList.add('js-hidden');
                 });
                 revealedSlugs.delete(slug);
+                navigatedSlugs.delete(slug);
             }
         });
     }

@@ -127,7 +127,8 @@
     'use strict';
 
     var conditionalSlugs = {{ conditional_proc_slugs_json|safe }};
-    var revealedSlugs    = new Set();
+    var revealedSlugs    = new Set();  /* display state */
+    var navigatedSlugs   = new Set();  /* prevents re-nav per page load */
 
     function getCsrf() {
         var m = document.cookie.match(/csrftoken=([^;]+)/);
@@ -174,12 +175,16 @@
     function applyShowProcedures(slugs, autoNav) {
         if (!slugs) return;
         slugs.forEach(function (slug) {
-            if (revealedSlugs.has(slug)) return;
-            document.querySelectorAll('[data-conditional-slug="' + slug + '"]').forEach(function (el) {
-                el.classList.remove('js-hidden');
-            });
-            revealedSlugs.add(slug);
-            if (autoNav) {
+            if (!revealedSlugs.has(slug)) {
+                document.querySelectorAll('[data-conditional-slug="' + slug + '"]').forEach(function (el) {
+                    el.classList.remove('js-hidden');
+                });
+                revealedSlugs.add(slug);
+            }
+            /* navigatedSlugs is NOT pre-populated by the manual fallback (autoNav=false),
+               so the first sim-connected poll always triggers navigation. */
+            if (autoNav && !navigatedSlugs.has(slug)) {
+                navigatedSlugs.add(slug);
                 window.location.href = '/checklist/' + slug;
             }
         });
@@ -190,6 +195,7 @@
                     el.classList.add('js-hidden');
                 });
                 revealedSlugs.delete(slug);
+                navigatedSlugs.delete(slug);
             }
         });
     }
