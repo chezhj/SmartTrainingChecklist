@@ -108,11 +108,23 @@ CSS is split into four files, loaded in order:
 
 `{% load environment_tags %}` provides `{{ 'KEY'|setting }}` and `{{ 'KEY'|env }}` template filters.
 
-### JS in `detail.html`
+### JS in `detail.html` and `idle.html`
 
-The inline IIFE tracks `checkedCount`, `autoCount`, `manualCount`. It exposes two `window.*` stubs for the future polling layer:
+The inline IIFE in `detail.html` tracks `checkedCount`, `autoCount`, `manualCount` and exposes:
 - `window.markItem(id, source)` — marks a row as `ci-manual` or `ci-auto`, updates counters
 - `window.updateConnectionBadge(simConnected, aircraft, reconnecting)` — updates conn-bar dot and status text
+
+Both templates poll `/api/poll/` on `POLL_INTERVAL_MS`. The response drives two behaviours:
+
+**Conditional procedure reveal / auto-navigation** (`applyShowProcedures`):
+
+`show_procedures` — slugs whose `Procedure.show_rule` currently evaluates to true against the latest plugin dataref snapshot. When `sim_connected=true` these are auto-navigated; when false, a manual fallback reveals all conditional procedures so the pilot can tap them.
+
+Two sets track state to avoid conflicts:
+- `revealedSlugs` — which procedures are currently visible in the nav (display tracking). The manual fallback (autoNav=false) adds to this set so buttons stay visible.
+- `navigatedSlugs` — which procedures we have already auto-navigated to this page load. **Never populated by the manual fallback.** This ensures that once the sim reconnects and a rule fires, auto-navigation always runs even if the slug was already in `revealedSlugs` from a prior disconnected-state fallback. When a procedure's rule stops firing and it is hidden, its slug is deleted from both sets so it can re-trigger later.
+
+Without the two-set split, a sim reconnect after a disconnect would silently fail to navigate because `revealedSlugs.has(slug)` short-circuits the entire block.
 
 ### Export (`checklist/export_view.py`)
 
