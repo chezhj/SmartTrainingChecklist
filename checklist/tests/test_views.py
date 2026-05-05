@@ -583,6 +583,46 @@ class TestProcedureDetailView(ViewTestCase):
 
         self.assertIn("active_phase_step", response.context_data)
 
+    def test_dualpilot_item_hidden_in_solo_mode(self):
+        # _resolve_active_ids stores attribute 16 (DualPilot) as active even for SOLO
+        # sessions. The view must strip it so items tagged [optional, DualPilot] stay hidden.
+        dualpilot_attr = Attribute.objects.create(id=16, title="DualPilot", order=999, show=False)
+        optional_attr = AttributeFactory()
+        check_item = CheckItemFactory(attributes=[optional_attr, dualpilot_attr])
+
+        request = self.create_request_with_session("/")
+        session = FlightSession.objects.create()  # pilot_role="SOLO" by default
+        FlightSessionAttribute.objects.create(
+            flight_session=session, attribute=optional_attr, is_active=True
+        )
+        FlightSessionAttribute.objects.create(
+            flight_session=session, attribute=dualpilot_attr, is_active=True
+        )
+        request.session["flight_session_key"] = session.session_key
+        request.session.save()
+
+        response = procedure_detail(request, slug=check_item.procedure.slug)
+        self.assertEqual(len(response.context_data["check_items"]), 0)
+
+    def test_dualpilot_item_visible_in_dual_mode(self):
+        dualpilot_attr = Attribute.objects.create(id=16, title="DualPilot", order=999, show=False)
+        optional_attr = AttributeFactory()
+        check_item = CheckItemFactory(attributes=[optional_attr, dualpilot_attr])
+
+        request = self.create_request_with_session("/")
+        session = FlightSession.objects.create(pilot_role="PF")
+        FlightSessionAttribute.objects.create(
+            flight_session=session, attribute=optional_attr, is_active=True
+        )
+        FlightSessionAttribute.objects.create(
+            flight_session=session, attribute=dualpilot_attr, is_active=False
+        )
+        request.session["flight_session_key"] = session.session_key
+        request.session.save()
+
+        response = procedure_detail(request, slug=check_item.procedure.slug)
+        self.assertEqual(len(response.context_data["check_items"]), 1)
+
     def test_checked_manual_item_annotated_with_ci_manual(self):
         """Every GET resets the procedure — prior manually-checked state is cleared."""
         from datetime import datetime, timezone
