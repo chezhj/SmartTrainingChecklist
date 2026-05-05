@@ -160,9 +160,9 @@
             "value": 1
           },
           {
-            "dataref": "laminar/B738/autopilot/lock_throttle",
+            "dataref": "laminar/B738/autopilot/pfd_mode",
             "op": "eq",
-            "value": 1
+            "value": 2
           },
           {
             "dataref": "laminar/B738/FMS/fmc_trans_lvl",
@@ -3482,7 +3482,7 @@
       "auto_check_rule": {
         "dataref": "laminar/B738/fueltruck_operate",
         "op": "gt",
-        "value": 0.5
+        "value": 0.3
       },
       "attributes": []
     }
@@ -6503,13 +6503,13 @@
     "fields": {
       "item": "BURNED FUEL & TIME",
       "procedure": 15,
-      "step": 2,
+      "step": 1,
       "setting": "COMPARE WITH FLIGHTPLAN",
       "action_label": "VOID",
       "dataref_expression": "",
       "role": "",
       "auto_check_rule": null,
-      "attributes": []
+      "attributes": [4]
     }
   },
   {
