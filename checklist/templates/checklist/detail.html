@@ -466,7 +466,7 @@
                first real sim-connected poll always triggers navigation. */
             if (autoNav && slug !== currentSlug && !navigatedSlugs.has(slug)) {
                 navigatedSlugs.add(slug);
-                window.location.href = '/checklist/' + slug;
+                window.location.href = '/' + slug;
             }
         });
         /* Hide any previously revealed procedure no longer in the list */
