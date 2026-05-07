@@ -128,7 +128,11 @@
       "slug": "decent-preparation",
       "show_expression": "",
       "auto_continue": false,
-      "show_rule": null
+      "show_rule": {
+        "dataref": "laminar/B738/fms/vnav_id_dist",
+        "op": "lt",
+        "value": 50
+      }
     }
   },
   {
@@ -6524,18 +6528,10 @@
       "dataref_expression": "laminar/B738/hud/hdg_bug_tape:-1|1",
       "role": "",
       "auto_check_rule": {
-        "any": [
-          {
-            "dataref": "laminar/B738/hud/hdg_bug_tape",
-            "op": "eq",
-            "value": -1
-          },
-          {
-            "dataref": "laminar/B738/hud/hdg_bug_tape",
-            "op": "eq",
-            "value": 1
-          }
-        ]
+        "dataref": "laminar/B738/hud/hdg_bug_tape",
+        "op": "abs_diff_lte",
+        "value": 0,
+        "tolerance": 1
       },
       "attributes": [4]
     }
