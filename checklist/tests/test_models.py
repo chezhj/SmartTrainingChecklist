@@ -20,6 +20,7 @@ from checklist.models import FlightItemState
 from checklist.models import FlightSession
 from checklist.models import FlightSessionAttribute
 from checklist.models import Procedure
+from checklist.models import SOP
 from checklist.models import UserProfile
 
 
@@ -27,7 +28,8 @@ class TestCheckItem(TestCase):
     profile_list = []
 
     def setUp(self):
-        default_procedure = Procedure.objects.create(title="procedure one", step=1)
+        sop = SOP.objects.create(name="Test SOP", icao_code="TST", content_version="1.0.0")
+        default_procedure = Procedure.objects.create(title="procedure one", step=1, sop=sop)
         Attribute.objects.create(title="left", order=1)
         Attribute.objects.create(title="right", order=2)
         Attribute.objects.create(title="center", order=3)
@@ -117,7 +119,8 @@ class TestCheckItem(TestCase):
 
 class TestProcedure(TestCase):
     def setUp(self):
-        default_procedure = Procedure.objects.create(title="procedure one", step=1)
+        sop = SOP.objects.create(name="Test SOP", icao_code="TST", content_version="1.0.0")
+        default_procedure = Procedure.objects.create(title="procedure one", step=1, sop=sop)
         default_procedure.slug = slugify(default_procedure.title)
         default_procedure.step = 4
         default_procedure.save()
@@ -290,7 +293,8 @@ class TestFlightItemState(TestCase):
 
     def setUp(self):
         self.session = FlightSession.objects.create()
-        proc = Procedure.objects.create(title="Before Start", step=1, slug="before-start")
+        sop = SOP.objects.create(name="Test SOP", icao_code="TST", content_version="1.0.0")
+        proc = Procedure.objects.create(title="Before Start", step=1, slug="before-start", sop=sop)
         self.item = CheckItem.objects.create(item="Parking Brake", procedure=proc, step=1)
 
     def test_create_checked_state(self):

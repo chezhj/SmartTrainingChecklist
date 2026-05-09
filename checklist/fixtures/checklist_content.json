@@ -1,5 +1,16 @@
 [
   {
+    "model": "checklist.sop",
+    "pk": 1,
+    "fields": {
+      "name": "Boeing 737-800",
+      "icao_code": "B738",
+      "content_version": "1.0.0",
+      "release_notes": "Initial SOP version.",
+      "updated_at": "2026-05-09T00:00:00Z"
+    }
+  },
+  {
     "model": "checklist.procedure",
     "pk": 1,
     "fields": {
@@ -8,7 +19,8 @@
       "slug": "before-start-procedure",
       "show_expression": "",
       "auto_continue": true,
-      "show_rule": null
+      "show_rule": null,
+      "sop": 1
     }
   },
   {
@@ -20,7 +32,8 @@
       "slug": "preflight-procedure",
       "show_expression": "",
       "auto_continue": true,
-      "show_rule": null
+      "show_rule": null,
+      "sop": 1
     }
   },
   {
@@ -32,7 +45,8 @@
       "slug": "engine-start-procedure",
       "show_expression": "",
       "auto_continue": true,
-      "show_rule": null
+      "show_rule": null,
+      "sop": 1
     }
   },
   {
@@ -44,7 +58,8 @@
       "slug": "before-taxi-procedure",
       "show_expression": "",
       "auto_continue": true,
-      "show_rule": null
+      "show_rule": null,
+      "sop": 1
     }
   },
   {
@@ -56,7 +71,8 @@
       "slug": "before-takeoff-procedure",
       "show_expression": "(sim/flightmodel/position/y_agl:<5)&&(laminar/b738/fmodpack/flightphase_landed:0)&&(laminar/b738/fmodpack/real_groundspeed:10:1)&&(sim/cockpit2/switches/navigation_lights_on:1)&&(sim/cockpit2/switches/strobe_lights_on:0)&&(sim/operation/failures/rel_lites_strobe:0)&&(sim/operation/failures/rel_lites_nav:0)&&(sim/cockpit/electrical/beacon_lights_on:1)&&(sim/time/is_in_replay:0)||(sim/flightmodel/position/y_agl:<5)&&(laminar/b738/fmodpack/flightphase_landed:0)&&(laminar/b738/fmodpack/real_groundspeed:>1)&&(sim/cockpit2/switches/navigation_lights_on:1)&&(sim/cockpit2/switches/strobe_lights_on:0:1)&&(sim/operation/failures/rel_lites_strobe:0)&&(sim/operation/failures/rel_lites_nav:0)&&(sim/cockpit/electrical/beacon_lights_on:1)&&(sim/time/is_in_replay:0)",
       "auto_continue": true,
-      "show_rule": null
+      "show_rule": null,
+      "sop": 1
     }
   },
   {
@@ -68,7 +84,8 @@
       "slug": "takeoff-procedure",
       "show_expression": "",
       "auto_continue": false,
-      "show_rule": null
+      "show_rule": null,
+      "sop": 1
     }
   },
   {
@@ -80,7 +97,8 @@
       "slug": "aircraft-preparation-efb",
       "show_expression": "",
       "auto_continue": true,
-      "show_rule": null
+      "show_rule": null,
+      "sop": 1
     }
   },
   {
@@ -92,7 +110,8 @@
       "slug": "flight-deck-preparation",
       "show_expression": "",
       "auto_continue": true,
-      "show_rule": null
+      "show_rule": null,
+      "sop": 1
     }
   },
   {
@@ -104,7 +123,8 @@
       "slug": "online-setup",
       "show_expression": "",
       "auto_continue": true,
-      "show_rule": null
+      "show_rule": null,
+      "sop": 1
     }
   },
   {
@@ -116,7 +136,8 @@
       "slug": "cdu-preflight-procedure",
       "show_expression": "",
       "auto_continue": true,
-      "show_rule": null
+      "show_rule": null,
+      "sop": 1
     }
   },
   {
@@ -128,7 +149,8 @@
       "slug": "decent-preparation",
       "show_expression": "",
       "auto_continue": false,
-      "show_rule": null
+      "show_rule": null,
+      "sop": 1
     }
   },
   {
@@ -140,7 +162,8 @@
       "slug": "start-sim",
       "show_expression": "",
       "auto_continue": true,
-      "show_rule": null
+      "show_rule": null,
+      "sop": 1
     }
   },
   {
@@ -175,7 +198,8 @@
             "value": 0
           }
         ]
-      }
+      },
+      "sop": 1
     }
   },
   {
@@ -187,7 +211,8 @@
       "slug": "icing-spray-procedure",
       "show_expression": "",
       "auto_continue": false,
-      "show_rule": null
+      "show_rule": null,
+      "sop": 1
     }
   },
   {
@@ -217,7 +242,8 @@
             "value": 0
           }
         ]
-      }
+      },
+      "sop": 1
     }
   },
   {
@@ -2550,7 +2576,6 @@
           }
         ]
       },
-      
       "attributes": [
         4
       ]

@@ -25,6 +25,7 @@ from .models import (
     FlightSessionAttribute,
     IdleDataref,
     Procedure,
+    SOP,
     UserProfile,
 )
 from .rules import collect_datarefs, collect_leaf_evaluations, evaluate_rule
@@ -32,6 +33,36 @@ from .rules import collect_datarefs, collect_leaf_evaluations, evaluate_rule
 logger = logging.getLogger(__name__)
 
 _LOG_DIR = Path(settings.BASE_DIR) / "logs"
+
+
+# ── Plugin version helpers ─────────────────────────────────────────────────── #
+
+
+def _parse_version(version_str: str) -> tuple[int, ...]:
+    """Parse '1.2.3' → (1, 2, 3). Returns (0, 0, 0) if unparseable."""
+    try:
+        return tuple(int(x) for x in version_str.strip().split("."))
+    except (ValueError, AttributeError):
+        return (0, 0, 0)
+
+
+def _plugin_status(request) -> str:
+    """
+    Return 'ok', 'warn', or 'blocked' based on the X-Plugin-Version request
+    header checked against PLUGIN_MIN_VERSION and PLUGIN_WARN_BELOW in settings.
+
+    A missing header is treated as (0, 0, 0) — the oldest possible version.
+    """
+    raw = request.headers.get("X-Plugin-Version", "")
+    version = _parse_version(raw) if raw else (0, 0, 0)
+    min_ver = getattr(settings, "PLUGIN_MIN_VERSION", (0, 0, 0))
+    warn_ver = getattr(settings, "PLUGIN_WARN_BELOW", (0, 0, 0))
+
+    if version < min_ver:
+        return "blocked"
+    if version < warn_ver:
+        return "warn"
+    return "ok"
 
 # Last dataref snapshot received per session (session_id → datarefs dict).
 # Updated on every plugin_state POST; read by plugin_check_next to provide
@@ -179,12 +210,41 @@ def plugin_session(request):
     authenticated user. The plugin calls this on startup to obtain the
     session_id it must include in every /api/plugin/state/ POST.
 
+    Also checks X-Plugin-Version against the configured compatibility window
+    and returns plugin_status ('ok' | 'warn' | 'blocked') plus SOP metadata.
+
     Responses:
-        200  {"session_id": <int>, "active_phase": "<slug>"}
+        200  {"session_id": <int>, "active_phase": "<slug>",
+              "plugin_status": "ok"|"warn"|"blocked",
+              "update_url": "<url>",
+              "aircraft_type": "<icao>",
+              "content_version": "<semver>"}
+        200  {"plugin_status": "blocked", "update_url": "<url>"}
+              — when plugin is too old; no session data returned
         401  bad or missing API key
         404  no active session found
     """
     profile = request.plugin_profile
+
+    status = _plugin_status(request)
+    update_url = getattr(settings, "PLUGIN_DOWNLOAD_URL", "")
+
+    # Resolve SOP metadata (first/only SOP for now; extend when multi-aircraft)
+    sop = SOP.objects.first()
+    aircraft_type = sop.icao_code if sop else ""
+    content_version = sop.content_version if sop else ""
+
+    # Blocked plugins get a minimal response — no session data.
+    if status == "blocked":
+        logger.warning(
+            "plugin_session: blocked plugin version from user %s (header: %r)",
+            profile.user.username,
+            request.headers.get("X-Plugin-Version", "<missing>"),
+        )
+        return JsonResponse(
+            {"plugin_status": "blocked", "update_url": update_url},
+            status=200,
+        )
 
     session = FlightSession.objects.filter(
         user_profile=profile, is_active=True
@@ -197,7 +257,21 @@ def plugin_session(request):
     now = datetime.now(tz=timezone.utc)
     FlightSession.objects.filter(pk=session.pk).update(last_plugin_contact=now)
 
-    return JsonResponse({"session_id": session.pk, "active_phase": session.active_phase})
+    if status == "warn":
+        logger.info(
+            "plugin_session: outdated plugin version from user %s (header: %r)",
+            profile.user.username,
+            request.headers.get("X-Plugin-Version", "<missing>"),
+        )
+
+    return JsonResponse({
+        "session_id": session.pk,
+        "active_phase": session.active_phase,
+        "plugin_status": status,
+        "update_url": update_url,
+        "aircraft_type": aircraft_type,
+        "content_version": content_version,
+    })
 
 
 def _parse_body(request):

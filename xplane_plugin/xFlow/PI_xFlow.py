@@ -3,8 +3,14 @@ xFlow — simFlow X-Plane plugin
 Phase 3: flight loop dataref monitoring + manual check-next command.
 
 Installation:
-  Copy the xFlow/ folder to:
-    X-Plane 12/Resources/plugins/PythonPlugins/
+  1. Copy PI_xFlow.py to:
+       X-Plane 12/Resources/plugins/PythonPlugins/
+
+  2. Create the folder:
+       X-Plane 12/Resources/plugins/PythonPlugins/xFlow/
+
+  3. Copy config.ini into that folder:
+       X-Plane 12/Resources/plugins/PythonPlugins/xFlow/config.ini
 
   Edit config.ini:
     api_key     — paste your key from the simFlow profile page
@@ -43,7 +49,9 @@ try:
 except ImportError:
     _USE_REQUESTS = False
 
-# ── Plugin identity ────────────────────────────────────────────────────────── #
+# ── Plugin identity & version ──────────────────────────────────────────────── #
+
+PLUGIN_VERSION = "1.0.0"
 
 plugin_name = "xFlow"
 plugin_sig = "xppython3.simflow"
@@ -125,6 +133,9 @@ class PythonInterface:
 
         # Session state — populated by _fetch_session()
         self._session_id: int | None = None
+        # Set to True when the server rejects this plugin version as too old.
+        # The flight loop stops all activity until the plugin is updated.
+        self._blocked: bool = False
 
         # Watch list: dataref path → cached XP DataRef handle
         # Populated from server responses; starts empty.
@@ -194,6 +205,12 @@ class PythonInterface:
         still fires (with datarefs: {}) so the server can return the initial
         watch list and record last_plugin_contact (keeps the connection badge alive).
         """
+        # Hard stop — server has rejected this plugin version.
+        with self._lock:
+            blocked = self._blocked
+        if blocked:
+            return _LOOP_INTERVAL
+
         if self._session_id is None:
             self._no_session_ticks += 1
             if self._no_session_ticks >= self._SESSION_RETRY_TICKS:
@@ -334,7 +351,10 @@ class PythonInterface:
             return
 
         url = self._backend_url.rstrip("/") + "/api/plugin/session/"
-        headers = {"Authorization": f"Bearer {self._api_key}"}
+        headers = {
+            "Authorization": f"Bearer {self._api_key}",
+            "X-Plugin-Version": PLUGIN_VERSION,
+        }
 
         self._log("DEBUG", f"GET {url}")
         try:
@@ -346,8 +366,28 @@ class PythonInterface:
         self._log("DEBUG", f"session response status {status}")
 
         if status == 200:
+            plugin_status = body.get("plugin_status", "ok")
+
+            if plugin_status == "blocked":
+                self._log(
+                    "ERROR",
+                    f"plugin v{PLUGIN_VERSION} is too old — server has blocked it. "
+                    f"Download the latest version: {body.get('update_url', '')}",
+                )
+                with self._lock:
+                    self._blocked = True
+                return
+
+            if plugin_status == "warn":
+                self._log(
+                    "WARNING",
+                    f"plugin v{PLUGIN_VERSION} is outdated — consider updating: "
+                    f"{body.get('update_url', '')}",
+                )
+
             new_id = body.get("session_id")
             with self._lock:
+                self._blocked = False
                 if new_id != self._session_id:
                     self._log(
                         "INFO",
@@ -359,9 +399,14 @@ class PythonInterface:
                     self._last_values = {}
                 else:
                     self._session_id = new_id
+
+            aircraft = body.get("aircraft_type", "")
+            content_ver = body.get("content_version", "")
             self._log(
                 "INFO",
-                f"session {self._session_id} — phase: {body.get('active_phase')}",
+                f"connected — {aircraft} SOP v{content_ver} "
+                f"| plugin v{PLUGIN_VERSION} | session {self._session_id} "
+                f"| phase: {body.get('active_phase')}",
             )
         elif status == 404:
             self._log(
@@ -388,6 +433,7 @@ class PythonInterface:
         headers = {
             "Authorization": f"Bearer {self._api_key}",
             "Content-Type": "application/json",
+            "X-Plugin-Version": PLUGIN_VERSION,
         }
         body = {"session_id": session_id, "datarefs": state}
 
@@ -439,7 +485,10 @@ class PythonInterface:
             return
 
         url = self._backend_url.rstrip("/") + "/api/plugin/check-next/"
-        headers = {"Authorization": f"Bearer {self._api_key}"}
+        headers = {
+            "Authorization": f"Bearer {self._api_key}",
+            "X-Plugin-Version": PLUGIN_VERSION,
+        }
 
         self._log("DEBUG", f"POST {url}")
 

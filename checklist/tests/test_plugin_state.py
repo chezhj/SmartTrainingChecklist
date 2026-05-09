@@ -17,7 +17,7 @@ from checklist.models import (
     Procedure,
     generate_api_key,
 )
-from checklist.tests.testFactories import AttributeFactory, CheckItemFactory
+from checklist.tests.testFactories import AttributeFactory, CheckItemFactory, SOPFactory
 
 User = get_user_model()
 URL = reverse("checklist:api_plugin_state")
@@ -51,8 +51,9 @@ class _Base(TestCase):
         self.profile.api_key_prefix = prefix
         self.profile.save()
 
+        self.sop = SOPFactory()
         self.procedure = Procedure.objects.create(
-            title="Before Start", step=1, slug="before-start"
+            title="Before Start", step=1, slug="before-start", sop=self.sop
         )
         self.session = FlightSession.objects.create(
             user_profile=self.profile, active_phase="before-start", is_active=True
@@ -429,6 +430,7 @@ class TestPluginStateIdleAndShowRule(_Base):
         self.cond_proc = Procedure.objects.create(
             title="Go Around Test", step=999, slug="go-around-watch-test",
             show_rule={"dataref": "sim/test/go_around_watch", "op": "eq", "value": 1},
+            sop=self.sop,
         )
 
     def tearDown(self):

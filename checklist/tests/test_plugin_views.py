@@ -17,7 +17,7 @@ from checklist.models import (
     Procedure,
     generate_api_key,
 )
-from checklist.tests.testFactories import AttributeFactory, CheckItemFactory
+from checklist.tests.testFactories import AttributeFactory, CheckItemFactory, SOPFactory
 
 User = get_user_model()
 URL = reverse("checklist:api_plugin_check_next")
@@ -42,7 +42,8 @@ class TestPluginCheckNextAuth(TestCase):
         self.profile.api_key_prefix = prefix
         self.profile.save()
 
-        procedure = Procedure.objects.create(title="Before Start", step=1, slug="before-start")
+        sop = SOPFactory()
+        procedure = Procedure.objects.create(title="Before Start", step=1, slug="before-start", sop=sop)
         CheckItemFactory(procedure=procedure, step=1)
         FlightSession.objects.create(
             user_profile=self.profile, active_phase="before-start", is_active=True
@@ -70,8 +71,9 @@ class TestPluginCheckNextSession(TestCase):
         self.profile.api_key_prefix = prefix
         self.profile.save()
 
+        self.sop = SOPFactory()
         self.procedure = Procedure.objects.create(
-            title="Before Start", step=1, slug="before-start"
+            title="Before Start", step=1, slug="before-start", sop=self.sop
         )
         CheckItemFactory(procedure=self.procedure, step=1)
 
@@ -109,8 +111,9 @@ class TestPluginCheckNextHappyPath(TestCase):
         self.profile.api_key_prefix = prefix
         self.profile.save()
 
+        self.sop = SOPFactory()
         self.procedure = Procedure.objects.create(
-            title="Before Start", step=1, slug="before-start"
+            title="Before Start", step=1, slug="before-start", sop=self.sop
         )
         self.item1 = CheckItemFactory(procedure=self.procedure, step=1)
         self.item2 = CheckItemFactory(procedure=self.procedure, step=2)
@@ -229,8 +232,9 @@ class TestPluginCheckNextAttributeFiltering(TestCase):
         self.profile.api_key_prefix = prefix
         self.profile.save()
 
+        self.sop = SOPFactory()
         self.procedure = Procedure.objects.create(
-            title="Before Start", step=1, slug="before-start"
+            title="Before Start", step=1, slug="before-start", sop=self.sop
         )
         self.session = FlightSession.objects.create(
             user_profile=self.profile, active_phase="before-start", is_active=True
