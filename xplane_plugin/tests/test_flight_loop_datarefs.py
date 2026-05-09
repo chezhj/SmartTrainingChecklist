@@ -21,6 +21,7 @@ def _make_xp_stub():
     xp.findDataRef  = MagicMock()
     xp.getDataRefTypes = MagicMock(return_value=0)   # float by default
     xp.getDataf    = MagicMock(return_value=0.0)
+    xp.getDatad    = MagicMock(return_value=0.0)
     xp.getDatas    = MagicMock(return_value="")
     xp.getDatavf   = MagicMock()
     xp.log         = MagicMock()
@@ -160,6 +161,24 @@ class TestFlightLoopStringDataref(unittest.TestCase):
 
         xp.getDatas.assert_not_called()
         self.assertEqual(posted.get("sim/some/float"), 42.0)
+
+    def test_double_dataref_uses_getDatad(self):
+        """Double datarefs (XPLM type bit 4) must use getDatad, not getDataf."""
+        xp = self.xp_stub
+        xp.findDataRef.return_value = object()
+        xp.getDataRefTypes.return_value = 4   # Double
+        xp.getDatad.return_value = 1.0
+
+        plugin = self._make_plugin()
+        plugin._watch = ["laminar/B738/fmodpack/played_welcome_msg"]
+
+        posted = {}
+        with patch.object(plugin, "_post_state", side_effect=posted.update):
+            plugin._flight_loop(1.0, 1.0, 1, None)
+
+        xp.getDatad.assert_called_once()
+        xp.getDataf.assert_not_called()
+        self.assertEqual(posted.get("laminar/B738/fmodpack/played_welcome_msg"), 1.0)
 
 
 if __name__ == "__main__":

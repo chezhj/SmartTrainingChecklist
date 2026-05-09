@@ -202,13 +202,14 @@ class TestProfileView(ViewTestCase):
         self.assertIn(pref_attr.id, response.context_data["user_default_ids"])
 
     def test_start_checklist_seeds_user_defaults_as_active(self):
+        # When the user keeps the pre-checked default (attribute appears in POST), it is active.
         from django.contrib.auth.models import User
         user = User.objects.create_user(username="pilot3", password="pass!")
         pref_attr = Attribute.objects.create(title="Safety Test", order=6, is_user_preference=True)
         UserAttributeDefault.objects.create(user_profile=user.profile, attribute=pref_attr)
 
         request = self.create_request_with_session(
-            "/", request_data={"action": "start_checklist"}
+            "/", request_data={"action": "start_checklist", "attributes": str(pref_attr.id)}
         )
         request.user = user
         profile_view(request)
@@ -219,6 +220,28 @@ class TestProfileView(ViewTestCase):
             FlightSessionAttribute.objects.filter(
                 flight_session=session, attribute=pref_attr, is_active=True
             ).exists()
+        )
+
+    def test_start_checklist_respects_deselection_of_user_default(self):
+        # When the user unchecks a default (attribute absent from POST), it must be inactive.
+        from django.contrib.auth.models import User
+        user = User.objects.create_user(username="pilot3b", password="pass!")
+        pref_attr = Attribute.objects.create(title="Safety Test B", order=6, is_user_preference=True)
+        UserAttributeDefault.objects.create(user_profile=user.profile, attribute=pref_attr)
+
+        request = self.create_request_with_session(
+            "/", request_data={"action": "start_checklist"}  # pref_attr intentionally absent
+        )
+        request.user = user
+        profile_view(request)
+
+        key = request.session["flight_session_key"]
+        session = FlightSession.objects.get(session_key=key)
+        self.assertFalse(
+            FlightSessionAttribute.objects.filter(
+                flight_session=session, attribute=pref_attr, is_active=True
+            ).exists(),
+            "A default that the user unchecked must not be seeded as active",
         )
 
     def test_start_checklist_user_default_source_is_user_default(self):
@@ -559,6 +582,46 @@ class TestProcedureDetailView(ViewTestCase):
         response = procedure_detail(request, slug=item.procedure.slug)
 
         self.assertIn("active_phase_step", response.context_data)
+
+    def test_dualpilot_item_hidden_in_solo_mode(self):
+        # _resolve_active_ids stores attribute 16 (DualPilot) as active even for SOLO
+        # sessions. The view must strip it so items tagged [optional, DualPilot] stay hidden.
+        dualpilot_attr = Attribute.objects.create(id=16, title="DualPilot", order=999, show=False)
+        optional_attr = AttributeFactory()
+        check_item = CheckItemFactory(attributes=[optional_attr, dualpilot_attr])
+
+        request = self.create_request_with_session("/")
+        session = FlightSession.objects.create()  # pilot_role="SOLO" by default
+        FlightSessionAttribute.objects.create(
+            flight_session=session, attribute=optional_attr, is_active=True
+        )
+        FlightSessionAttribute.objects.create(
+            flight_session=session, attribute=dualpilot_attr, is_active=True
+        )
+        request.session["flight_session_key"] = session.session_key
+        request.session.save()
+
+        response = procedure_detail(request, slug=check_item.procedure.slug)
+        self.assertEqual(len(response.context_data["check_items"]), 0)
+
+    def test_dualpilot_item_visible_in_dual_mode(self):
+        dualpilot_attr = Attribute.objects.create(id=16, title="DualPilot", order=999, show=False)
+        optional_attr = AttributeFactory()
+        check_item = CheckItemFactory(attributes=[optional_attr, dualpilot_attr])
+
+        request = self.create_request_with_session("/")
+        session = FlightSession.objects.create(pilot_role="PF")
+        FlightSessionAttribute.objects.create(
+            flight_session=session, attribute=optional_attr, is_active=True
+        )
+        FlightSessionAttribute.objects.create(
+            flight_session=session, attribute=dualpilot_attr, is_active=False
+        )
+        request.session["flight_session_key"] = session.session_key
+        request.session.save()
+
+        response = procedure_detail(request, slug=check_item.procedure.slug)
+        self.assertEqual(len(response.context_data["check_items"]), 1)
 
     def test_checked_manual_item_annotated_with_ci_manual(self):
         """Every GET resets the procedure — prior manually-checked state is cleared."""

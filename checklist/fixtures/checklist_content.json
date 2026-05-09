@@ -149,7 +149,11 @@
       "slug": "decent-preparation",
       "show_expression": "",
       "auto_continue": false,
-      "show_rule": null,
+      "show_rule": {
+        "dataref": "laminar/B738/fms/vnav_id_dist",
+        "op": "lt",
+        "value": 50
+      },
       "sop": 1
     }
   },
@@ -183,9 +187,9 @@
             "value": 1
           },
           {
-            "dataref": "laminar/B738/autopilot/lock_throttle",
+            "dataref": "laminar/B738/autopilot/pfd_mode",
             "op": "eq",
-            "value": 1
+            "value": 2
           },
           {
             "dataref": "laminar/B738/FMS/fmc_trans_lvl",
@@ -336,9 +340,9 @@
     "pk": 7,
     "fields": {
       "title": "Anti-Ice Normal",
-      "label": "Anti-Ice (\u00e2\u2030\u00a40\u00c2\u00b0C)",
+      "label": "Anti-Ice (\u22640\u00b0C)",
       "order": 8,
-      "description": "Temperature at or below 0\u00c2\u00b0C \u00e2\u20ac\u201d icing procedures apply",
+      "description": "Temperature at or below 0\u00b0C \u2014 icing procedures apply",
       "show": true,
       "is_user_preference": false,
       "over_ruled_by": null,
@@ -358,7 +362,7 @@
         ]
       },
       "live_rule_mode": "prompt_on_change",
-      "prompt_message": "OAT below 0 \u00c2\u00b0C \u00e2\u20ac\u201d Anti-Ice Normal procedures active?"
+      "prompt_message": "OAT below 0 \u00b0C \u2014 Anti-Ice Normal procedures active?"
     }
   },
   {
@@ -383,9 +387,9 @@
     "pk": 9,
     "fields": {
       "title": "ZeroToTen",
-      "label": "0\u00c2\u00b0C \u00e2\u20ac\u201c 10\u00c2\u00b0C Conditions",
+      "label": "0\u00b0C \u2013 10\u00b0C Conditions",
       "order": 22,
-      "description": "Temperature between 0\u00c2\u00b0C and 10\u00c2\u00b0C \u00e2\u20ac\u201d additional checks required",
+      "description": "Temperature between 0\u00b0C and 10\u00b0C \u2014 additional checks required",
       "show": true,
       "is_user_preference": false,
       "over_ruled_by": null,
@@ -410,7 +414,7 @@
         ]
       },
       "live_rule_mode": "prompt_on_change",
-      "prompt_message": "OAT 0\u00e2\u20ac\u201c10 \u00c2\u00b0C \u00e2\u20ac\u201d Zero-to-Ten temperature procedures active?"
+      "prompt_message": "OAT 0\u201310 \u00b0C \u2014 Zero-to-Ten temperature procedures active?"
     }
   },
   {
@@ -437,7 +441,7 @@
       "title": "No Pushback",
       "label": "No Pushback",
       "order": 20,
-      "description": "No pushback required \u00e2\u20ac\u201d engine start at stand",
+      "description": "No pushback required \u2014 engine start at stand",
       "show": true,
       "is_user_preference": false,
       "over_ruled_by": null,
@@ -1469,7 +1473,7 @@
         ]
       },
       "attributes": [
-        4
+        3
       ]
     }
   },
@@ -3065,7 +3069,7 @@
       "dataref_expression": "laminar/B738/autopilot/pfd_spd_mode:2",
       "role": "PF",
       "auto_check_rule": {
-        "dataref": "laminar/B738/autopilot/pfd_spd_mode[1]",
+        "dataref": "laminar/B738/autopilot/pfd_mode",
         "op": "eq",
         "value": 2
       },
@@ -3507,7 +3511,7 @@
       "auto_check_rule": {
         "dataref": "laminar/B738/fueltruck_operate",
         "op": "gt",
-        "value": 0.5
+        "value": 0.3
       },
       "attributes": []
     }
@@ -5510,7 +5514,7 @@
       "dataref_expression": "",
       "role": "PF",
       "auto_check_rule": {
-        "dataref": "laminar/b738/autopilot/pfd_mode",
+        "dataref": "laminar/B738/autopilot/pfd_mode",
         "op": "eq",
         "value": 2
       },
@@ -6330,12 +6334,12 @@
       "step": 34,
       "setting": "Completed",
       "action_label": "TESTED",
-      "dataref_expression": "(laminar/B738/push_botton/cargo_fire_test:>0)&&(laminar/B738/annunciator/cargo_fire:>0)&&(laminar/B738/annunciator/fire_bell_annun:1)",
+      "dataref_expression": "(laminar/B738/push_button/cargo_fire_test:>0)&&(laminar/B738/annunciator/cargo_fire:>0)&&(laminar/B738/annunciator/fire_bell_annun:1)",
       "role": "FO",
       "auto_check_rule": {
         "all": [
           {
-            "dataref": "laminar/B738/push_botton/cargo_fire_test",
+            "dataref": "laminar/B738/push_button/cargo_fire_test",
             "op": "gt",
             "value": 0
           },
@@ -6386,12 +6390,12 @@
       "step": 40,
       "setting": "Completed",
       "action_label": "TESTED",
-      "dataref_expression": "(laminar/B738/push_botton/cargo_fire_test:>0)&&(laminar/B738/annunciator/cargo_fire:>0)&&(laminar/B738/annunciator/fire_bell_annun:1)",
+      "dataref_expression": "(laminar/B738/push_button/cargo_fire_test:>0)&&(laminar/B738/annunciator/cargo_fire:>0)&&(laminar/B738/annunciator/fire_bell_annun:1)",
       "role": "FO",
       "auto_check_rule": {
         "all": [
           {
-            "dataref": "laminar/B738/push_botton/cargo_fire_test",
+            "dataref": "laminar/B738/push_button/cargo_fire_test",
             "op": "gt",
             "value": 0
           },
@@ -6528,13 +6532,13 @@
     "fields": {
       "item": "BURNED FUEL & TIME",
       "procedure": 15,
-      "step": 2,
+      "step": 1,
       "setting": "COMPARE WITH FLIGHTPLAN",
       "action_label": "VOID",
       "dataref_expression": "",
       "role": "",
       "auto_check_rule": null,
-      "attributes": []
+      "attributes": [4]
     }
   },
   {
@@ -6549,20 +6553,12 @@
       "dataref_expression": "laminar/B738/hud/hdg_bug_tape:-1|1",
       "role": "",
       "auto_check_rule": {
-        "any": [
-          {
-            "dataref": "laminar/B738/hud/hdg_bug_tape",
-            "op": "eq",
-            "value": -1
-          },
-          {
-            "dataref": "laminar/B738/hud/hdg_bug_tape",
-            "op": "eq",
-            "value": 1
-          }
-        ]
+        "dataref": "laminar/B738/hud/hdg_bug_tape",
+        "op": "abs_diff_lte",
+        "value": 0,
+        "tolerance": 1
       },
-      "attributes": []
+      "attributes": [4]
     }
   },
   {

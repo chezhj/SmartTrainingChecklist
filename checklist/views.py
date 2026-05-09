@@ -90,15 +90,17 @@ def _get_user_default_ids(user_profile) -> set[int]:
 def _resolve_active_ids(
     selected_attr_ids: list[int],
     ofp_attr_ids: set[int],
-    user_default_ids: set[int],
 ) -> set[int]:
     """
     Compute the final set of active attribute IDs.
 
-    Starts from the explicitly chosen set (selected + OFP-derived + user defaults),
-    then auto-activates invisible defaults (show=False) whose over_ruled_by attribute
-    is not already active. This mirrors the old update_profile logic for the
-    Django session but is applied to FlightSession attribute seeding.
+    Starts from the explicitly chosen set (selected + OFP-derived), then
+    auto-activates invisible defaults (show=False) whose over_ruled_by attribute
+    is not already active.
+
+    user_default_ids are intentionally excluded here: they pre-seed the form
+    checkboxes, so if the user kept a default it is already in selected_attr_ids.
+    Including them here would re-activate defaults the user deliberately unchecked.
 
     Attributes with live_rule_mode set are plugin-driven and intentionally excluded
     from auto-activation — they start OFF and are turned on by the plugin.
@@ -106,7 +108,7 @@ def _resolve_active_ids(
     Example: AboveZero (show=False, over_ruled_by=Anti-Ice Normal) is activated
     automatically whenever Anti-Ice Normal is not selected.
     """
-    active = set(selected_attr_ids) | ofp_attr_ids | user_default_ids
+    active = set(selected_attr_ids) | ofp_attr_ids
     for attr in Attribute.objects.filter(show=False):
         if attr.live_rule_mode:
             continue  # plugin-driven: starts OFF, activated by live_rule evaluation
@@ -123,7 +125,7 @@ def _update_session_attributes(
 ) -> None:
     """Apply attribute form choices to an existing FlightSession in-place."""
     selected_set = set(selected_attr_ids)
-    active_ids = _resolve_active_ids(selected_attr_ids, ofp_attr_ids, user_default_ids)
+    active_ids = _resolve_active_ids(selected_attr_ids, ofp_attr_ids)
     for attr in Attribute.objects.all():
         is_active = attr.id in active_ids
         if attr.id in ofp_attr_ids:
@@ -170,7 +172,7 @@ def _create_flight_session(
     )
 
     # Create one row per Attribute (eager seeding)
-    active_ids = _resolve_active_ids(selected_attr_ids, ofp_attr_ids, user_default_ids)
+    active_ids = _resolve_active_ids(selected_attr_ids, ofp_attr_ids)
     selected_set = set(selected_attr_ids)
     session_attrs = []
     for attr in Attribute.objects.all():
@@ -609,7 +611,10 @@ def procedure_detail(request, slug=None, pk=None):
         ).values_list("attribute_id", flat=True)
     )
     if flight_session.pilot_role != "SOLO":
-        active_attr_ids.append(16)  # DualPilot — show dual-pilot-only items
+        if 16 not in active_attr_ids:
+            active_attr_ids.append(16)  # DualPilot — show dual-pilot-only items
+    elif 16 in active_attr_ids:
+        active_attr_ids.remove(16)  # strip DualPilot if wrongly stored for SOLO session
 
     allitems = procedure2view.checkitem_set.all()
     query_ids = [item.id for item in allitems if item.shouldshow(active_attr_ids)]

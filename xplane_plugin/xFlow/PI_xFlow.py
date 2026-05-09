@@ -271,13 +271,15 @@ class PythonInterface:
                         continue
                     self._drefs[path] = dref
                 # XPLM type bits: Int=1, Float=2, Double=4, FloatArray=8,
-                #                 IntArray=16, Data/string=32. dd
+                #                 IntArray=16, Data/string=32.
                 # Must use getDatai for int datarefs — getDataf returns 0.0 for them.
                 dtype = xp.getDataRefTypes(dref)
                 if dtype & 32:
                     val = xp.getDatas(dref, 0, 64).rstrip("\x00").strip()
                 elif dtype & 1:
                     val = xp.getDatai(dref)
+                elif dtype & 4:
+                    val = xp.getDatad(dref)
                 else:
                     val = xp.getDataf(dref)
 

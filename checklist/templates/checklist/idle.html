@@ -127,7 +127,56 @@
     'use strict';
 
     var conditionalSlugs = {{ conditional_proc_slugs_json|safe }};
-    var revealedSlugs    = new Set();
+    var revealedSlugs    = new Set();  /* display state */
+    var navigatedSlugs   = new Set();  /* prevents re-nav per page load */
+
+    function escHtml(s) {
+        return String(s)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    /* ── Debug: show conditional-procedure rule state in the info panel ── */
+    function renderDebugRules(showProcs, attrs) {
+        var section = document.getElementById('debug-rules-section');
+        var list    = document.getElementById('debug-rules-list');
+        if (!section || !list) return;
+        var hasContent = (showProcs && showProcs.length > 0) || (attrs && attrs.length > 0);
+        if (!hasContent) { section.classList.add('js-hidden'); return; }
+        section.classList.remove('js-hidden');
+        function conditionRows(conditions) {
+            return (conditions || []).map(function (c) {
+                var icon = c.pass ? '<span class="debug-pass">&#10003;</span>' : '<span class="debug-fail">&#10007;</span>';
+                var dr = String(c.dataref || '').split('/').pop();
+                return '<div class="debug-cond">' + icon
+                    + '<span class="debug-dr" title="' + escHtml(c.dataref) + '">' + escHtml(dr) + '</span>'
+                    + '<span class="debug-expr">' + escHtml(c.op) + ' ' + escHtml(String(c.required)) + '</span>'
+                    + '<span class="debug-actual">&#8594; ' + escHtml(String(c.actual)) + '</span>'
+                    + '</div>';
+            }).join('');
+        }
+        var html = '';
+        if (attrs && attrs.length > 0) {
+            html += '<div class="debug-group-title">Attributes</div>';
+            html += attrs.map(function (a) {
+                var activeTag = a.is_active ? '<span class="debug-tag debug-tag-gate">ON</span>' : '<span class="debug-tag debug-tag-opt">OFF</span>';
+                var overallIcon = a.rule_pass ? '<span class="debug-pass">&#10003;</span>' : '<span class="debug-fail">&#10007;</span>';
+                return '<div class="debug-item"><div class="debug-item-header">' + activeTag + overallIcon
+                    + '<span class="debug-item-name">' + escHtml(a.label || a.title) + '</span></div>'
+                    + conditionRows(a.conditions) + '</div>';
+            }).join('');
+        }
+        if (showProcs && showProcs.length > 0) {
+            html += '<div class="debug-group-title">Conditional procedures</div>';
+            html += showProcs.map(function (p) {
+                var overallIcon = p.rule_pass ? '<span class="debug-pass">&#10003;</span>' : '<span class="debug-fail">&#10007;</span>';
+                return '<div class="debug-item"><div class="debug-item-header">' + overallIcon
+                    + '<span class="debug-item-name">' + escHtml(p.title) + '</span></div>'
+                    + conditionRows(p.conditions) + '</div>';
+            }).join('');
+        }
+        list.innerHTML = html;
+    }
 
     function getCsrf() {
         var m = document.cookie.match(/csrftoken=([^;]+)/);
@@ -174,13 +223,17 @@
     function applyShowProcedures(slugs, autoNav) {
         if (!slugs) return;
         slugs.forEach(function (slug) {
-            if (revealedSlugs.has(slug)) return;
-            document.querySelectorAll('[data-conditional-slug="' + slug + '"]').forEach(function (el) {
-                el.classList.remove('js-hidden');
-            });
-            revealedSlugs.add(slug);
-            if (autoNav) {
-                window.location.href = '/checklist/' + slug;
+            if (!revealedSlugs.has(slug)) {
+                document.querySelectorAll('[data-conditional-slug="' + slug + '"]').forEach(function (el) {
+                    el.classList.remove('js-hidden');
+                });
+                revealedSlugs.add(slug);
+            }
+            /* navigatedSlugs is NOT pre-populated by the manual fallback (autoNav=false),
+               so the first sim-connected poll always triggers navigation. */
+            if (autoNav && !navigatedSlugs.has(slug)) {
+                navigatedSlugs.add(slug);
+                window.location.href = '/' + slug;
             }
         });
         /* Hide any previously revealed procedure no longer in the list */
@@ -190,6 +243,7 @@
                     el.classList.add('js-hidden');
                 });
                 revealedSlugs.delete(slug);
+                navigatedSlugs.delete(slug);
             }
         });
     }
@@ -210,6 +264,9 @@
                 : conditionalSlugs;
             applyShowProcedures(activeConditionals, data.sim_connected);
             applyLiveValues(data.show_live_values || []);
+            if (data.debug_show_procedures !== undefined) {
+                renderDebugRules(data.debug_show_procedures || [], data.debug_attributes || []);
+            }
 
             var age          = data.last_seen > 0 ? (Date.now() / 1000 - data.last_seen) : Infinity;
             var reconnecting = !data.sim_connected && data.last_seen > 0 && age < 30;
@@ -233,12 +290,6 @@
     });
 
     /* ── Attribute transition: intercept nav clicks ── */
-    function escHtml(s) {
-        return String(s)
-            .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-    }
-
     async function navigateWithTransition(targetUrl) {
         try {
             var res  = await fetch('{% url "checklist:api_attribute_transition" %}', {
