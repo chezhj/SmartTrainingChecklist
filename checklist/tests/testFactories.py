@@ -1,6 +1,16 @@
 import factory
 
-from checklist.models import Attribute, CheckItem, Procedure
+from checklist.models import Attribute, CheckItem, Procedure, SOP
+
+
+class SOPFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = SOP
+
+    name = factory.Faker("company")
+    icao_code = factory.Sequence(lambda n: f"B7{n:02d}")
+    content_version = "1.0.0"
+    release_notes = ""
 
 
 class AttributeFactory(factory.django.DjangoModelFactory):
@@ -36,6 +46,7 @@ class ProcedureFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Procedure
 
+    sop = factory.SubFactory(SOPFactory)
     title = factory.Faker("sentence")
     step = factory.Sequence(lambda n: n)
     slug = factory.Faker("slug")

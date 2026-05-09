@@ -1,0 +1,136 @@
+name: Plugin Release
+
+# Triggered when a tag matching plugin-v* is pushed.
+# Builds the xflow-plugin.zip distribution artifact and creates a GitHub Release.
+#
+# Install layout inside the zip (user extracts directly into PythonPlugins/):
+#   PI_xFlow.py          ← XPPython3 scans PythonPlugins/ root for PI_*.py
+#   xFlow/
+#     config.ini         ← hardcoded path in PI_xFlow.py: PythonPlugins/xFlow/config.ini
+#   README.txt
+
+on:
+  push:
+    tags:
+      - "plugin-v*"
+
+jobs:
+  release:
+    name: Build & publish plugin release
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write   # needed to create the GitHub Release
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history so git log works for the release body
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          TAG="${GITHUB_REF_NAME}"          # e.g. plugin-v1.0.0
+          VERSION="${TAG#plugin-v}"         # e.g. 1.0.0
+          echo "tag=$TAG"       >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Build release notes from git log
+        id: notes
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+
+          # Find the previous plugin-v* tag (if any)
+          PREV_TAG=$(git tag --list "plugin-v*" --sort=-version:refname \
+            | grep -v "^${TAG}$" | head -1)
+
+          if [ -n "$PREV_TAG" ]; then
+            RANGE="${PREV_TAG}..${TAG}"
+          else
+            RANGE="${TAG}"
+          fi
+
+          # Commits that touched plugin files
+          NOTES=$(git log "$RANGE" --oneline -- xplane_plugin/ \
+            | sed 's/^/- /')
+
+          if [ -z "$NOTES" ]; then
+            NOTES="- Initial release"
+          fi
+
+          # Write to a file so multi-line output survives the env variable boundary
+          {
+            echo "## xFlow Plugin ${{ steps.version.outputs.version }}"
+            echo ""
+            echo "### Changes"
+            echo "$NOTES"
+            echo ""
+            echo "### Installation"
+            echo "Extract the zip directly into your \`PythonPlugins/\` folder:"
+            echo "\`\`\`"
+            echo "PythonPlugins/"
+            echo "  PI_xFlow.py"
+            echo "  xFlow/"
+            echo "    config.ini   ← edit this with your API key"
+            echo "\`\`\`"
+            echo "Requires [XPPython3](https://xppython3.readthedocs.io/) installed in X-Plane."
+          } > release_notes.md
+
+      - name: Assemble plugin zip
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          STAGING="staging_plugin"
+          mkdir -p "$STAGING/xFlow"
+
+          # PI_* file goes at the root of PythonPlugins/
+          cp xplane_plugin/xFlow/PI_xFlow.py "$STAGING/PI_xFlow.py"
+
+          # config.ini goes in the xFlow/ subfolder (hardcoded path in the plugin)
+          cp xplane_plugin/xFlow/config.ini  "$STAGING/xFlow/config.ini"
+
+          # README
+          cat > "$STAGING/README.txt" << 'EOF'
+          xFlow — simFlow X-Plane Plugin
+          ==============================
+
+          Installation
+          ------------
+          1. Extract this zip directly into your PythonPlugins/ folder:
+
+               X-Plane 12/Resources/plugins/PythonPlugins/
+
+             Result:
+               PythonPlugins/
+                 PI_xFlow.py
+                 xFlow/
+                   config.ini
+
+          2. Edit xFlow/config.ini:
+               api_key     — paste your key from the simFlow profile page
+               backend_url — URL of your simFlow server (default: http://cortado:8300)
+               log_level   — DEBUG / INFO / WARNING / ERROR
+
+          Requirements
+          ------------
+          - X-Plane 12
+          - XPPython3 plugin (https://xppython3.readthedocs.io/)
+
+          Source & updates
+          ----------------
+          https://github.com/chezhj/SmartTrainingChecklist/releases
+          EOF
+
+          cd "$STAGING"
+          zip -r "../xflow-plugin.zip" .
+          cd ..
+          echo "Built xflow-plugin.zip"
+          unzip -l xflow-plugin.zip
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: "xFlow Plugin ${{ steps.version.outputs.version }}"
+          body_path: release_notes.md
+          files: xflow-plugin.zip

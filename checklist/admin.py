@@ -1,15 +1,30 @@
 from django.contrib import admin
 
-from .models import Procedure, CheckItem, Attribute
+from .models import Attribute, CheckItem, Procedure, SOP
 
 
 class CheckInline(admin.TabularInline):
     model = CheckItem
 
 
+class ProcedureInline(admin.TabularInline):
+    model = Procedure
+    fields = ["title", "step", "slug", "auto_continue"]
+    prepopulated_fields = {"slug": ("title",)}
+    extra = 0
+
+
+class SOPAdmin(admin.ModelAdmin):
+    list_display = ["icao_code", "name", "content_version", "updated_at"]
+    readonly_fields = ["updated_at"]
+    fields = ["name", "icao_code", "content_version", "release_notes", "updated_at"]
+    inlines = [ProcedureInline]
+
+
 class ProcedureAdmin(admin.ModelAdmin):
     inlines = [CheckInline]
-    list_display = ["title", "step"]
+    list_display = ["title", "step", "sop"]
+    list_filter = ["sop"]
     ordering = ["step"]
     prepopulated_fields = {"slug": ("title",)}
 
@@ -32,6 +47,7 @@ class AttributeAdmin(admin.ModelAdmin):
 admin.site.site_header = "SimFlow Admin"
 admin.site.site_title = "SimFlow"
 
+admin.site.register(SOP, SOPAdmin)
 admin.site.register(Procedure, ProcedureAdmin)
 admin.site.register(CheckItem)
 admin.site.register(Attribute, AttributeAdmin)

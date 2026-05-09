@@ -58,6 +58,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "checklist.context_processors.sop_context",
             ],
         },
     },
@@ -118,6 +119,26 @@ MOCK_TOKEN = config("X-Auth-Token", default=None)
 # Polling interval for the JS checklist polling loop (milliseconds).
 # Override in dev.py / prod.py if needed.
 POLL_INTERVAL_MS = 1500
+
+# ── Plugin compatibility window ────────────────────────────────────────────── #
+#
+# PLUGIN_MIN_VERSION  — plugins below this tuple are blocked (response includes
+#                       plugin_status: "blocked" and the update URL).
+# PLUGIN_WARN_BELOW   — plugins at or above MIN but below this get a warning.
+#
+# Sliding-window policy: when a new minor version ships, the previous minor
+# version moves to "warn" and the one before that moves to "blocked".
+# Patch-only releases (1.0.x → 1.0.y) never change the window.
+
+PLUGIN_MIN_VERSION = (0, 0, 0)   # nothing blocked yet — first public release
+PLUGIN_WARN_BELOW  = (0, 0, 0)   # nothing warned yet
+
+# Stable permalink to the latest plugin zip attached to the GitHub release.
+# The GitHub Actions workflow must upload the asset under this exact filename.
+PLUGIN_DOWNLOAD_URL = (
+    "https://github.com/chezhj/SmartTrainingChecklist"
+    "/releases/latest/download/xflow-plugin.zip"
+)
 
 # Auth redirects
 LOGIN_URL = "/login/"

@@ -32,7 +32,29 @@ def generate_api_key():
     return raw, make_password(raw), raw[:8]
 
 
+class SOP(models.Model):
+    """
+    Standard Operating Procedure — groups all Procedures for one aircraft type.
+    One row per aircraft variant (e.g. B738, A320).
+    content_version tracks the checklist data separately from the app code version.
+    """
+
+    name = models.CharField(max_length=100, help_text="Full aircraft name, e.g. 'Boeing 737-800'")
+    icao_code = models.CharField(max_length=10, help_text="ICAO type code, e.g. 'B738'")
+    content_version = models.CharField(max_length=20, help_text="Semver of the checklist content, e.g. '1.0.0'")
+    release_notes = models.TextField(blank=True, help_text="Human-readable summary of what changed in this content version.")
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self) -> str:
+        return f"{self.icao_code} v{self.content_version}"
+
+
 class Procedure(models.Model):
+    sop = models.ForeignKey(
+        SOP,
+        on_delete=models.CASCADE,
+        related_name="procedures",
+    )
     title = models.CharField(max_length=40)
     step = models.PositiveIntegerField()
     slug = models.SlugField(unique=True)

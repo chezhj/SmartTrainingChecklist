@@ -9,8 +9,8 @@ from datetime import datetime, timedelta, timezone
 from django.test import TestCase
 from django.urls import reverse
 
-from checklist.models import CheckItem, FlightItemState, FlightSession, Procedure
-from checklist.tests.testFactories import CheckItemFactory
+from checklist.models import CheckItem, FlightItemState, FlightSession, Procedure, SOP
+from checklist.tests.testFactories import CheckItemFactory, SOPFactory
 
 
 def _post_json(client, url, data, session_key=None):
@@ -43,7 +43,8 @@ def _get_poll(client, procedure_slug="before-start", since=0):
 class TestPollView(TestCase):
 
     def setUp(self):
-        self.procedure = Procedure.objects.create(title="Before Start", step=1, slug="before-start")
+        self.sop = SOPFactory()
+        self.procedure = Procedure.objects.create(title="Before Start", step=1, slug="before-start", sop=self.sop)
         self.item = CheckItemFactory(procedure=self.procedure)
         self.session = FlightSession.objects.create()
 
@@ -158,6 +159,7 @@ class TestPollView(TestCase):
         cond_proc = Procedure.objects.create(
             title="Go Around", step=99, slug="go-around-test",
             show_rule={"dataref": "sim/test/go_around", "op": "eq", "value": 1},
+            sop=self.sop,
         )
         _last_datarefs[self.session.pk] = {"sim/test/go_around": 1}
         _set_session_key(self.client, self.session.session_key)
@@ -173,6 +175,7 @@ class TestPollView(TestCase):
         cond_proc = Procedure.objects.create(
             title="Go Around", step=99, slug="go-around-test2",
             show_rule={"dataref": "sim/test/go_around", "op": "eq", "value": 1},
+            sop=self.sop,
         )
         _last_datarefs[self.session.pk] = {"sim/test/go_around": 0}
         _set_session_key(self.client, self.session.session_key)
@@ -189,6 +192,7 @@ class TestPollView(TestCase):
         cond_proc = Procedure.objects.create(
             title="Waypoint", step=98, slug="waypoint-test",
             show_rule={"dataref": "sim/test/wp", "op": "eq", "value": 1},
+            sop=self.sop,
         )
         item = CheckItemFactory(procedure=cond_proc)
         state = FlightItemState.objects.create(
@@ -221,7 +225,8 @@ class TestCheckView(TestCase):
 
     def setUp(self):
         self.url = reverse("checklist:api_check")
-        self.procedure = Procedure.objects.create(title="Before Start", step=1, slug="before-start")
+        self.sop = SOPFactory()
+        self.procedure = Procedure.objects.create(title="Before Start", step=1, slug="before-start", sop=self.sop)
         self.item = CheckItemFactory(procedure=self.procedure)
         self.session = FlightSession.objects.create()
 
@@ -301,7 +306,8 @@ class TestUncheckView(TestCase):
 
     def setUp(self):
         self.url = reverse("checklist:api_uncheck")
-        self.procedure = Procedure.objects.create(title="Before Start", step=1, slug="before-start")
+        self.sop = SOPFactory()
+        self.procedure = Procedure.objects.create(title="Before Start", step=1, slug="before-start", sop=self.sop)
         self.item = CheckItemFactory(procedure=self.procedure)
         self.session = FlightSession.objects.create()
 

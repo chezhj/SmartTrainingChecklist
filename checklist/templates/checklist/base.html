@@ -139,12 +139,29 @@
         <div class="info-section">
             <div class="info-section-title">About</div>
             <div class="info-row">
-                <span class="info-row-label">Version</span>
-                <span class="info-row-value">{{ 'VERSION'|setting }}</span>
+                <span class="info-row-label">App</span>
+                <span class="info-row-value">v{{ 'VERSION'|setting }}</span>
             </div>
+            {% if sop %}
             <div class="info-row">
-                <span class="info-row-label">Checklist</span>
-                <span class="info-row-value">Skymatix 737</span>
+                <span class="info-row-label">SOP</span>
+                <span class="info-row-value">{{ sop_icao }} · v{{ sop_version }}</span>
+            </div>
+            {% if sop_notes %}
+            <div class="info-row">
+                <span class="info-row-label">What's new</span>
+                <details class="info-row-value info-details">
+                    <summary>Show notes</summary>
+                    <p class="info-notes">{{ sop_notes }}</p>
+                </details>
+            </div>
+            {% endif %}
+            {% endif %}
+            <div class="info-row">
+                <span class="info-row-label">Plugin</span>
+                <a class="info-row-value info-link"
+                   href="{{ 'PLUGIN_DOWNLOAD_URL'|setting }}"
+                   target="_blank" rel="noopener">Download ↗</a>
             </div>
             <div class="info-row">
                 <span class="info-row-label">Profile</span>

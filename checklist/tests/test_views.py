@@ -778,13 +778,16 @@ class TestNextprocSkipsConditional(ViewTestCase):
     def test_nextproc_skips_conditional_procedure(self):
         """nextproc must skip procedures that have a show_rule."""
         from checklist.models import Procedure
-        proc_a = Procedure.objects.create(title="Step A", step=200, slug="step-a-skip-test")
+        from checklist.tests.testFactories import SOPFactory as _SOPFactory
+        sop = _SOPFactory()
+        proc_a = Procedure.objects.create(title="Step A", step=200, slug="step-a-skip-test", sop=sop)
         CheckItemFactory(procedure=proc_a)  # proc_a needs an item to avoid redirect
         cond   = Procedure.objects.create(
             title="Conditional", step=201, slug="cond-skip-test",
             show_rule={"dataref": "x", "op": "eq", "value": 1},
+            sop=sop,
         )
-        proc_b = Procedure.objects.create(title="Step B", step=202, slug="step-b-skip-test")
+        proc_b = Procedure.objects.create(title="Step B", step=202, slug="step-b-skip-test", sop=sop)
         request = self.create_request_with_session("/")
         _create_session_with_flight(request, [])
         response = procedure_detail(request, slug=proc_a.slug)
@@ -795,11 +798,14 @@ class TestNextprocSkipsConditional(ViewTestCase):
     def test_nextproc_is_none_when_only_conditional_follows(self):
         """nextproc is None when the only following procedure is conditional."""
         from checklist.models import Procedure
-        proc_a = Procedure.objects.create(title="Last Linear", step=210, slug="last-linear-test")
+        from checklist.tests.testFactories import SOPFactory as _SOPFactory
+        sop = _SOPFactory()
+        proc_a = Procedure.objects.create(title="Last Linear", step=210, slug="last-linear-test", sop=sop)
         CheckItemFactory(procedure=proc_a)
         cond   = Procedure.objects.create(
             title="Conditional Only", step=211, slug="cond-only-test",
             show_rule={"dataref": "x", "op": "eq", "value": 1},
+            sop=sop,
         )
         request = self.create_request_with_session("/")
         _create_session_with_flight(request, [])

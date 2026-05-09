@@ -1,5 +1,5 @@
 from django.test import TestCase, RequestFactory
-from checklist.models import Procedure, CheckItem
+from checklist.models import Procedure, CheckItem, SOP
 from checklist.export_view import ExportChecklistView
 
 
@@ -9,11 +9,13 @@ class ExportChecklistViewTests(TestCase):
         self.view = ExportChecklistView.as_view()
 
         # Create test data
+        sop = SOP.objects.create(name="Test SOP", icao_code="TST", content_version="1.0.0")
         self.procedure = Procedure.objects.create(
             title="Test Procedure",
             step=1,
             show_expression="test_expression",
             auto_continue=True,
+            sop=sop,
         )
         self.checkitem = CheckItem.objects.create(
             procedure=self.procedure,
