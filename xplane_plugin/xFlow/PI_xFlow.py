@@ -51,7 +51,7 @@ except ImportError:
 
 # ── Plugin identity & version ──────────────────────────────────────────────── #
 
-PLUGIN_VERSION = "1.0.0"
+PLUGIN_VERSION = "0.6.0"
 
 plugin_name = "xFlow"
 plugin_sig = "xppython3.simflow"
@@ -260,7 +260,9 @@ class PythonInterface:
                     scalar = xp.getDatai(dref)
                     val = int(bool(scalar & (1 << idx)))
                 else:
-                    self._log("WARNING", f"unhandled XPLM type {dtype} for {path} — skipping")
+                    self._log(
+                        "WARNING", f"unhandled XPLM type {dtype} for {path} — skipping"
+                    )
                     continue
             else:
                 dref = self._drefs.get(path)
