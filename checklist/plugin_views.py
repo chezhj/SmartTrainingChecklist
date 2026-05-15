@@ -422,13 +422,36 @@ def plugin_state(request):
                     watched_paths = collect_datarefs(item.auto_check_rule)
                     watched_values = {p: datarefs.get(p, "<missing>") for p in watched_paths}
 
-                    # Auto-skip unchecked optional items that precede this item
+                    # For each unchecked optional before this item: check its own
+                    # rule first — if it fires, auto-check it; otherwise skip it.
                     for candidate in visible_items:
                         if candidate.step >= item.step:
                             break
                         if candidate.pk in done_ids:
                             continue
-                        if is_optional(candidate):
+                        if not is_optional(candidate):
+                            continue
+                        if candidate.auto_check_rule and evaluate_rule(candidate.auto_check_rule, datarefs):
+                            FlightItemState.objects.update_or_create(
+                                flight_session=session,
+                                checklist_item=candidate,
+                                defaults={
+                                    "status": "checked",
+                                    "source": "auto",
+                                    "checked_at": now,
+                                },
+                            )
+                            newly_checked.append(candidate.pk)
+                            done_ids.add(candidate.pk)
+                            _session_log(session.pk, {
+                                "ts": now.isoformat(),
+                                "event": "auto_checked",
+                                "item_id": candidate.pk,
+                                "item": candidate.item,
+                                "action": candidate.action_label,
+                                "rule": candidate.auto_check_rule,
+                            })
+                        else:
                             FlightItemState.objects.update_or_create(
                                 flight_session=session,
                                 checklist_item=candidate,
