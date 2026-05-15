@@ -8,7 +8,14 @@
       "Bash(python -m pytest checklist/tests/test_simbrief.py -v -q)",
       "Bash(python manage.py check)",
       "Bash(python3:*)",
-      "Bash(python manage.py shell -c ':*)"
+      "Bash(python manage.py shell -c ':*)",
+      "Bash(git add *)",
+      "Bash(git commit -m 'feat\\(checklist\\): persist check state across visits and add explicit Reset' -m 'Check items no longer reset when a pilot navigates back to a procedure; *)",
+      "Bash(git commit -m 'fix\\(plugin\\): auto-check optionals whose rule fires instead of always skipping' -m 'When advancing past unchecked optional items, the plugin now evaluates *)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(pytest checklist/tests/test_rules.py -v)",
+      "Bash(pytest --tb=short -q)"
     ]
   }
 }
