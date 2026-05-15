@@ -150,7 +150,7 @@
       "show_expression": "",
       "auto_continue": false,
       "show_rule": {
-        "dataref": "laminar/B738/fms/vnav_id_dist",
+        "dataref": "laminar/B738/fms/vnav_td_dist",
         "op": "lt",
         "value": 50
       },
@@ -325,7 +325,7 @@
       "title": "Pushback Needed",
       "label": "",
       "order": 6,
-      "description": "The stand.gate requires pushback",
+      "description": "The stand/gate requires pushback",
       "show": false,
       "is_user_preference": false,
       "over_ruled_by": 11,
