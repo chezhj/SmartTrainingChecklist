@@ -71,7 +71,7 @@
       "slug": "before-takeoff-procedure",
       "show_expression": "(sim/flightmodel/position/y_agl:<5)&&(laminar/b738/fmodpack/flightphase_landed:0)&&(laminar/b738/fmodpack/real_groundspeed:10:1)&&(sim/cockpit2/switches/navigation_lights_on:1)&&(sim/cockpit2/switches/strobe_lights_on:0)&&(sim/operation/failures/rel_lites_strobe:0)&&(sim/operation/failures/rel_lites_nav:0)&&(sim/cockpit/electrical/beacon_lights_on:1)&&(sim/time/is_in_replay:0)||(sim/flightmodel/position/y_agl:<5)&&(laminar/b738/fmodpack/flightphase_landed:0)&&(laminar/b738/fmodpack/real_groundspeed:>1)&&(sim/cockpit2/switches/navigation_lights_on:1)&&(sim/cockpit2/switches/strobe_lights_on:0:1)&&(sim/operation/failures/rel_lites_strobe:0)&&(sim/operation/failures/rel_lites_nav:0)&&(sim/cockpit/electrical/beacon_lights_on:1)&&(sim/time/is_in_replay:0)",
       "auto_continue": true,
-      "show_rule": null,
+      "show_rule": {"all": [{"op": "near", "ref_lat": "laminar/B738/fms/ref_runway_start_lat", "ref_lon": "laminar/B738/fms/ref_runway_start_lon", "meters": 200}, {"dataref": "sim/flightmodel/position/y_agl", "op": "lt", "value": 5}]},
       "sop": 1
     }
   },

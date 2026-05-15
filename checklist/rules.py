@@ -1,4 +1,24 @@
 """Rule evaluator for CheckItem.auto_check_rule JSON conditions."""
+import math
+
+
+def _haversine_meters(lat1, lon1, lat2, lon2):
+    R = 6_371_000
+    p = math.pi / 180
+    dlat = (lat2 - lat1) * p
+    dlon = (lon2 - lon1) * p
+    a = (math.sin(dlat / 2) ** 2 +
+         math.cos(lat1 * p) * math.cos(lat2 * p) *
+         math.sin(dlon / 2) ** 2)
+    return 2 * R * math.asin(math.sqrt(a))
+
+
+# Standard X-Plane aircraft position datarefs — implicit dependency of every
+# near operator. Defined here as constants so they are easy to find/replace
+# when multi-aircraft support requires per-SOP configuration.
+# TODO: make these configurable per SOP once non-Zibo aircraft are supported.
+_AC_LAT_DATAREF = "sim/flightmodel/position/latitude"
+_AC_LON_DATAREF = "sim/flightmodel/position/longitude"
 
 
 def collect_datarefs(rule: dict) -> list:
@@ -18,6 +38,8 @@ def collect_datarefs(rule: dict) -> list:
         return result
     if "fmc_line" in rule:
         return [rule["fmc_line"]]
+    if rule.get("op") == "near":
+        return [rule["ref_lat"], rule["ref_lon"], _AC_LAT_DATAREF, _AC_LON_DATAREF]
     result = []
     if dr := rule.get("dataref"):
         result.append(dr)
@@ -91,6 +113,21 @@ def collect_leaf_evaluations(rule: dict, state: dict) -> list:
             passed = required not in str(actual) if actual != "<missing>" else False
         return [{"dataref": path, "op": op, "required": required, "actual": actual, "pass": passed}]
 
+    # TODO: near evaluation logic duplicated from evaluate_rule; extract a shared
+    #       _eval_near(rule, state) helper once a third call site appears.
+    if rule.get("op") == "near":
+        ref_lat = float(state.get(rule["ref_lat"], 0.0))
+        ref_lon = float(state.get(rule["ref_lon"], 0.0))
+        ac_lat  = float(state.get(_AC_LAT_DATAREF, 0.0))
+        ac_lon  = float(state.get(_AC_LON_DATAREF, 0.0))
+        if ref_lat == 0.0 and ref_lon == 0.0:
+            dist, result = None, False
+        else:
+            dist   = round(_haversine_meters(ac_lat, ac_lon, ref_lat, ref_lon), 1)
+            result = dist < rule["meters"]
+        return [{"op": "near", "ref_lat": rule["ref_lat"], "ref_lon": rule["ref_lon"],
+                 "threshold_m": rule["meters"], "dist_m": dist, "result": result}]
+
     dataref = rule.get("dataref")
     op      = rule.get("op", "?")
     actual  = state.get(dataref, "<missing>")
@@ -163,6 +200,15 @@ def evaluate_rule(rule: dict, state: dict) -> bool:
     # Optional "tail": N  — check only last N chars of the line.
     # Optional "head": N  — check only first N chars of the line.
     # Optional "count_gte": N  — require contains substring ≥ N times.
+    if rule.get("op") == "near":
+        ref_lat = float(state.get(rule["ref_lat"], 0.0))
+        ref_lon = float(state.get(rule["ref_lon"], 0.0))
+        if ref_lat == 0.0 and ref_lon == 0.0:
+            return False
+        ac_lat = float(state.get(_AC_LAT_DATAREF, 0.0))
+        ac_lon = float(state.get(_AC_LON_DATAREF, 0.0))
+        return _haversine_meters(ac_lat, ac_lon, ref_lat, ref_lon) < rule["meters"]
+
     if "fmc_line" in rule:
         path = rule["fmc_line"]
         if path not in state:
