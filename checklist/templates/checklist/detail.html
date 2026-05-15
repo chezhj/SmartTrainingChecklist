@@ -307,6 +307,16 @@
 
         function conditionRows(conditions) {
             return (conditions || []).map(function (c) {
+                if (c.op === 'near') {
+                    var icon = c.result ? '<span class="debug-pass">&#10003;</span>' : '<span class="debug-fail">&#10007;</span>';
+                    var latDr = String(c.ref_lat || '').split('/').pop();
+                    return '<div class="debug-cond">'
+                        + icon
+                        + '<span class="debug-dr" title="' + escHtml(c.ref_lat + ' / ' + c.ref_lon) + '">' + escHtml(latDr) + '</span>'
+                        + '<span class="debug-expr">near &lt; ' + escHtml(String(c.threshold_m)) + ' m</span>'
+                        + '<span class="debug-actual">&#8594; ' + escHtml(String(c.dist_m)) + ' m</span>'
+                        + '</div>';
+                }
                 var icon = c.pass
                     ? '<span class="debug-pass">&#10003;</span>'
                     : '<span class="debug-fail">&#10007;</span>';
