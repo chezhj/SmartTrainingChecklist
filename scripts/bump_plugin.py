@@ -1,15 +1,24 @@
 #!/usr/bin/env python
 """
-Bump the xFlow plugin version.
+Bump the xFlow plugin version — two-phase workflow.
 
-Usage:
+Phase 1 — prepare (run first):
     python scripts/bump_plugin.py 1.1.0
 
-What it does:
   1. Updates PLUGIN_VERSION in xplane_plugin/xFlow/PI_xFlow.py
-  2. Prepends a new section header to xplane_plugin/CHANGELOG.md
-  3. Creates a git commit: "chore(plugin): bump version to X.Y.Z"
-  4. Creates a git tag: plugin-vX.Y.Z
+  2. Prepends a stub section to xplane_plugin/CHANGELOG.md
+  3. Commits: "chore(plugin): bump version to X.Y.Z"
+  4. Tags: plugin-vX.Y.Z
+
+  → Edit xplane_plugin/CHANGELOG.md to fill in the release notes.
+
+Phase 2 — commit & push (run after editing the CHANGELOG):
+    python scripts/bump_plugin.py --push
+
+  1. Stages xplane_plugin/CHANGELOG.md
+  2. Amends the bump commit (preserves message)
+  3. Moves the tag to the amended commit
+  4. Pushes branch + tag
 
 Run from the repo root.
 """
@@ -65,9 +74,41 @@ def _prepend_changelog(new_ver: str) -> None:
     print(f"  → Remember to fill in the release notes in {PLUGIN_CHANGELOG.relative_to(REPO_ROOT)}")
 
 
+def _push_phase() -> None:
+    new_ver = _current_version()
+    tag = f"plugin-v{new_ver}"
+    changelog_rel = str(PLUGIN_CHANGELOG.relative_to(REPO_ROOT))
+
+    print(f"Phase 2: amend + push for plugin-v{new_ver}")
+
+    print("Staging CHANGELOG …")
+    _run(["git", "add", changelog_rel])
+
+    print("Amending commit …")
+    _run(["git", "commit", "--amend", "--no-edit"])
+
+    print(f"Moving tag {tag} …")
+    _run(["git", "tag", "-f", tag])
+
+    print("Pushing branch …")
+    _run(["git", "push"])
+
+    print(f"Pushing tag {tag} …")
+    _run(["git", "push", "origin", tag])
+
+    print(f"\nDone! plugin-v{new_ver} pushed.")
+
+
 def main() -> None:
+    if "--push" in sys.argv:
+        _push_phase()
+        return
+
     if len(sys.argv) != 2:
-        sys.exit(f"Usage: python {Path(__file__).name} <new-version>  (e.g. 1.1.0)")
+        sys.exit(
+            f"Usage: python {Path(__file__).name} <new-version>  (e.g. 1.1.0)\n"
+            f"       python {Path(__file__).name} --push          (after editing CHANGELOG)"
+        )
 
     new_ver = sys.argv[1].lstrip("v")
     old_ver = _current_version()
@@ -89,7 +130,8 @@ def main() -> None:
     print(f"Tagging {tag} …")
     _run(["git", "tag", tag])
 
-    print(f"\nDone. Push with:\n  git push && git push origin {tag}")
+    print(f"\nPhase 1 done. Edit the release notes in xplane_plugin/CHANGELOG.md,")
+    print(f"then run:  python {Path(__file__).name} --push")
 
 
 if __name__ == "__main__":
