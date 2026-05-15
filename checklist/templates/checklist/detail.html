@@ -40,7 +40,7 @@
 
         <div class="proc-sidebar-list">
             {% for proc in all_procedures %}
-                <a class="proc-sidebar-item js-nav-btn {% if proc.slug == procedure.slug %}active{% elif proc.step < active_phase_step %}done{% endif %}{% if proc.show_rule %} js-hidden{% endif %}"
+                <a class="proc-sidebar-item js-nav-btn {% if proc.slug == procedure.slug %}active{% elif proc.step < procedure.step %}done{% endif %}{% if proc.show_rule %} js-hidden{% endif %}"
                    href="{% url 'checklist:detail' proc.slug %}"
                    {% if proc.show_rule %}data-conditional-slug="{{ proc.slug }}"{% endif %}>
                     <span class="proc-sidebar-name">{{ proc.title }}</span>
@@ -56,7 +56,6 @@
 
         <div class="proc-header">
             <div class="proc-header-left">
-                <div class="proc-phase">Step {{ procedure.step }} of {{ all_procedures|length }}</div>
                 <div class="proc-title">{{ procedure.title }}</div>
                 <div class="proc-meta">
                     <span class="proc-count" id="proc-count">0 of {{ check_items|length }}</span>
@@ -80,6 +79,10 @@
                     </svg>
                     <div class="progress-ring-label" id="ring-label">0%</div>
                 </div>
+                <form method="post" action="{% url 'checklist:procedure_reset' procedure.slug %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-reset-proc">Reset</button>
+                </form>
             </div>
         </div>
 
@@ -130,7 +133,6 @@
                 <span>&nbsp;</span>
             {% endif %}
 
-            <span class="nav-label">{{ procedure.step }} / {{ all_procedures|length }}</span>
 
             {% if nextproc and procedure.auto_continue %}
                 <a class="nav-btn nav-btn-primary nav-btn-next js-nav-btn"
@@ -179,7 +181,7 @@
     var autoCount        = document.querySelectorAll('.ci-auto').length;
     var manualCount      = document.querySelectorAll('.ci-manual').length;
     var skippedCount     = document.querySelectorAll('.ci-skipped').length;
-    var allowAutoAdvance        = false; /* true only after an item is checked this visit */
+    var hasCheckedThisVisit        = false; /* true only after an item is checked this visit */
     var autoContinue            = {{ procedure.auto_continue|lower }};
     var isConditionalProcedure  = {% if procedure.show_rule %}true{% else %}false{% endif %};
     var conditionalSlugs        = {{ conditional_proc_slugs_json|safe }};
@@ -220,7 +222,7 @@
         if (labelEl) labelEl.classList.toggle('js-hidden', checkedCount === 0);
 
         /* Auto-advance when all items are checked this visit (requires auto_continue flag) */
-        if (autoContinue && allowAutoAdvance && checkedCount === totalItems && totalItems > 0) {
+        if (autoContinue && hasCheckedThisVisit && checkedCount === totalItems && totalItems > 0) {
             setTimeout(function () {
                 {% if nextproc %}
                 window.location.href = '{% url "checklist:detail" nextproc.slug %}';
@@ -272,7 +274,7 @@
             box.innerHTML = TICK_SVG;
             checkedCount += 1;
             manualCount  += 1;
-            allowAutoAdvance = true;
+            hasCheckedThisVisit = true;
             updateProgress();
             scrollToFirstUncheckedAfter(row);
             fetch('/api/check/', {
@@ -442,7 +444,7 @@
             if (source === 'AUTO') { autoCount += 1; }
             else if (source === 'MANUAL') { manualCount += 1; }
             else if (source === 'SKIPPED') { skippedCount += 1; }
-            if (source !== 'SKIPPED') { allowAutoAdvance = true; }
+            if (source !== 'SKIPPED') { hasCheckedThisVisit = true; }
             updateProgress();
             scrollToFirstUncheckedAfter(row);
         }

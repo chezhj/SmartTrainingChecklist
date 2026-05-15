@@ -397,6 +397,8 @@ class TestProcedureDetailView(ViewTestCase):
         atrib_one = AttributeFactory()
         atrib_two = AttributeFactory()
         check_item = CheckItemFactory(attributes=[atrib_one, atrib_two])
+        check_item.procedure.auto_continue = True
+        check_item.procedure.save()
         ProcedureFactory(step=check_item.procedure.step - 1)
         proc_two = ProcedureFactory(step=check_item.procedure.step + 1)
 
@@ -405,25 +407,43 @@ class TestProcedureDetailView(ViewTestCase):
 
         response = procedure_detail(request, slug=check_item.procedure.slug)
         self.assertEqual(response.status_code, 302)
-        self.assertAlmostEqual(response.url, "/" + proc_two.slug)
+        self.assertEqual(response.url, "/" + proc_two.slug)
 
-    def test_procedure_detail_with_zero_checkitems_no_redirect_if_no_next(self):
+    def test_procedure_detail_with_zero_checkitems_redirects_to_idle_if_no_next(self):
         atrib_one = AttributeFactory()
         atrib_two = AttributeFactory()
         check_item = CheckItemFactory(attributes=[atrib_one, atrib_two])
+        check_item.procedure.auto_continue = True
+        check_item.procedure.save()
         ProcedureFactory(step=check_item.procedure.step - 1)
 
         request = self.create_request_with_session("/", referer="Any string")
         _create_session_with_flight(request, [atrib_one.id])
 
         response = procedure_detail(request, slug=check_item.procedure.slug)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context_data["procedure"].id, check_item.procedure.id)
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/idle/", response.url)
+
+    def test_procedure_detail_with_zero_checkitems_redirects_to_idle_if_no_auto_continue(self):
+        atrib_one = AttributeFactory()
+        atrib_two = AttributeFactory()
+        check_item = CheckItemFactory(attributes=[atrib_one, atrib_two])
+        # auto_continue defaults to False — empty procedure should go to idle
+        ProcedureFactory(step=check_item.procedure.step + 1)
+
+        request = self.create_request_with_session("/")
+        _create_session_with_flight(request, [atrib_one.id])
+
+        response = procedure_detail(request, slug=check_item.procedure.slug)
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/idle/", response.url)
 
     def test_procedure_detail_with_zero_checkitems_will_redirect_backward(self):
         atrib_one = AttributeFactory()
         atrib_two = AttributeFactory()
         check_item = CheckItemFactory(attributes=[atrib_one, atrib_two])
+        check_item.procedure.auto_continue = True
+        check_item.procedure.save()
         proc_prev = ProcedureFactory(step=check_item.procedure.step - 1)
         proc_next = ProcedureFactory(step=check_item.procedure.step + 1)
 
@@ -552,11 +572,10 @@ class TestProcedureDetailView(ViewTestCase):
         session.refresh_from_db()
         self.assertEqual(session.active_phase, item.procedure.slug)
 
-    def test_procedure_detail_does_not_retreat_active_phase(self):
+    def test_procedure_detail_updates_active_phase_on_backward_navigate(self):
         attr = AttributeFactory()
         item_low = CheckItemFactory(attributes=[attr])
         item_high = CheckItemFactory(attributes=[attr])
-        # Ensure distinct steps
         item_low.procedure.step = 1
         item_low.procedure.save()
         item_high.procedure.step = 10
@@ -567,28 +586,20 @@ class TestProcedureDetailView(ViewTestCase):
         session.active_phase = item_high.procedure.slug
         session.save()
 
-        # Navigate to a lower-step procedure
+        # Navigate backwards — active_phase should follow the pilot
         procedure_detail(request, slug=item_low.procedure.slug)
 
         session.refresh_from_db()
-        self.assertEqual(session.active_phase, item_high.procedure.slug)
-
-    def test_procedure_detail_active_phase_step_in_context(self):
-        attr = AttributeFactory()
-        item = CheckItemFactory(attributes=[attr])
-        request = self.create_request_with_session("/")
-        _create_session_with_flight(request, [attr.id])
-
-        response = procedure_detail(request, slug=item.procedure.slug)
-
-        self.assertIn("active_phase_step", response.context_data)
+        self.assertEqual(session.active_phase, item_low.procedure.slug)
 
     def test_dualpilot_item_hidden_in_solo_mode(self):
-        # _resolve_active_ids stores attribute 16 (DualPilot) as active even for SOLO
-        # sessions. The view must strip it so items tagged [optional, DualPilot] stay hidden.
+        # The view strips attribute pk=16 (DualPilot) from active_attr_ids for SOLO sessions,
+        # so items that require it are filtered out.
         dualpilot_attr = Attribute.objects.create(id=16, title="DualPilot", order=999, show=False)
         optional_attr = AttributeFactory()
         check_item = CheckItemFactory(attributes=[optional_attr, dualpilot_attr])
+        # Add a mandatory item so the procedure isn't empty (empty → redirect now)
+        CheckItemFactory(procedure=check_item.procedure, attributes=[])
 
         request = self.create_request_with_session("/")
         session = FlightSession.objects.create()  # pilot_role="SOLO" by default
@@ -602,7 +613,8 @@ class TestProcedureDetailView(ViewTestCase):
         request.session.save()
 
         response = procedure_detail(request, slug=check_item.procedure.slug)
-        self.assertEqual(len(response.context_data["check_items"]), 0)
+        # Only the mandatory item shows; the [optional+DualPilot] item is hidden
+        self.assertEqual(len(response.context_data["check_items"]), 1)
 
     def test_dualpilot_item_visible_in_dual_mode(self):
         dualpilot_attr = Attribute.objects.create(id=16, title="DualPilot", order=999, show=False)
@@ -624,7 +636,7 @@ class TestProcedureDetailView(ViewTestCase):
         self.assertEqual(len(response.context_data["check_items"]), 1)
 
     def test_checked_manual_item_annotated_with_ci_manual(self):
-        """Every GET resets the procedure — prior manually-checked state is cleared."""
+        """Checked state persists across page visits — ci-manual is shown on revisit."""
         from datetime import datetime, timezone
         attr = AttributeFactory()
         item = CheckItemFactory(attributes=[attr])
@@ -639,10 +651,10 @@ class TestProcedureDetailView(ViewTestCase):
         )
         response = procedure_detail(request, slug=item.procedure.slug)
         items = response.context_data["check_items"]
-        self.assertEqual(items[0].checked_css, "")
+        self.assertEqual(items[0].checked_css, "ci-manual")
 
     def test_checked_auto_item_annotated_with_ci_auto(self):
-        """Every GET resets the procedure — prior auto-checked state is cleared."""
+        """Checked state persists across page visits — ci-auto is shown on revisit."""
         from datetime import datetime, timezone
         attr = AttributeFactory()
         item = CheckItemFactory(attributes=[attr])
@@ -657,7 +669,7 @@ class TestProcedureDetailView(ViewTestCase):
         )
         response = procedure_detail(request, slug=item.procedure.slug)
         items = response.context_data["check_items"]
-        self.assertEqual(items[0].checked_css, "")
+        self.assertEqual(items[0].checked_css, "ci-auto")
 
     def test_unchecked_item_annotated_with_empty_string(self):
         attr = AttributeFactory()
@@ -669,7 +681,7 @@ class TestProcedureDetailView(ViewTestCase):
         self.assertEqual(items[0].checked_css, "")
 
     def test_skipped_item_annotated_as_ci_skipped(self):
-        """Every GET resets the procedure — prior skipped state is cleared."""
+        """Skipped state persists across page visits — ci-skipped is shown on revisit."""
         attr = AttributeFactory()
         item = CheckItemFactory(attributes=[attr])
         request = self.create_request_with_session("/")
@@ -682,10 +694,10 @@ class TestProcedureDetailView(ViewTestCase):
         )
         response = procedure_detail(request, slug=item.procedure.slug)
         items = response.context_data["check_items"]
-        self.assertEqual(items[0].checked_css, "")
+        self.assertEqual(items[0].checked_css, "ci-skipped")
 
-    def test_procedure_detail_resets_item_states_on_get(self):
-        """GET always deletes existing FlightItemState for the procedure (clean slate)."""
+    def test_procedure_detail_state_persists_across_visits(self):
+        """Checked state is NOT deleted on page visit — pilot sees previous check state."""
         from datetime import datetime, timezone
         attr = AttributeFactory()
         item = CheckItemFactory(attributes=[attr])
@@ -700,7 +712,7 @@ class TestProcedureDetailView(ViewTestCase):
         )
         self.assertEqual(FlightItemState.objects.filter(flight_session=session).count(), 1)
         procedure_detail(request, slug=item.procedure.slug)
-        self.assertEqual(FlightItemState.objects.filter(flight_session=session).count(), 0)
+        self.assertEqual(FlightItemState.objects.filter(flight_session=session).count(), 1)
 
 
 class TestUpdateSessionRole(TestCase):

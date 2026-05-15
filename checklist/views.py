@@ -11,6 +11,7 @@ from django.shortcuts import HttpResponseRedirect, get_object_or_404, redirect
 from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.views import generic
+from django.views.decorators.http import require_POST
 
 from checklist.simbrief import SimBrief
 
@@ -267,13 +268,34 @@ def profile_view(request):
     if request.method == "POST" and request.POST.get("action") == "get_plan":
         simbrief_id = request.POST.get("simbrief_id", "").strip()
         if simbrief_id:
+            old_origin = request.session.get("sb_origin", "")
             _fetch_and_cache_simbrief(request, simbrief_id)
+            new_origin = request.session.get("sb_origin", "")
+            # Detect a flight-plan change while a session is active
+            existing_key = request.session.get("flight_session_key")
+            if (
+                old_origin
+                and old_origin != new_origin
+                and existing_key
+                and FlightSession.objects.filter(
+                    session_key=existing_key, is_active=True
+                ).exists()
+            ):
+                request.session["sb_ofp_mismatch"] = True
         return redirect("checklist:start")
 
     # ── POST: new_flight — deactivate current session, return to setup ───────
     if request.method == "POST" and request.POST.get("action") == "new_flight":
         _deactivate_current_session(request)
         _clear_flight_session_keys(request)
+        simbrief_id = ""
+        if request.user.is_authenticated:
+            try:
+                simbrief_id = request.user.profile.simbrief_id or ""
+            except UserProfile.DoesNotExist:
+                pass
+        if simbrief_id:
+            _fetch_and_cache_simbrief(request, simbrief_id)
         return redirect("checklist:start")
 
     # ── POST: start_checklist ─────────────────────────────────────────────────
@@ -377,6 +399,13 @@ def profile_view(request):
     # Session-cached SimBrief ID overrides profile (user typed a different one)
     simbrief_id = request.session.get("sb_simbrief_id", simbrief_id)
 
+    # Auto-fetch OFP on first visit when none is cached yet
+    if simbrief_id and not request.session.get("sb_origin"):
+        _fetch_and_cache_simbrief(request, simbrief_id)
+
+    # Consume mismatch flag set by get_plan
+    ofp_mismatch = request.session.pop("sb_ofp_mismatch", False)
+
     ofp_derived_ids = set(request.session.get("sb_derived_attribs", []))
     # Conditions: flight-specific (not user preference); General: user preference defaults
     conditions_attrs = Attribute.objects.filter(
@@ -437,6 +466,7 @@ def profile_view(request):
         "active_flight_session": active_flight_session,
         "prechecked_ids": prechecked_ids,
         "dual_mode_active": dual_mode_active,
+        "ofp_mismatch": ofp_mismatch,
     }
     return TemplateResponse(request, "checklist/profile.html", context)
 
@@ -587,23 +617,10 @@ def procedure_detail(request, slug=None, pk=None):
     except FlightSession.DoesNotExist:
         return HttpResponseRedirect(reverse("checklist:start"))
 
-    # Advance the active_phase frontier (forward-only)
-    current_frontier = Procedure.objects.filter(
-        slug=flight_session.active_phase
-    ).first()
-    current_frontier_step = current_frontier.step if current_frontier else 0
-    if procedure2view.step > current_frontier_step:
+    # Track currently open procedure (not forward-only — follows pilot navigation)
+    if flight_session.active_phase != procedure2view.slug:
         flight_session.active_phase = procedure2view.slug
         flight_session.save(update_fields=["active_phase"])
-    active_phase_step = max(procedure2view.step, current_frontier_step)
-
-    # Reset: every visit starts with a clean slate for this procedure.
-    # The plugin's active_phase frontier stays forward-only; this only clears
-    # display state so the pilot always sees fresh check items.
-    FlightItemState.objects.filter(
-        flight_session=flight_session,
-        checklist_item__procedure=procedure2view,
-    ).delete()
 
     active_attr_ids = list(
         FlightSessionAttribute.objects.filter(
@@ -655,6 +672,8 @@ def procedure_detail(request, slug=None, pk=None):
     query_time = round(time_finished - time_start, 3)
 
     if len(check_items) == 0:
+        if not procedure2view.auto_continue:
+            return HttpResponseRedirect(reverse("checklist:idle"))
         if nextproc and (nextproc.slug in request.META.get("HTTP_REFERER", "")):
             if prevproc:
                 return HttpResponseRedirect(
@@ -665,6 +684,7 @@ def procedure_detail(request, slug=None, pk=None):
                 return HttpResponseRedirect(
                     reverse("checklist:detail", args=[nextproc.slug])
                 )
+            return HttpResponseRedirect(reverse("checklist:idle"))
 
     all_procedures = list(Procedure.objects.order_by("step"))
     conditional_proc_slugs = [p.slug for p in all_procedures if p.show_rule is not None]
@@ -678,10 +698,32 @@ def procedure_detail(request, slug=None, pk=None):
         "all_procedures": all_procedures,
         "conditional_proc_slugs_json": json.dumps(conditional_proc_slugs),
         "flight_session": flight_session,
-        "active_phase_step": active_phase_step,
         "poll_interval_ms": settings.POLL_INTERVAL_MS,
     }
     return TemplateResponse(request, "checklist/detail.html", context)
+
+
+@require_POST
+def procedure_reset_view(request, slug):
+    """Reset a procedure: delete its checked state and refocus active_phase on it."""
+    session_key = request.session.get("flight_session_key")
+    if not session_key:
+        return HttpResponseRedirect(reverse("checklist:start"))
+    try:
+        flight_session = FlightSession.objects.get(
+            session_key=session_key, is_active=True
+        )
+    except FlightSession.DoesNotExist:
+        return HttpResponseRedirect(reverse("checklist:start"))
+
+    procedure = get_object_or_404(Procedure, slug=slug)
+    FlightItemState.objects.filter(
+        flight_session=flight_session,
+        checklist_item__procedure=procedure,
+    ).delete()
+    flight_session.active_phase = slug
+    flight_session.save(update_fields=["active_phase"])
+    return HttpResponseRedirect(reverse("checklist:detail", args=[slug]))
 
 
 def idle_view(request):

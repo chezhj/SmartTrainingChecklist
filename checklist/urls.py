@@ -15,6 +15,7 @@ urlpatterns = [
     path("procedures/", views.IndexView.as_view(), name="index"),
     path("<int:pk>/", views.procedure_detail, name="detailpk"),
     path("<slug:slug>", views.procedure_detail, name="detail"),
+    path("<slug:slug>/reset/", views.procedure_reset_view, name="procedure_reset"),
     path("profile/", views.profile_view, name="profile"),
     path("export/", ExportChecklistView.as_view(), name="export"),
     path("update-session-role/", views.update_session_role, name="update_session_role"),

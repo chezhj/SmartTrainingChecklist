@@ -345,22 +345,10 @@
   color: #fff;
 }
 
-.nav-label {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  color: var(--color-ink-faint);
-  text-align: center;
-}
-
-/* Prev stays left, Next stays right — stop them stretching in the grid */
 .nav-btn {
-  justify-self: start;
   align-self: center;
 }
 
-.nav-btn-next {
-  justify-self: end;
-}
 
 
 /* ── Info panel internals ───────────────────────────────────────── */
@@ -1691,6 +1679,31 @@
 }
 
 
+/* ── OFP mismatch banner ─────────────────────────────────────────── */
+
+.ofp-mismatch-banner {
+  background: rgba(220, 150, 0, 0.08);
+  border: 1px solid rgba(220, 150, 0, 0.35);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.ofp-mismatch-text {
+  font-size: 13px;
+  color: var(--color-ink);
+  line-height: 1.5;
+}
+
+.ofp-mismatch-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
 /* ── Toggle list (light-background cards) ───────────────────────── */
 
 .toggle-list {
@@ -1999,6 +2012,29 @@
   border-color: var(--color-danger);
 }
 
+
+/* ── Reset procedure button ──────────────────────────────────────── */
+
+.btn-reset-proc {
+  height: 28px;
+  padding: 0 12px;
+  background: transparent;
+  color: var(--color-ink-muted);
+  border: 1px solid var(--color-border-mid);
+  border-radius: var(--radius-md);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.btn-reset-proc:hover {
+  border-color: var(--color-ink-muted);
+  color: var(--color-ink);
+}
 
 /* ── X-Plane connected banner ────────────────────────────────────── */
 
