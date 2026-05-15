@@ -57,7 +57,7 @@
       "step": 14,
       "slug": "before-taxi-procedure",
       "show_expression": "",
-      "auto_continue": true,
+      "auto_continue": false,
       "show_rule": null,
       "sop": 1
     }
@@ -150,9 +150,10 @@
       "show_expression": "",
       "auto_continue": false,
       "show_rule": {
-        "dataref": "laminar/B738/fms/vnav_td_dist",
-        "op": "lt",
-        "value": 50
+        "all": [
+          {"dataref": "laminar/B738/fms/vnav_td_dist", "op": "gt", "value": 10},
+          {"dataref": "laminar/B738/fms/vnav_td_dist", "op": "lt", "value": 50}
+        ]
       },
       "sop": 1
     }
@@ -4878,7 +4879,7 @@
       "item": "Flight Planning VA",
       "procedure": 12,
       "step": 0,
-      "setting": "VA -bid",
+      "setting": "VA - bid",
       "action_label": "",
       "dataref_expression": "",
       "role": "PF",
@@ -4944,7 +4945,7 @@
       "item": "Flight Tracking",
       "procedure": 12,
       "step": 5,
-      "setting": "SImToolkitPro, Volanta",
+      "setting": "SImToolkitPro, Volanta, Elevatex",
       "action_label": "STARTED",
       "dataref_expression": "",
       "role": "",
