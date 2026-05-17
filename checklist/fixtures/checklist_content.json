@@ -71,7 +71,21 @@
       "slug": "before-takeoff-procedure",
       "show_expression": "(sim/flightmodel/position/y_agl:<5)&&(laminar/b738/fmodpack/flightphase_landed:0)&&(laminar/b738/fmodpack/real_groundspeed:10:1)&&(sim/cockpit2/switches/navigation_lights_on:1)&&(sim/cockpit2/switches/strobe_lights_on:0)&&(sim/operation/failures/rel_lites_strobe:0)&&(sim/operation/failures/rel_lites_nav:0)&&(sim/cockpit/electrical/beacon_lights_on:1)&&(sim/time/is_in_replay:0)||(sim/flightmodel/position/y_agl:<5)&&(laminar/b738/fmodpack/flightphase_landed:0)&&(laminar/b738/fmodpack/real_groundspeed:>1)&&(sim/cockpit2/switches/navigation_lights_on:1)&&(sim/cockpit2/switches/strobe_lights_on:0:1)&&(sim/operation/failures/rel_lites_strobe:0)&&(sim/operation/failures/rel_lites_nav:0)&&(sim/cockpit/electrical/beacon_lights_on:1)&&(sim/time/is_in_replay:0)",
       "auto_continue": true,
-      "show_rule": {"all": [{"op": "near", "ref_lat": "laminar/B738/fms/ref_runway_start_lat", "ref_lon": "laminar/B738/fms/ref_runway_start_lon", "meters": 200}, {"dataref": "sim/flightmodel/position/y_agl", "op": "lt", "value": 5}]},
+      "show_rule": {
+        "all": [
+          {
+            "op": "near",
+            "ref_lat": "laminar/B738/fms/ref_runway_start_lat",
+            "ref_lon": "laminar/B738/fms/ref_runway_start_lon",
+            "meters": 200
+          },
+          {
+            "dataref": "sim/flightmodel/position/y_agl",
+            "op": "lt",
+            "value": 5
+          }
+        ]
+      },
       "sop": 1
     }
   },
@@ -151,8 +165,16 @@
       "auto_continue": false,
       "show_rule": {
         "all": [
-          {"dataref": "laminar/B738/fms/vnav_td_dist", "op": "gt", "value": 10},
-          {"dataref": "laminar/B738/fms/vnav_td_dist", "op": "lt", "value": 50}
+          {
+            "dataref": "laminar/B738/fms/vnav_td_dist",
+            "op": "gt",
+            "value": 10
+          },
+          {
+            "dataref": "laminar/B738/fms/vnav_td_dist",
+            "op": "lt",
+            "value": 50
+          }
         ]
       },
       "sop": 1
@@ -341,9 +363,9 @@
     "pk": 7,
     "fields": {
       "title": "Anti-Ice Normal",
-      "label": "Anti-Ice (\u22640\u00b0C)",
+      "label": "Anti-Ice (≤0°C)",
       "order": 8,
-      "description": "Temperature at or below 0\u00b0C \u2014 icing procedures apply",
+      "description": "Temperature at or below 0°C — icing procedures apply",
       "show": true,
       "is_user_preference": false,
       "over_ruled_by": null,
@@ -363,7 +385,7 @@
         ]
       },
       "live_rule_mode": "prompt_on_change",
-      "prompt_message": "OAT below 0 \u00b0C \u2014 Anti-Ice Normal procedures active?"
+      "prompt_message": "OAT below 0 °C — Anti-Ice Normal procedures active?"
     }
   },
   {
@@ -388,9 +410,9 @@
     "pk": 9,
     "fields": {
       "title": "ZeroToTen",
-      "label": "0\u00b0C \u2013 10\u00b0C Conditions",
+      "label": "0°C – 10°C Conditions",
       "order": 22,
-      "description": "Temperature between 0\u00b0C and 10\u00b0C \u2014 additional checks required",
+      "description": "Temperature between 0°C and 10°C — additional checks required",
       "show": true,
       "is_user_preference": false,
       "over_ruled_by": null,
@@ -415,7 +437,7 @@
         ]
       },
       "live_rule_mode": "prompt_on_change",
-      "prompt_message": "OAT 0\u201310 \u00b0C \u2014 Zero-to-Ten temperature procedures active?"
+      "prompt_message": "OAT 0–10 °C — Zero-to-Ten temperature procedures active?"
     }
   },
   {
@@ -442,7 +464,7 @@
       "title": "No Pushback",
       "label": "No Pushback",
       "order": 20,
-      "description": "No pushback required \u2014 engine start at stand",
+      "description": "No pushback required — engine start at stand",
       "show": true,
       "is_user_preference": false,
       "over_ruled_by": null,
@@ -6539,7 +6561,9 @@
       "dataref_expression": "",
       "role": "",
       "auto_check_rule": null,
-      "attributes": [4]
+      "attributes": [
+        4
+      ]
     }
   },
   {
@@ -6559,7 +6583,9 @@
         "value": 0,
         "tolerance": 1
       },
-      "attributes": [4]
+      "attributes": [
+        4
+      ]
     }
   },
   {
@@ -7200,6 +7226,1695 @@
             "value": 1
           }
         ]
+      },
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.procedure",
+    "pk": 16,
+    "fields": {
+      "title": "Climb Procedure",
+      "step": 23,
+      "slug": "climb-procedure",
+      "show_expression": "",
+      "auto_continue": true,
+      "show_rule": null,
+      "sop": 1
+    }
+  },
+  {
+    "model": "checklist.procedure",
+    "pk": 17,
+    "fields": {
+      "title": "Cruise Entry",
+      "step": 25,
+      "slug": "cruise-entry",
+      "show_expression": "",
+      "auto_continue": true,
+      "show_rule": null,
+      "sop": 1
+    }
+  },
+  {
+    "model": "checklist.procedure",
+    "pk": 18,
+    "fields": {
+      "title": "Descent Checklist",
+      "step": 26,
+      "slug": "descent-checklist",
+      "show_expression": "",
+      "auto_continue": false,
+      "show_rule": {
+        "all": [
+          {
+            "dataref": "sim/cockpit2/gauges/indicators/altitude_ft_pilot",
+            "op": "lt",
+            "value": 12000
+          },
+          {
+            "dataref": "laminar/b738/fmodpack/flightphase_landed",
+            "op": "eq",
+            "value": 0
+          },
+          {
+            "dataref": "sim/flightmodel/position/y_agl",
+            "op": "gt",
+            "value": 5
+          }
+        ]
+      },
+      "sop": 1
+    }
+  },
+  {
+    "model": "checklist.procedure",
+    "pk": 19,
+    "fields": {
+      "title": "Approach Procedure",
+      "step": 28,
+      "slug": "approach-procedure",
+      "show_expression": "",
+      "auto_continue": true,
+      "show_rule": null,
+      "sop": 1
+    }
+  },
+  {
+    "model": "checklist.procedure",
+    "pk": 20,
+    "fields": {
+      "title": "Landing Checklist",
+      "step": 29,
+      "slug": "landing-checklist",
+      "show_expression": "",
+      "auto_continue": false,
+      "show_rule": null,
+      "sop": 1
+    }
+  },
+  {
+    "model": "checklist.procedure",
+    "pk": 21,
+    "fields": {
+      "title": "After Landing Procedure",
+      "step": 32,
+      "slug": "after-landing-procedure",
+      "show_expression": "",
+      "auto_continue": true,
+      "show_rule": {
+        "all": [
+          {
+            "dataref": "laminar/b738/fmodpack/flightphase_landed",
+            "op": "eq",
+            "value": 1
+          },
+          {
+            "dataref": "sim/flightmodel/position/indicated_airspeed",
+            "op": "lt",
+            "value": 80
+          }
+        ]
+      },
+      "sop": 1
+    }
+  },
+  {
+    "model": "checklist.procedure",
+    "pk": 22,
+    "fields": {
+      "title": "Parking Procedure",
+      "step": 35,
+      "slug": "parking-procedure",
+      "show_expression": "",
+      "auto_continue": false,
+      "show_rule": null,
+      "sop": 1
+    }
+  },
+  {
+    "model": "checklist.procedure",
+    "pk": 23,
+    "fields": {
+      "title": "Securing Procedure",
+      "step": 38,
+      "slug": "securing-procedure",
+      "show_expression": "",
+      "auto_continue": false,
+      "show_rule": null,
+      "sop": 1
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 313,
+    "fields": {
+      "item": "Center Fuel Pumps",
+      "procedure": 15,
+      "step": 3,
+      "setting": "Monitor / Turn Off When Empty",
+      "action_label": "MONITOR",
+      "dataref_expression": "(laminar/B738/fuel/fuel_tank_pos_ctr1:0)&&(laminar/B738/fuel/fuel_tank_pos_ctr2:0)",
+      "role": "PM",
+      "auto_check_rule": {
+        "all": [
+          {
+            "dataref": "laminar/B738/fuel/fuel_tank_pos_ctr1",
+            "op": "eq",
+            "value": 0
+          },
+          {
+            "dataref": "laminar/B738/fuel/fuel_tank_pos_ctr2",
+            "op": "eq",
+            "value": 0
+          }
+        ]
+      },
+      "attributes": [
+        15
+      ]
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 314,
+    "fields": {
+      "item": "Landing Lights",
+      "procedure": 16,
+      "step": 10,
+      "setting": "Off",
+      "action_label": "SET",
+      "dataref_expression": "(laminar/B738/switch/land_lights_left_pos:0)&&(laminar/B738/switch/land_lights_right_pos:0)",
+      "role": "PM",
+      "auto_check_rule": {
+        "all": [
+          {
+            "dataref": "laminar/B738/switch/land_lights_left_pos",
+            "op": "eq",
+            "value": 0
+          },
+          {
+            "dataref": "laminar/B738/switch/land_lights_right_pos",
+            "op": "eq",
+            "value": 0
+          }
+        ]
+      },
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 315,
+    "fields": {
+      "item": "Engine Start Switches",
+      "procedure": 16,
+      "step": 20,
+      "setting": "Auto",
+      "action_label": "SET",
+      "dataref_expression": "(laminar/B738/engine/starter1_pos:1)&&(laminar/B738/engine/starter2_pos:1)",
+      "role": "PM",
+      "auto_check_rule": {
+        "all": [
+          {
+            "dataref": "laminar/B738/engine/starter1_pos",
+            "op": "eq",
+            "value": 1
+          },
+          {
+            "dataref": "laminar/B738/engine/starter2_pos",
+            "op": "eq",
+            "value": 1
+          }
+        ]
+      },
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 316,
+    "fields": {
+      "item": "Fasten Seatbelt Signs",
+      "procedure": 16,
+      "step": 30,
+      "setting": "Auto",
+      "action_label": "SET",
+      "dataref_expression": "laminar/B738/toggle_switch/seatbelt_sign_pos:1",
+      "role": "PF",
+      "auto_check_rule": {
+        "dataref": "laminar/B738/toggle_switch/seatbelt_sign_pos",
+        "op": "eq",
+        "value": 1
+      },
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 317,
+    "fields": {
+      "item": "Altimeters",
+      "procedure": 16,
+      "step": 40,
+      "setting": "Set STD (Passing Transition Level)",
+      "action_label": "SET",
+      "dataref_expression": "(laminar/B738/EFIS/baro_set_std_pilot:1)&&(laminar/B738/EFIS/baro_set_std_copilot:1)",
+      "role": "C",
+      "auto_check_rule": {
+        "all": [
+          {
+            "dataref": "laminar/B738/EFIS/baro_set_std_pilot",
+            "op": "eq",
+            "value": 1
+          },
+          {
+            "dataref": "laminar/B738/EFIS/baro_set_std_copilot",
+            "op": "eq",
+            "value": 1
+          }
+        ]
+      },
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 318,
+    "fields": {
+      "item": "PA Cruise Announcement",
+      "procedure": 17,
+      "step": 10,
+      "setting": "Made",
+      "action_label": "PLAYED",
+      "dataref_expression": "laminar/b738/fmodpack/play_cruise_msg:1",
+      "role": "PF",
+      "auto_check_rule": {
+        "dataref": "laminar/b738/fmodpack/play_cruise_msg",
+        "op": "eq",
+        "value": 1
+      },
+      "attributes": [
+        4
+      ]
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 319,
+    "fields": {
+      "item": "Pressurization",
+      "procedure": 18,
+      "step": 10,
+      "setting": "Verify Set to Landing Altitude",
+      "action_label": "CHECKED",
+      "dataref_expression": "laminar/B738/pressurization/knobs/landing_alt:{laminar/B738/fms/des_icao_alt}-35|{laminar/B738/fms/des_icao_alt}+35",
+      "role": "PM",
+      "auto_check_rule": {
+        "dataref": "laminar/B738/pressurization/knobs/landing_alt",
+        "op": "abs_diff_lte",
+        "ref": "laminar/B738/fms/des_icao_alt",
+        "tolerance": 35
+      },
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 320,
+    "fields": {
+      "item": "Center Tank Fuel Pumps",
+      "procedure": 18,
+      "step": 20,
+      "setting": "Off (When Empty)",
+      "action_label": "SET",
+      "dataref_expression": "(laminar/B738/fuel/fuel_tank_pos_ctr1:0)&&(laminar/B738/fuel/fuel_tank_pos_ctr2:0)",
+      "role": "PM",
+      "auto_check_rule": {
+        "all": [
+          {
+            "dataref": "laminar/B738/fuel/fuel_tank_pos_ctr1",
+            "op": "eq",
+            "value": 0
+          },
+          {
+            "dataref": "laminar/B738/fuel/fuel_tank_pos_ctr2",
+            "op": "eq",
+            "value": 0
+          }
+        ]
+      },
+      "attributes": [
+        15
+      ]
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 321,
+    "fields": {
+      "item": "System Annunciator Lights",
+      "procedure": 18,
+      "step": 30,
+      "setting": "Reviewed",
+      "action_label": "CHECKED",
+      "dataref_expression": "",
+      "role": "C",
+      "auto_check_rule": null,
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 322,
+    "fields": {
+      "item": "VREF (APPROACH REF Page)",
+      "procedure": 18,
+      "step": 40,
+      "setting": "Verified / Set",
+      "action_label": "SET",
+      "dataref_expression": "(laminar/B738/FMS/approach_speed:>0)&&(laminar/B738/FMS/approach_flaps:>0)",
+      "role": "PM",
+      "auto_check_rule": {
+        "all": [
+          {
+            "dataref": "laminar/B738/FMS/approach_speed",
+            "op": "gt",
+            "value": 0
+          },
+          {
+            "dataref": "laminar/B738/FMS/approach_flaps",
+            "op": "gt",
+            "value": 0
+          }
+        ]
+      },
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 323,
+    "fields": {
+      "item": "RADIO / BARO Minimums",
+      "procedure": 18,
+      "step": 50,
+      "setting": "Set",
+      "action_label": "SET",
+      "dataref_expression": "laminar/B738/pfd/dh_pilot:>=200",
+      "role": "PM",
+      "auto_check_rule": {
+        "dataref": "laminar/B738/pfd/dh_pilot",
+        "op": "gte",
+        "value": 0
+      },
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 324,
+    "fields": {
+      "item": "Navigation Radios & Course",
+      "procedure": 18,
+      "step": 60,
+      "setting": "Set / Verified",
+      "action_label": "SET",
+      "dataref_expression": "",
+      "role": "PM",
+      "auto_check_rule": null,
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 325,
+    "fields": {
+      "item": "Autobrake",
+      "procedure": 18,
+      "step": 70,
+      "setting": "Set As Calculated",
+      "action_label": "SET",
+      "dataref_expression": "laminar/B738/autobrake/autobrake_pos:>1",
+      "role": "PM",
+      "auto_check_rule": {
+        "dataref": "laminar/B738/autobrake/autobrake_pos",
+        "op": "gt",
+        "value": 1
+      },
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 326,
+    "fields": {
+      "item": "Approach Briefing",
+      "procedure": 18,
+      "step": 80,
+      "setting": "Completed",
+      "action_label": "DONE",
+      "dataref_expression": "",
+      "role": "PF",
+      "auto_check_rule": null,
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 327,
+    "fields": {
+      "item": "Landing Lights",
+      "procedure": 18,
+      "step": 90,
+      "setting": "On (Passing 10,000 ft)",
+      "action_label": "SET",
+      "dataref_expression": "(laminar/B738/switch/land_lights_left_pos:1)&&(laminar/B738/switch/land_lights_right_pos:1)",
+      "role": "PM",
+      "auto_check_rule": {
+        "all": [
+          {
+            "dataref": "laminar/B738/switch/land_lights_left_pos",
+            "op": "eq",
+            "value": 1
+          },
+          {
+            "dataref": "laminar/B738/switch/land_lights_right_pos",
+            "op": "eq",
+            "value": 1
+          }
+        ]
+      },
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 328,
+    "fields": {
+      "item": "Engine Start Switches",
+      "procedure": 18,
+      "step": 100,
+      "setting": "Continuous (Passing 10,000 ft)",
+      "action_label": "SET",
+      "dataref_expression": "(laminar/B738/engine/starter1_pos:2)&&(laminar/B738/engine/starter2_pos:2)",
+      "role": "PM",
+      "auto_check_rule": {
+        "all": [
+          {
+            "dataref": "laminar/B738/engine/starter1_pos",
+            "op": "eq",
+            "value": 2
+          },
+          {
+            "dataref": "laminar/B738/engine/starter2_pos",
+            "op": "eq",
+            "value": 2
+          }
+        ]
+      },
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 329,
+    "fields": {
+      "item": "Altimeters",
+      "procedure": 18,
+      "step": 110,
+      "setting": "Set QNH (Passing Transition Level)",
+      "action_label": "SET",
+      "dataref_expression": "(laminar/B738/EFIS/baro_set_std_pilot:0)&&(laminar/B738/EFIS/baro_set_std_copilot:0)",
+      "role": "C",
+      "auto_check_rule": {
+        "all": [
+          {
+            "dataref": "laminar/B738/EFIS/baro_set_std_pilot",
+            "op": "eq",
+            "value": 0
+          },
+          {
+            "dataref": "laminar/B738/EFIS/baro_set_std_copilot",
+            "op": "eq",
+            "value": 0
+          }
+        ]
+      },
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 330,
+    "fields": {
+      "item": "Speed Brakes",
+      "procedure": 19,
+      "step": 10,
+      "setting": "Armed (Green Light)",
+      "action_label": "ARMED",
+      "dataref_expression": "sim/cockpit2/controls/speedbrake_ratio:-0.5",
+      "role": "PM",
+      "auto_check_rule": {
+        "dataref": "sim/cockpit2/controls/speedbrake_ratio",
+        "op": "eq",
+        "value": -0.5
+      },
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 331,
+    "fields": {
+      "item": "Flaps",
+      "procedure": 19,
+      "step": 20,
+      "setting": "1",
+      "action_label": "SET",
+      "dataref_expression": "sim/flightmodel2/controls/flap_handle_deploy_ratio:>=0.125",
+      "role": "PM",
+      "auto_check_rule": {
+        "dataref": "sim/flightmodel2/controls/flap_handle_deploy_ratio",
+        "op": "gte",
+        "value": 0.125
+      },
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 332,
+    "fields": {
+      "item": "Flaps",
+      "procedure": 19,
+      "step": 30,
+      "setting": "5",
+      "action_label": "SET",
+      "dataref_expression": "sim/flightmodel2/controls/flap_handle_deploy_ratio:>=0.375",
+      "role": "PM",
+      "auto_check_rule": {
+        "dataref": "sim/flightmodel2/controls/flap_handle_deploy_ratio",
+        "op": "gte",
+        "value": 0.375
+      },
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 333,
+    "fields": {
+      "item": "Flaps",
+      "procedure": 19,
+      "step": 40,
+      "setting": "15",
+      "action_label": "SET",
+      "dataref_expression": "sim/flightmodel2/controls/flap_handle_deploy_ratio:>=0.625",
+      "role": "PM",
+      "auto_check_rule": {
+        "dataref": "sim/flightmodel2/controls/flap_handle_deploy_ratio",
+        "op": "gte",
+        "value": 0.625
+      },
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 334,
+    "fields": {
+      "item": "Runway Turnoff Lights",
+      "procedure": 19,
+      "step": 50,
+      "setting": "On",
+      "action_label": "SET",
+      "dataref_expression": "(sim/cockpit2/switches/generic_lights_switch[2]:1)&&(sim/cockpit2/switches/generic_lights_switch[3]:1)",
+      "role": "PM",
+      "auto_check_rule": {
+        "all": [
+          {
+            "dataref": "sim/cockpit2/switches/generic_lights_switch[2]",
+            "op": "eq",
+            "value": 1
+          },
+          {
+            "dataref": "sim/cockpit2/switches/generic_lights_switch[3]",
+            "op": "eq",
+            "value": 1
+          }
+        ]
+      },
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 335,
+    "fields": {
+      "item": "Anti-Ice",
+      "procedure": 19,
+      "step": 60,
+      "setting": "As Required",
+      "action_label": "SET",
+      "dataref_expression": "",
+      "role": "PM",
+      "auto_check_rule": null,
+      "attributes": [
+        7
+      ]
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 336,
+    "fields": {
+      "item": "Engine Start Switches",
+      "procedure": 20,
+      "step": 10,
+      "setting": "Continuous",
+      "action_label": "SET",
+      "dataref_expression": "(laminar/B738/engine/starter1_pos:2)&&(laminar/B738/engine/starter2_pos:2)",
+      "role": "PM",
+      "auto_check_rule": {
+        "all": [
+          {
+            "dataref": "laminar/B738/engine/starter1_pos",
+            "op": "eq",
+            "value": 2
+          },
+          {
+            "dataref": "laminar/B738/engine/starter2_pos",
+            "op": "eq",
+            "value": 2
+          }
+        ]
+      },
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 337,
+    "fields": {
+      "item": "Landing Gear",
+      "procedure": 20,
+      "step": 20,
+      "setting": "Down, 3 Green",
+      "action_label": "CHECKED",
+      "dataref_expression": "(sim/flightmodel2/gear/deploy_ratio[0]:1)&&(sim/flightmodel2/gear/deploy_ratio[1]:1)&&(sim/flightmodel2/gear/deploy_ratio[2]:1)&&(sim/operation/failures/rel_gear_act:0)",
+      "role": "PF",
+      "auto_check_rule": {
+        "all": [
+          {
+            "dataref": "sim/flightmodel2/gear/deploy_ratio[0]",
+            "op": "eq",
+            "value": 1
+          },
+          {
+            "dataref": "sim/flightmodel2/gear/deploy_ratio[1]",
+            "op": "eq",
+            "value": 1
+          },
+          {
+            "dataref": "sim/flightmodel2/gear/deploy_ratio[2]",
+            "op": "eq",
+            "value": 1
+          },
+          {
+            "dataref": "sim/operation/failures/rel_gear_act",
+            "op": "eq",
+            "value": 0
+          }
+        ]
+      },
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 338,
+    "fields": {
+      "item": "Landing Flaps",
+      "procedure": 20,
+      "step": 30,
+      "setting": "30 or 40 (per FMC APPROACH REF)",
+      "action_label": "SET",
+      "dataref_expression": "laminar/B738/FMS/approach_flaps_set:1",
+      "role": "PM",
+      "auto_check_rule": {
+        "dataref": "laminar/B738/FMS/approach_flaps_set",
+        "op": "eq",
+        "value": 1
+      },
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 339,
+    "fields": {
+      "item": "Go-Around Altitude",
+      "procedure": 20,
+      "step": 40,
+      "setting": "Set on MCP",
+      "action_label": "SET",
+      "dataref_expression": "laminar/B738/autopilot/mcp_alt_dial:><0",
+      "role": "PF",
+      "auto_check_rule": {
+        "dataref": "laminar/B738/autopilot/mcp_alt_dial",
+        "op": "gt",
+        "value": 0
+      },
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 340,
+    "fields": {
+      "item": "Cabin",
+      "procedure": 20,
+      "step": 50,
+      "setting": "Advised",
+      "action_label": "DONE",
+      "dataref_expression": "",
+      "role": "PF",
+      "auto_check_rule": null,
+      "attributes": [
+        4
+      ]
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 341,
+    "fields": {
+      "item": "Speed Brakes",
+      "procedure": 21,
+      "step": 10,
+      "setting": "Down",
+      "action_label": "SET",
+      "dataref_expression": "sim/cockpit2/controls/speedbrake_ratio:0",
+      "role": "PM",
+      "auto_check_rule": {
+        "dataref": "sim/cockpit2/controls/speedbrake_ratio",
+        "op": "eq",
+        "value": 0
+      },
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 342,
+    "fields": {
+      "item": "Autobrake",
+      "procedure": 21,
+      "step": 20,
+      "setting": "Off",
+      "action_label": "SET",
+      "dataref_expression": "laminar/B738/autobrake/autobrake_pos:1",
+      "role": "PM",
+      "auto_check_rule": {
+        "dataref": "laminar/B738/autobrake/autobrake_pos",
+        "op": "eq",
+        "value": 1
+      },
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 343,
+    "fields": {
+      "item": "Flaps",
+      "procedure": 21,
+      "step": 30,
+      "setting": "Retracted (Flaps 0)",
+      "action_label": "SET",
+      "dataref_expression": "sim/cockpit2/controls/flap_ratio:0",
+      "role": "PM",
+      "auto_check_rule": {
+        "dataref": "sim/cockpit2/controls/flap_ratio",
+        "op": "eq",
+        "value": 0
+      },
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 344,
+    "fields": {
+      "item": "Weather Radar",
+      "procedure": 21,
+      "step": 40,
+      "setting": "Off",
+      "action_label": "SET",
+      "dataref_expression": "sim/cockpit/switches/EFIS_shows_weather:0",
+      "role": "PM",
+      "auto_check_rule": {
+        "dataref": "sim/cockpit/switches/EFIS_shows_weather",
+        "op": "eq",
+        "value": 0
+      },
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 345,
+    "fields": {
+      "item": "Terrain Radar",
+      "procedure": 21,
+      "step": 50,
+      "setting": "Off",
+      "action_label": "SET",
+      "dataref_expression": "laminar/B738/EFIS_control/fo/terr_on:0",
+      "role": "PM",
+      "auto_check_rule": {
+        "dataref": "laminar/B738/EFIS_control/fo/terr_on",
+        "op": "eq",
+        "value": 0
+      },
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 346,
+    "fields": {
+      "item": "Landing Lights",
+      "procedure": 21,
+      "step": 60,
+      "setting": "Off",
+      "action_label": "SET",
+      "dataref_expression": "(laminar/B738/switch/land_lights_left_pos:0)&&(laminar/B738/switch/land_lights_right_pos:0)",
+      "role": "PM",
+      "auto_check_rule": {
+        "all": [
+          {
+            "dataref": "laminar/B738/switch/land_lights_left_pos",
+            "op": "eq",
+            "value": 0
+          },
+          {
+            "dataref": "laminar/B738/switch/land_lights_right_pos",
+            "op": "eq",
+            "value": 0
+          }
+        ]
+      },
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 347,
+    "fields": {
+      "item": "Runway Turnoff Lights",
+      "procedure": 21,
+      "step": 70,
+      "setting": "As Required",
+      "action_label": "SET",
+      "dataref_expression": "",
+      "role": "PM",
+      "auto_check_rule": null,
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 348,
+    "fields": {
+      "item": "Taxi Lights",
+      "procedure": 21,
+      "step": 80,
+      "setting": "On",
+      "action_label": "SET",
+      "dataref_expression": "laminar/B738/toggle_switch/taxi_light_brightness_pos:>0",
+      "role": "PM",
+      "auto_check_rule": {
+        "dataref": "laminar/B738/toggle_switch/taxi_light_brightness_pos",
+        "op": "gt",
+        "value": 0
+      },
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 349,
+    "fields": {
+      "item": "APU",
+      "procedure": 21,
+      "step": 90,
+      "setting": "Start (During Taxi to Gate)",
+      "action_label": "SET",
+      "dataref_expression": "sim/cockpit/engine/APU_running:1",
+      "role": "PM",
+      "auto_check_rule": {
+        "dataref": "sim/cockpit/engine/APU_running",
+        "op": "eq",
+        "value": 1
+      },
+      "attributes": [
+        4
+      ]
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 350,
+    "fields": {
+      "item": "Engine Start Switches",
+      "procedure": 21,
+      "step": 100,
+      "setting": "Auto",
+      "action_label": "SET",
+      "dataref_expression": "(laminar/B738/engine/starter1_pos:1)&&(laminar/B738/engine/starter2_pos:1)",
+      "role": "PM",
+      "auto_check_rule": {
+        "all": [
+          {
+            "dataref": "laminar/B738/engine/starter1_pos",
+            "op": "eq",
+            "value": 1
+          },
+          {
+            "dataref": "laminar/B738/engine/starter2_pos",
+            "op": "eq",
+            "value": 1
+          }
+        ]
+      },
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 351,
+    "fields": {
+      "item": "Position Lights",
+      "procedure": 21,
+      "step": 110,
+      "setting": "Steady",
+      "action_label": "SET",
+      "dataref_expression": "(sim/cockpit2/switches/navigation_lights_on:1)&&(sim/cockpit2/switches/strobe_lights_on:0)",
+      "role": "PM",
+      "auto_check_rule": {
+        "all": [
+          {
+            "dataref": "sim/cockpit2/switches/navigation_lights_on",
+            "op": "eq",
+            "value": 1
+          },
+          {
+            "dataref": "sim/cockpit2/switches/strobe_lights_on",
+            "op": "eq",
+            "value": 0
+          }
+        ]
+      },
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 352,
+    "fields": {
+      "item": "Stabilizer Trim",
+      "procedure": 21,
+      "step": 120,
+      "setting": "Set 5 Units",
+      "action_label": "SET",
+      "dataref_expression": "",
+      "role": "PM",
+      "auto_check_rule": null,
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 353,
+    "fields": {
+      "item": "Taxi Lights",
+      "procedure": 22,
+      "step": 10,
+      "setting": "Off (Before Turning Into Stand)",
+      "action_label": "SET",
+      "dataref_expression": "laminar/B738/toggle_switch/taxi_light_brightness_pos:0",
+      "role": "PM",
+      "auto_check_rule": {
+        "dataref": "laminar/B738/toggle_switch/taxi_light_brightness_pos",
+        "op": "eq",
+        "value": 0
+      },
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 354,
+    "fields": {
+      "item": "Runway Turnoff Lights",
+      "procedure": 22,
+      "step": 20,
+      "setting": "Off",
+      "action_label": "SET",
+      "dataref_expression": "(sim/cockpit2/switches/generic_lights_switch[2]:0)&&(sim/cockpit2/switches/generic_lights_switch[3]:0)",
+      "role": "PM",
+      "auto_check_rule": {
+        "all": [
+          {
+            "dataref": "sim/cockpit2/switches/generic_lights_switch[2]",
+            "op": "eq",
+            "value": 0
+          },
+          {
+            "dataref": "sim/cockpit2/switches/generic_lights_switch[3]",
+            "op": "eq",
+            "value": 0
+          }
+        ]
+      },
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 355,
+    "fields": {
+      "item": "Parking Brakes",
+      "procedure": 22,
+      "step": 30,
+      "setting": "Set",
+      "action_label": "SET",
+      "dataref_expression": "sim/cockpit2/controls/parking_brake_ratio:1",
+      "role": "PF",
+      "auto_check_rule": {
+        "dataref": "sim/cockpit2/controls/parking_brake_ratio",
+        "op": "eq",
+        "value": 1
+      },
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 356,
+    "fields": {
+      "item": "Chocks",
+      "procedure": 22,
+      "step": 40,
+      "setting": "Set",
+      "action_label": "DONE",
+      "dataref_expression": "",
+      "role": "PM",
+      "auto_check_rule": null,
+      "attributes": [
+        4
+      ]
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 357,
+    "fields": {
+      "item": "APU Generator 1",
+      "procedure": 22,
+      "step": 50,
+      "setting": "On",
+      "action_label": "SET",
+      "dataref_expression": "(sim/cockpit2/electrical/APU_generator_on:1)&&(laminar/B738/electrical/apu_power_bus1:1)",
+      "role": "PM",
+      "auto_check_rule": {
+        "all": [
+          {
+            "dataref": "sim/cockpit2/electrical/APU_generator_on",
+            "op": "eq",
+            "value": 1
+          },
+          {
+            "dataref": "laminar/B738/electrical/apu_power_bus1",
+            "op": "eq",
+            "value": 1
+          }
+        ]
+      },
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 358,
+    "fields": {
+      "item": "APU Generator 2",
+      "procedure": 22,
+      "step": 60,
+      "setting": "On",
+      "action_label": "SET",
+      "dataref_expression": "laminar/B738/electrical/apu_power_bus2:1",
+      "role": "PM",
+      "auto_check_rule": {
+        "dataref": "laminar/B738/electrical/apu_power_bus2",
+        "op": "eq",
+        "value": 1
+      },
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 359,
+    "fields": {
+      "item": "Start Lever Engine 1",
+      "procedure": 22,
+      "step": 70,
+      "setting": "Cutoff",
+      "action_label": "DONE",
+      "dataref_expression": "laminar/B738/engine/mixture_ratio1:0",
+      "role": "PM",
+      "auto_check_rule": {
+        "dataref": "laminar/B738/engine/mixture_ratio1",
+        "op": "eq",
+        "value": 0
+      },
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 360,
+    "fields": {
+      "item": "Start Lever Engine 2",
+      "procedure": 22,
+      "step": 80,
+      "setting": "Cutoff",
+      "action_label": "DONE",
+      "dataref_expression": "laminar/B738/engine/mixture_ratio2:0",
+      "role": "PM",
+      "auto_check_rule": {
+        "dataref": "laminar/B738/engine/mixture_ratio2",
+        "op": "eq",
+        "value": 0
+      },
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 361,
+    "fields": {
+      "item": "APU Bleed",
+      "procedure": 22,
+      "step": 90,
+      "setting": "On",
+      "action_label": "SET",
+      "dataref_expression": "laminar/B738/toggle_switch/bleed_air_apu_pos:1",
+      "role": "PM",
+      "auto_check_rule": {
+        "dataref": "laminar/B738/toggle_switch/bleed_air_apu_pos",
+        "op": "eq",
+        "value": 1
+      },
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 362,
+    "fields": {
+      "item": "Isolation Valve",
+      "procedure": 22,
+      "step": 100,
+      "setting": "Open",
+      "action_label": "SET",
+      "dataref_expression": "laminar/B738/air/isolation_valve_pos:2",
+      "role": "PM",
+      "auto_check_rule": {
+        "dataref": "laminar/B738/air/isolation_valve_pos",
+        "op": "eq",
+        "value": 2
+      },
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 363,
+    "fields": {
+      "item": "Fasten Seatbelt Signs",
+      "procedure": 22,
+      "step": 110,
+      "setting": "Off",
+      "action_label": "SET",
+      "dataref_expression": "laminar/B738/toggle_switch/seatbelt_sign_pos:0",
+      "role": "PM",
+      "auto_check_rule": {
+        "dataref": "laminar/B738/toggle_switch/seatbelt_sign_pos",
+        "op": "eq",
+        "value": 0
+      },
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 364,
+    "fields": {
+      "item": "Anti-Collision Light",
+      "procedure": 22,
+      "step": 120,
+      "setting": "Off (When N1 < 20%)",
+      "action_label": "SET",
+      "dataref_expression": "sim/cockpit/electrical/beacon_lights_on:0",
+      "role": "PM",
+      "auto_check_rule": {
+        "dataref": "sim/cockpit/electrical/beacon_lights_on",
+        "op": "eq",
+        "value": 0
+      },
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 365,
+    "fields": {
+      "item": "Transponder",
+      "procedure": 22,
+      "step": 130,
+      "setting": "Standby",
+      "action_label": "SET",
+      "dataref_expression": "(laminar/B738/knob/transponder_pos:1)",
+      "role": "PM",
+      "auto_check_rule": {
+        "dataref": "laminar/B738/knob/transponder_pos",
+        "op": "eq",
+        "value": 1
+      },
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 366,
+    "fields": {
+      "item": "Ground Power (EFB)",
+      "procedure": 23,
+      "step": 10,
+      "setting": "Connect",
+      "action_label": "DONE",
+      "dataref_expression": "laminar/B738/fmod/gpu_deployed:1",
+      "role": "PM",
+      "auto_check_rule": {
+        "dataref": "laminar/B738/fmod/gpu_deployed",
+        "op": "eq",
+        "value": 1
+      },
+      "attributes": [
+        4
+      ]
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 367,
+    "fields": {
+      "item": "AC Ground Power Switch",
+      "procedure": 23,
+      "step": 20,
+      "setting": "On",
+      "action_label": "SET",
+      "dataref_expression": "(sim/cockpit/electrical/gpu_amps:>0)",
+      "role": "PM",
+      "auto_check_rule": {
+        "dataref": "sim/cockpit/electrical/gpu_amps",
+        "op": "gt",
+        "value": 0
+      },
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 368,
+    "fields": {
+      "item": "Yaw Damper",
+      "procedure": 23,
+      "step": 30,
+      "setting": "Off",
+      "action_label": "SET",
+      "dataref_expression": "sim/cockpit2/switches/yaw_damper_on:0",
+      "role": "PM",
+      "auto_check_rule": {
+        "dataref": "sim/cockpit2/switches/yaw_damper_on",
+        "op": "eq",
+        "value": 0
+      },
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 369,
+    "fields": {
+      "item": "CAB / UTIL Power Switch",
+      "procedure": 23,
+      "step": 40,
+      "setting": "Off",
+      "action_label": "SET",
+      "dataref_expression": "laminar/B738/toggle_switch/cab_util_pos:0",
+      "role": "PM",
+      "auto_check_rule": {
+        "dataref": "laminar/B738/toggle_switch/cab_util_pos",
+        "op": "eq",
+        "value": 0
+      },
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 370,
+    "fields": {
+      "item": "IFE / PASS Seat Power Switch",
+      "procedure": 23,
+      "step": 50,
+      "setting": "Off",
+      "action_label": "SET",
+      "dataref_expression": "laminar/B738/toggle_switch/ife_pass_seat_pos:0",
+      "role": "PM",
+      "auto_check_rule": {
+        "dataref": "laminar/B738/toggle_switch/ife_pass_seat_pos",
+        "op": "eq",
+        "value": 0
+      },
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 371,
+    "fields": {
+      "item": "Electric Hydraulic Pumps A & B",
+      "procedure": 23,
+      "step": 60,
+      "setting": "Off",
+      "action_label": "SET",
+      "dataref_expression": "(laminar/B738/toggle_switch/electric_hydro_pumps1_pos:0)&&(laminar/B738/toggle_switch/electric_hydro_pumps2_pos:0)",
+      "role": "PM",
+      "auto_check_rule": {
+        "all": [
+          {
+            "dataref": "laminar/B738/toggle_switch/electric_hydro_pumps1_pos",
+            "op": "eq",
+            "value": 0
+          },
+          {
+            "dataref": "laminar/B738/toggle_switch/electric_hydro_pumps2_pos",
+            "op": "eq",
+            "value": 0
+          }
+        ]
+      },
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 372,
+    "fields": {
+      "item": "Recirc Fan Switches",
+      "procedure": 23,
+      "step": 70,
+      "setting": "Off",
+      "action_label": "SET",
+      "dataref_expression": "",
+      "role": "PM",
+      "auto_check_rule": null,
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 373,
+    "fields": {
+      "item": "Air Conditioning Packs",
+      "procedure": 23,
+      "step": 80,
+      "setting": "Off",
+      "action_label": "SET",
+      "dataref_expression": "(laminar/B738/air/l_pack_pos:0)&&(laminar/B738/air/r_pack_pos:0)",
+      "role": "PM",
+      "auto_check_rule": {
+        "all": [
+          {
+            "dataref": "laminar/B738/air/l_pack_pos",
+            "op": "eq",
+            "value": 0
+          },
+          {
+            "dataref": "laminar/B738/air/r_pack_pos",
+            "op": "eq",
+            "value": 0
+          }
+        ]
+      },
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 374,
+    "fields": {
+      "item": "APU Bleed",
+      "procedure": 23,
+      "step": 90,
+      "setting": "Off",
+      "action_label": "SET",
+      "dataref_expression": "laminar/B738/toggle_switch/bleed_air_apu_pos:0",
+      "role": "PM",
+      "auto_check_rule": {
+        "dataref": "laminar/B738/toggle_switch/bleed_air_apu_pos",
+        "op": "eq",
+        "value": 0
+      },
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 375,
+    "fields": {
+      "item": "APU",
+      "procedure": 23,
+      "step": 100,
+      "setting": "Off",
+      "action_label": "SET",
+      "dataref_expression": "laminar/B738/spring_toggle_switch/APU_start_pos:0",
+      "role": "PM",
+      "auto_check_rule": {
+        "dataref": "laminar/B738/spring_toggle_switch/APU_start_pos",
+        "op": "eq",
+        "value": 0
+      },
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 376,
+    "fields": {
+      "item": "Fuel Pump Switches",
+      "procedure": 23,
+      "step": 110,
+      "setting": "All Off",
+      "action_label": "SET",
+      "dataref_expression": "(laminar/B738/fuel/fuel_tank_pos_ctr1:0)&&(laminar/B738/fuel/fuel_tank_pos_ctr2:0)&&(laminar/B738/fuel/fuel_tank_pos_lft1:0)&&(laminar/B738/fuel/fuel_tank_pos_lft2:0)&&(laminar/B738/fuel/fuel_tank_pos_rgt1:0)&&(laminar/B738/fuel/fuel_tank_pos_rgt2:0)",
+      "role": "PM",
+      "auto_check_rule": {
+        "all": [
+          {
+            "dataref": "laminar/B738/fuel/fuel_tank_pos_ctr1",
+            "op": "eq",
+            "value": 0
+          },
+          {
+            "dataref": "laminar/B738/fuel/fuel_tank_pos_ctr2",
+            "op": "eq",
+            "value": 0
+          },
+          {
+            "dataref": "laminar/B738/fuel/fuel_tank_pos_lft1",
+            "op": "eq",
+            "value": 0
+          },
+          {
+            "dataref": "laminar/B738/fuel/fuel_tank_pos_lft2",
+            "op": "eq",
+            "value": 0
+          },
+          {
+            "dataref": "laminar/B738/fuel/fuel_tank_pos_rgt1",
+            "op": "eq",
+            "value": 0
+          },
+          {
+            "dataref": "laminar/B738/fuel/fuel_tank_pos_rgt2",
+            "op": "eq",
+            "value": 0
+          }
+        ]
+      },
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 377,
+    "fields": {
+      "item": "IRS Mode Selectors",
+      "procedure": 23,
+      "step": 120,
+      "setting": "Off",
+      "action_label": "SET",
+      "dataref_expression": "(laminar/B738/toggle_switch/irs_left:0)&&(laminar/B738/toggle_switch/irs_right:0)",
+      "role": "PM",
+      "auto_check_rule": {
+        "all": [
+          {
+            "dataref": "laminar/B738/toggle_switch/irs_left",
+            "op": "eq",
+            "value": 0
+          },
+          {
+            "dataref": "laminar/B738/toggle_switch/irs_right",
+            "op": "eq",
+            "value": 0
+          }
+        ]
+      },
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 378,
+    "fields": {
+      "item": "Window Heat",
+      "procedure": 23,
+      "step": 130,
+      "setting": "All Off",
+      "action_label": "SET",
+      "dataref_expression": "(laminar/B738/ice/window_heat_l_side_pos:0)&&(laminar/B738/ice/window_heat_l_fwd_pos:0)&&(laminar/B738/ice/window_heat_r_fwd_pos:0)&&(laminar/B738/ice/window_heat_r_side_pos:0)",
+      "role": "PM",
+      "auto_check_rule": {
+        "all": [
+          {
+            "dataref": "laminar/B738/ice/window_heat_l_side_pos",
+            "op": "eq",
+            "value": 0
+          },
+          {
+            "dataref": "laminar/B738/ice/window_heat_l_fwd_pos",
+            "op": "eq",
+            "value": 0
+          },
+          {
+            "dataref": "laminar/B738/ice/window_heat_r_fwd_pos",
+            "op": "eq",
+            "value": 0
+          },
+          {
+            "dataref": "laminar/B738/ice/window_heat_r_side_pos",
+            "op": "eq",
+            "value": 0
+          }
+        ]
+      },
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 379,
+    "fields": {
+      "item": "Position Lights",
+      "procedure": 23,
+      "step": 140,
+      "setting": "Off",
+      "action_label": "SET",
+      "dataref_expression": "(sim/cockpit2/switches/navigation_lights_on:0)&&(sim/cockpit2/switches/strobe_lights_on:0)",
+      "role": "PM",
+      "auto_check_rule": {
+        "all": [
+          {
+            "dataref": "sim/cockpit2/switches/navigation_lights_on",
+            "op": "eq",
+            "value": 0
+          },
+          {
+            "dataref": "sim/cockpit2/switches/strobe_lights_on",
+            "op": "eq",
+            "value": 0
+          }
+        ]
+      },
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 380,
+    "fields": {
+      "item": "Emergency Lights",
+      "procedure": 23,
+      "step": 150,
+      "setting": "Off",
+      "action_label": "SET",
+      "dataref_expression": "laminar/B738/toggle_switch/emer_exit_lights:0",
+      "role": "PM",
+      "auto_check_rule": {
+        "dataref": "laminar/B738/toggle_switch/emer_exit_lights",
+        "op": "eq",
+        "value": 0
+      },
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 381,
+    "fields": {
+      "item": "Standby Power Switch",
+      "procedure": 23,
+      "step": 160,
+      "setting": "Off",
+      "action_label": "SET",
+      "dataref_expression": "",
+      "role": "PM",
+      "auto_check_rule": null,
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 382,
+    "fields": {
+      "item": "Battery",
+      "procedure": 23,
+      "step": 170,
+      "setting": "Off",
+      "action_label": "SET",
+      "dataref_expression": "sim/cockpit2/electrical/battery_on[0]:0",
+      "role": "PM",
+      "auto_check_rule": {
+        "dataref": "sim/cockpit2/electrical/battery_on[0]",
+        "op": "eq",
+        "value": 0
       },
       "attributes": []
     }
