@@ -15,7 +15,8 @@
       "Bash(git commit *)",
       "Bash(git push *)",
       "Bash(pytest checklist/tests/test_rules.py -v)",
-      "Bash(pytest --tb=short -q)"
+      "Bash(pytest --tb=short -q)",
+      "Bash(python -c ' *)"
     ]
   }
 }
