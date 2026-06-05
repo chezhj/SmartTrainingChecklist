@@ -77,7 +77,7 @@
             "op": "near",
             "ref_lat": "laminar/B738/fms/ref_runway_start_lat",
             "ref_lon": "laminar/B738/fms/ref_runway_start_lon",
-            "meters": 200
+            "meters": 500
           },
           {
             "dataref": "sim/flightmodel/position/y_agl",
@@ -143,7 +143,7 @@
   },
   {
     "model": "checklist.procedure",
-    "pk": 10,
+    "pk": 10, 
     "fields": {
       "title": "CDU Preflight Procedure",
       "step": 6,
@@ -158,22 +158,55 @@
     "model": "checklist.procedure",
     "pk": 11,
     "fields": {
-      "title": "Descent Preparation",
+      "title": "Descent Procedure",
       "step": 24,
-      "slug": "decent-preparation",
+      "slug": "descent-procedure",
       "show_expression": "",
       "auto_continue": false,
       "show_rule": {
-        "all": [
+        "any": [
           {
-            "dataref": "laminar/B738/fms/vnav_td_dist",
-            "op": "gt",
-            "value": 10
+            "all": [
+              {
+                "dataref": "laminar/B738/fms/vnav_td_dist",
+                "op": "gt",
+                "value": 0
+              },
+              {
+                "dataref": "laminar/B738/fms/vnav_td_dist",
+                "op": "lt",
+                "value": 60
+              }
+            ]
           },
           {
-            "dataref": "laminar/B738/fms/vnav_td_dist",
-            "op": "lt",
-            "value": 50
+            "all": [
+              {
+                "dataref": "sim/cockpit2/gauges/indicators/altitude_ft_pilot",
+                "op": "lt",
+                "value": 18000
+              },
+              {
+                "dataref": "sim/flightmodel/position/y_agl",
+                "op": "gt",
+                "value": 5
+              },
+              {
+                "dataref": "laminar/b738/fmodpack/flightphase_landed",
+                "op": "eq",
+                "value": 0
+              },
+              {
+                "dataref": "sim/flightmodel/position/vh_ind_fpm",
+                "op": "lt",
+                "value": -200
+              },
+              {
+                "dataref": "laminar/B738/FMS/approach_speed",
+                "op": "eq",
+                "value": 0
+              }
+            ]
           }
         ]
       },
@@ -210,9 +243,9 @@
             "value": 1
           },
           {
-            "dataref": "laminar/B738/autopilot/pfd_mode",
+            "dataref": "laminar/B738/autopilot/altitude_mode",
             "op": "eq",
-            "value": 2
+            "value": 8
           },
           {
             "dataref": "laminar/B738/FMS/fmc_trans_lvl",
@@ -564,6 +597,23 @@
     }
   },
   {
+    "model": "checklist.attribute",
+    "pk": 17,
+    "fields": {
+      "title": "NotOnline",
+      "label": "",
+      "order": 999,
+      "description": "Active when NOT flying online (no ATC network). Items tagged with this attribute are hidden when Online is selected.",
+      "show": false,
+      "is_user_preference": false,
+      "over_ruled_by": 2,
+      "btn_color": "#888888",
+      "live_rule": null,
+      "live_rule_mode": null,
+      "prompt_message": ""
+    }
+  },
+  {
     "model": "checklist.checkitem",
     "pk": 1,
     "fields": {
@@ -638,6 +688,21 @@
           },
           {
             "dataref": "laminar/B738/annunciator/fwd_entry",
+            "op": "eq",
+            "value": 0
+          },
+          {
+            "dataref": "737u/doors/aft_Cargo",
+            "op": "eq",
+            "value": 0
+          },
+          {
+            "dataref": "737u/doors/Fwd_Cargo",
+            "op": "eq",
+            "value": 0
+          },
+          {
+            "dataref": "laminar/B738/annunciator/six_pack_doors",
             "op": "eq",
             "value": 0
           }
@@ -1305,12 +1370,12 @@
           {
             "dataref": "laminar/B738/fuel/fuel_tank_pos_lft1",
             "op": "eq",
-            "value": 0
+            "value": 1
           },
           {
             "dataref": "laminar/B738/fuel/fuel_tank_pos_lft2",
             "op": "eq",
-            "value": 0
+            "value": 1
           }
         ]
       },
@@ -3207,12 +3272,12 @@
       "step": 190,
       "setting": "Retract Flaps",
       "action_label": "DONE",
-      "dataref_expression": "(sim/cockpit2/controls/flap_ratio:0)&&(sim/operation/failures/rel_flap_act:0)",
+      "dataref_expression": "(sim/cockpit2/controls/flap_handle_request_ratio:0)&&(sim/operation/failures/rel_flap_act:0)",
       "role": "PM",
       "auto_check_rule": {
         "all": [
           {
-            "dataref": "sim/cockpit2/controls/flap_ratio",
+            "dataref": "sim/cockpit2/controls/flap_handle_request_ratio",
             "op": "eq",
             "value": 0
           },
@@ -3241,6 +3306,57 @@
         "dataref": "laminar/B738/autobrake/autobrake_pos",
         "op": "eq",
         "value": 1
+      },
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 385,
+    "fields": {
+      "item": "Engine Start Switches 1 & 2",
+      "procedure": 6,
+      "step": 205,
+      "setting": "AUTO (or CONT if < 10°C + visible moisture)",
+      "action_label": "SET",
+      "dataref_expression": "",
+      "role": "PM",
+      "auto_check_rule": {
+        "any": [
+          {
+            "all": [
+              {
+                "dataref": "laminar/B738/engine/starter1_pos",
+                "op": "eq",
+                "value": 1
+              },
+              {
+                "dataref": "laminar/B738/engine/starter2_pos",
+                "op": "eq",
+                "value": 1
+              }
+            ]
+          },
+          {
+            "all": [
+              {
+                "dataref": "laminar/B738/engine/starter1_pos",
+                "op": "eq",
+                "value": 2
+              },
+              {
+                "dataref": "laminar/B738/engine/starter2_pos",
+                "op": "eq",
+                "value": 2
+              },
+              {
+                "dataref": "sim/cockpit2/temperature/outside_air_temp_degc",
+                "op": "lt",
+                "value": 10
+              }
+            ]
+          }
+        ]
       },
       "attributes": []
     }
@@ -3671,10 +3787,10 @@
       "step": 6,
       "setting": "Up",
       "action_label": "",
-      "dataref_expression": "(sim/cockpit2/controls/flap_ratio:0)",
+      "dataref_expression": "(sim/cockpit2/controls/flap_handle_request_ratio:0)",
       "role": "C",
       "auto_check_rule": {
-        "dataref": "laminar/B738/flt_ctrls/flap_lever",
+        "dataref": "sim/cockpit2/controls/flap_handle_request_ratio",
         "op": "eq",
         "value": 0.0
       },
@@ -4240,7 +4356,7 @@
       "role": "C",
       "auto_check_rule": {
         "fmc_line": "laminar/B738/fmc1/Line01_L",
-        "contains": "737-800W.1"
+        "contains": "737-800W"
       },
       "attributes": []
     }
@@ -4606,28 +4722,13 @@
     "fields": {
       "item": "Reset MCP Altitude",
       "procedure": 11,
-      "step": 1,
-      "setting": "suggestion - 100 below ILS -if not online-",
+      "step": 100,
+      "setting": "ILS - altitude or next waypoint",
       "action_label": "",
       "dataref_expression": "",
-      "role": "",
+      "role": "PF",
       "auto_check_rule": null,
-      "attributes": []
-    }
-  },
-  {
-    "model": "checklist.checkitem",
-    "pk": 182,
-    "fields": {
-      "item": "Altimiter",
-      "procedure": 11,
-      "step": 2,
-      "setting": "Set QNH-destination",
-      "action_label": "",
-      "dataref_expression": "",
-      "role": "",
-      "auto_check_rule": null,
-      "attributes": []
+      "attributes": [17]
     }
   },
   {
@@ -4635,27 +4736,12 @@
     "pk": 183,
     "fields": {
       "item": "Standby Altimiter",
-      "procedure": 11,
-      "step": 3,
+      "procedure": 24,
+      "step": 30,
       "setting": "Set QNH-destination",
       "action_label": "",
       "dataref_expression": "",
-      "role": "",
-      "auto_check_rule": null,
-      "attributes": []
-    }
-  },
-  {
-    "model": "checklist.checkitem",
-    "pk": 184,
-    "fields": {
-      "item": "NAVAID Frequencies (ILS)",
-      "procedure": 11,
-      "step": 4,
-      "setting": "2 times -from chart-",
-      "action_label": "",
-      "dataref_expression": "",
-      "role": "",
+      "role": "BOTH",
       "auto_check_rule": null,
       "attributes": []
     }
@@ -4666,27 +4752,17 @@
     "fields": {
       "item": "Course",
       "procedure": 11,
-      "step": 5,
+      "step": 90,
       "setting": "From Charts",
       "action_label": "",
-      "dataref_expression": "",
-      "role": "",
-      "auto_check_rule": null,
-      "attributes": []
-    }
-  },
-  {
-    "model": "checklist.checkitem",
-    "pk": 186,
-    "fields": {
-      "item": "Set DA(H) /MDA/RA",
-      "procedure": 11,
-      "step": 6,
-      "setting": "from charts",
-      "action_label": "",
-      "dataref_expression": "",
-      "role": "",
-      "auto_check_rule": null,
+      "dataref_expression": "(laminar/B738/autopilot/course_pilot:{laminar/B738/fms/dest_runway_crs}-2|{laminar/B738/fms/dest_runway_crs}+2)&&(laminar/B738/autopilot/course_copilot:{laminar/B738/fms/dest_runway_crs}-2|{laminar/B738/fms/dest_runway_crs}+2)||(laminar/B738/autopilot/course_pilot:{laminar/B738/fms/dest_runway_crs}-2|{laminar/B738/fms/dest_runway_crs}+2)",
+      "role": "PM",
+      "auto_check_rule": {
+        "dataref": "laminar/B738/autopilot/course_pilot",
+        "op": "abs_diff_lte",
+        "ref": "laminar/B738/fms/dest_runway_crs",
+        "tolerance": 2
+      },
       "attributes": []
     }
   },
@@ -4696,11 +4772,11 @@
     "fields": {
       "item": "Baro minimum",
       "procedure": 11,
-      "step": 7,
+      "step": 70,
       "setting": "from charts",
       "action_label": "",
       "dataref_expression": "",
-      "role": "",
+      "role": "PM",
       "auto_check_rule": null,
       "attributes": [
         4
@@ -4713,11 +4789,11 @@
     "fields": {
       "item": "Transition Flight Level (FMC)",
       "procedure": 11,
-      "step": 8,
+      "step": 30,
       "setting": "ATIS/METAR",
       "action_label": "",
       "dataref_expression": "",
-      "role": "",
+      "role": "BOTH",
       "auto_check_rule": null,
       "attributes": [
         4
@@ -4730,11 +4806,11 @@
     "fields": {
       "item": "ISA/QNH (FMC)",
       "procedure": 11,
-      "step": 9,
+      "step": 40,
       "setting": "ATIS/METAR",
       "action_label": "",
       "dataref_expression": "",
-      "role": "",
+      "role": "BOTH",
       "auto_check_rule": null,
       "attributes": [
         4
@@ -4747,45 +4823,15 @@
     "fields": {
       "item": "Wind information (FMC)",
       "procedure": 11,
-      "step": 10,
+      "step": 20,
       "setting": "ATIS/METAR",
       "action_label": "",
       "dataref_expression": "",
-      "role": "",
-      "auto_check_rule": {
-        "all": [
-          {
-            "fmc_line": "laminar/B738/fmc1/Line00_L",
-            "contains": "RTE"
-          },
-          {
-            "fmc_line": "laminar/B738/fmc1/Line00_L",
-            "contains": "DATA"
-          },
-          {
-            "fmc_line": "laminar/B738/fmc1/Line01_X",
-            "contains": "WIND"
-          }
-        ]
-      },
+      "role": "BOTH",
+      "auto_check_rule": null,
       "attributes": [
         4
       ]
-    }
-  },
-  {
-    "model": "checklist.checkitem",
-    "pk": 191,
-    "fields": {
-      "item": "Set Landing Speed (FMC)",
-      "procedure": 11,
-      "step": 11,
-      "setting": "Correct Weight, then select Flaps setting",
-      "action_label": "",
-      "dataref_expression": "",
-      "role": "",
-      "auto_check_rule": null,
-      "attributes": []
     }
   },
   {
@@ -4794,11 +4840,11 @@
     "fields": {
       "item": "Fix/Rings",
       "procedure": 11,
-      "step": 12,
+      "step": 50,
       "setting": "10/4,5 out of RWY",
       "action_label": "",
       "dataref_expression": "",
-      "role": "",
+      "role": "BOTH",
       "auto_check_rule": null,
       "attributes": [
         4
@@ -4807,42 +4853,21 @@
   },
   {
     "model": "checklist.checkitem",
-    "pk": 193,
-    "fields": {
-      "item": "Autobrake",
-      "procedure": 11,
-      "step": 13,
-      "setting": "As calculated",
-      "action_label": "",
-      "dataref_expression": "",
-      "role": "",
-      "auto_check_rule": {
-        "dataref": "laminar/B738/autobrake/autobrake_pos",
-        "op": "gt",
-        "value": 0
-      },
-      "attributes": []
-    }
-  },
-  {
-    "model": "checklist.checkitem",
     "pk": 194,
     "fields": {
       "item": "Seatbelt signs",
-      "procedure": 11,
-      "step": 14,
-      "setting": "On, just before decend",
-      "action_label": "",
+      "procedure": 24,
+      "step": 55,
+      "setting": "On",
+      "action_label": "SET",
       "dataref_expression": "",
-      "role": "",
+      "role": "PM",
       "auto_check_rule": {
         "dataref": "laminar/B738/toggle_switch/seatbelt_sign_pos",
-        "op": "gte",
-        "value": 1
+        "op": "eq",
+        "value": 2
       },
-      "attributes": [
-        4
-      ]
+      "attributes": []
     }
   },
   {
@@ -4851,7 +4876,7 @@
     "fields": {
       "item": "ATC report ready for decend",
       "procedure": 11,
-      "step": 15,
+      "step": 140,
       "setting": "Wait for approval",
       "action_label": "",
       "dataref_expression": "",
@@ -4868,7 +4893,7 @@
     "fields": {
       "item": "ATC decend (when ready)",
       "procedure": 11,
-      "step": 16,
+      "step": 150,
       "setting": "Set MCP altitude",
       "action_label": "",
       "dataref_expression": "",
@@ -5537,9 +5562,9 @@
       "dataref_expression": "",
       "role": "PF",
       "auto_check_rule": {
-        "dataref": "laminar/B738/autopilot/pfd_mode",
+        "dataref": "laminar/B738/autopilot/altitude_mode",
         "op": "eq",
-        "value": 2
+        "value": 8
       },
       "attributes": []
     }
@@ -5586,12 +5611,12 @@
       "auto_check_rule": {
         "all": [
           {
-            "dataref": "sim/cockpit2/controls/flap_ratio",
+            "dataref": "sim/cockpit2/controls/flap_handle_request_ratio",
             "op": "gte",
             "value": 0.35
           },
           {
-            "dataref": "sim/cockpit2/controls/flap_ratio",
+            "dataref": "sim/cockpit2/controls/flap_handle_request_ratio",
             "op": "lte",
             "value": 0.42
           }
@@ -5739,7 +5764,7 @@
       "auto_check_rule": {
         "all": [
           {
-            "dataref": "sim/cockpit2/controls/flap_ratio",
+            "dataref": "sim/cockpit2/controls/flap_handle_request_ratio",
             "op": "eq",
             "value": 0
           },
@@ -6118,10 +6143,10 @@
       "step": 105,
       "setting": "Leave UP",
       "action_label": "CHECKED",
-      "dataref_expression": "sim/cockpit2/controls/flap_ratio:0",
+      "dataref_expression": "sim/cockpit2/controls/flap_handle_request_ratio:0",
       "role": "PM",
       "auto_check_rule": {
-        "dataref": "sim/cockpit2/controls/flap_ratio",
+        "dataref": "sim/cockpit2/controls/flap_handle_request_ratio",
         "op": "eq",
         "value": 0
       },
@@ -6314,10 +6339,10 @@
       "step": 85,
       "setting": "UP (protected by the fluid)",
       "action_label": "CHECKED",
-      "dataref_expression": "sim/cockpit2/controls/flap_ratio:0",
+      "dataref_expression": "sim/cockpit2/controls/flap_handle_request_ratio:0",
       "role": "FO",
       "auto_check_rule": {
-        "dataref": "sim/cockpit2/controls/flap_ratio",
+        "dataref": "sim/cockpit2/controls/flap_handle_request_ratio",
         "op": "eq",
         "value": 0
       },
@@ -6537,10 +6562,10 @@
       "step": 104,
       "setting": "(Leave) UP (to avoid accumulation)",
       "action_label": "CHECKED",
-      "dataref_expression": "sim/cockpit2/controls/flap_ratio:0",
+      "dataref_expression": "sim/cockpit2/controls/flap_handle_request_ratio:0",
       "role": "PM",
       "auto_check_rule": {
-        "dataref": "sim/cockpit2/controls/flap_ratio",
+        "dataref": "sim/cockpit2/controls/flap_handle_request_ratio",
         "op": "eq",
         "value": 0
       },
@@ -6947,7 +6972,7 @@
       "dataref_expression": "",
       "role": "FO",
       "auto_check_rule": {
-        "dataref": "sim/cockpit2/controls/flap_ratio",
+        "dataref": "sim/cockpit2/controls/flap_handle_request_ratio",
         "op": "eq",
         "value": 0
       },
@@ -7234,12 +7259,34 @@
     "model": "checklist.procedure",
     "pk": 16,
     "fields": {
-      "title": "Climb Procedure",
-      "step": 23,
-      "slug": "climb-procedure",
+      "title": "Precruise Procedure",
+      "step": 21,
+      "slug": "precruise-procedure",
       "show_expression": "",
-      "auto_continue": true,
-      "show_rule": null,
+      "auto_continue": false,
+      "show_rule": {
+        "all": [
+          {
+            "dataref": "sim/cockpit2/gauges/indicators/altitude_ft_pilot",
+            "op": "gt",
+            "value": 9500
+          },
+          {
+            "any": [
+              {
+                "dataref": "laminar/B738/switch/land_lights_left_pos",
+                "op": "eq",
+                "value": 1
+              },
+              {
+                "dataref": "laminar/B738/switch/land_lights_right_pos",
+                "op": "eq",
+                "value": 1
+              }
+            ]
+          }
+        ]
+      },
       "sop": 1
     }
   },
@@ -7248,39 +7295,22 @@
     "pk": 17,
     "fields": {
       "title": "Cruise Entry",
-      "step": 25,
+      "step": 23,
       "slug": "cruise-entry",
-      "show_expression": "",
-      "auto_continue": true,
-      "show_rule": null,
-      "sop": 1
-    }
-  },
-  {
-    "model": "checklist.procedure",
-    "pk": 18,
-    "fields": {
-      "title": "Descent Checklist",
-      "step": 26,
-      "slug": "descent-checklist",
       "show_expression": "",
       "auto_continue": false,
       "show_rule": {
         "all": [
           {
-            "dataref": "sim/cockpit2/gauges/indicators/altitude_ft_pilot",
-            "op": "lt",
-            "value": 12000
+            "dataref": "laminar/B738/autopilot/altitude",
+            "op": "abs_diff_lte",
+            "ref": "laminar/B738/autopilot/fmc_cruise_alt",
+            "tolerance": 2000
           },
           {
-            "dataref": "laminar/b738/fmodpack/flightphase_landed",
-            "op": "eq",
-            "value": 0
-          },
-          {
-            "dataref": "sim/flightmodel/position/y_agl",
+            "dataref": "sim/flightmodel/position/vh_ind_fpm",
             "op": "gt",
-            "value": 5
+            "value": 200
           }
         ]
       },
@@ -7295,7 +7325,7 @@
       "step": 28,
       "slug": "approach-procedure",
       "show_expression": "",
-      "auto_continue": true,
+      "auto_continue": false,
       "show_rule": null,
       "sop": 1
     }
@@ -7366,6 +7396,42 @@
     }
   },
   {
+    "model": "checklist.procedure",
+    "pk": 24,
+    "fields": {
+      "title": "Descent Procedure (Passing 10,000 ft)",
+      "step": 25,
+      "slug": "descent-10k",
+      "show_expression": "",
+      "auto_continue": false,
+      "show_rule": {
+        "all": [
+          {
+            "dataref": "sim/cockpit2/gauges/indicators/altitude_ft_pilot",
+            "op": "lt",
+            "value": 10500
+          },
+          {
+            "dataref": "sim/flightmodel/position/y_agl",
+            "op": "gt",
+            "value": 50
+          },
+          {
+            "dataref": "laminar/b738/fmodpack/flightphase_landed",
+            "op": "eq",
+            "value": 0
+          },
+          {
+            "dataref": "sim/flightmodel/position/vh_ind_fpm",
+            "op": "lt",
+            "value": -200
+          }
+        ]
+      },
+      "sop": 1
+    }
+  },
+  {
     "model": "checklist.checkitem",
     "pk": 313,
     "fields": {
@@ -7420,7 +7486,87 @@
           }
         ]
       },
-      "attributes": []
+      "attributes": [4]
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 384,
+    "fields": {
+      "item": "Left & Right Runway Turnoff Lights",
+      "procedure": 16,
+      "step": 11,
+      "setting": "OFF",
+      "action_label": "SET",
+      "dataref_expression": "(sim/cockpit2/switches/generic_lights_switch[2]:0)&&(sim/cockpit2/switches/generic_lights_switch[3]:0)",
+      "role": "PM",
+      "auto_check_rule": {
+        "all": [
+          {
+            "dataref": "sim/cockpit2/switches/generic_lights_switch[2]",
+            "op": "eq",
+            "value": 0
+          },
+          {
+            "dataref": "sim/cockpit2/switches/generic_lights_switch[3]",
+            "op": "eq",
+            "value": 0
+          }
+        ]
+      },
+      "attributes": [
+        4
+      ]
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 383,
+    "fields": {
+      "item": "Fuel Facing Lights",
+      "procedure": 16,
+      "step": 15,
+      "setting": "OFF",
+      "action_label": "CHECKED",
+      "dataref_expression": "(laminar/B738/annunciator/low_fuel_press_c1:0)&&(laminar/B738/annunciator/low_fuel_press_c2:0)&&(laminar/B738/annunciator/low_fuel_press_l1:0)&&(laminar/B738/annunciator/low_fuel_press_l2:0)&&(laminar/B738/annunciator/low_fuel_press_r1:0)&&(laminar/B738/annunciator/low_fuel_press_r2:0)",
+      "role": "PM",
+      "auto_check_rule": {
+        "all": [
+          {
+            "dataref": "laminar/B738/annunciator/low_fuel_press_c1",
+            "op": "eq",
+            "value": 0
+          },
+          {
+            "dataref": "laminar/B738/annunciator/low_fuel_press_c2",
+            "op": "eq",
+            "value": 0
+          },
+          {
+            "dataref": "laminar/B738/annunciator/low_fuel_press_l1",
+            "op": "eq",
+            "value": 0
+          },
+          {
+            "dataref": "laminar/B738/annunciator/low_fuel_press_l2",
+            "op": "eq",
+            "value": 0
+          },
+          {
+            "dataref": "laminar/B738/annunciator/low_fuel_press_r1",
+            "op": "eq",
+            "value": 0
+          },
+          {
+            "dataref": "laminar/B738/annunciator/low_fuel_press_r2",
+            "op": "eq",
+            "value": 0
+          }
+        ]
+      },
+      "attributes": [
+        3
+      ]
     }
   },
   {
@@ -7521,76 +7667,11 @@
   },
   {
     "model": "checklist.checkitem",
-    "pk": 319,
-    "fields": {
-      "item": "Pressurization",
-      "procedure": 18,
-      "step": 10,
-      "setting": "Verify Set to Landing Altitude",
-      "action_label": "CHECKED",
-      "dataref_expression": "laminar/B738/pressurization/knobs/landing_alt:{laminar/B738/fms/des_icao_alt}-35|{laminar/B738/fms/des_icao_alt}+35",
-      "role": "PM",
-      "auto_check_rule": {
-        "dataref": "laminar/B738/pressurization/knobs/landing_alt",
-        "op": "abs_diff_lte",
-        "ref": "laminar/B738/fms/des_icao_alt",
-        "tolerance": 35
-      },
-      "attributes": []
-    }
-  },
-  {
-    "model": "checklist.checkitem",
-    "pk": 320,
-    "fields": {
-      "item": "Center Tank Fuel Pumps",
-      "procedure": 18,
-      "step": 20,
-      "setting": "Off (When Empty)",
-      "action_label": "SET",
-      "dataref_expression": "(laminar/B738/fuel/fuel_tank_pos_ctr1:0)&&(laminar/B738/fuel/fuel_tank_pos_ctr2:0)",
-      "role": "PM",
-      "auto_check_rule": {
-        "all": [
-          {
-            "dataref": "laminar/B738/fuel/fuel_tank_pos_ctr1",
-            "op": "eq",
-            "value": 0
-          },
-          {
-            "dataref": "laminar/B738/fuel/fuel_tank_pos_ctr2",
-            "op": "eq",
-            "value": 0
-          }
-        ]
-      },
-      "attributes": [
-        15
-      ]
-    }
-  },
-  {
-    "model": "checklist.checkitem",
-    "pk": 321,
-    "fields": {
-      "item": "System Annunciator Lights",
-      "procedure": 18,
-      "step": 30,
-      "setting": "Reviewed",
-      "action_label": "CHECKED",
-      "dataref_expression": "",
-      "role": "C",
-      "auto_check_rule": null,
-      "attributes": []
-    }
-  },
-  {
-    "model": "checklist.checkitem",
     "pk": 322,
     "fields": {
       "item": "VREF (APPROACH REF Page)",
-      "procedure": 18,
-      "step": 40,
+      "procedure": 11,
+      "step": 110,
       "setting": "Verified / Set",
       "action_label": "SET",
       "dataref_expression": "(laminar/B738/FMS/approach_speed:>0)&&(laminar/B738/FMS/approach_flaps:>0)",
@@ -7617,16 +7698,16 @@
     "pk": 323,
     "fields": {
       "item": "RADIO / BARO Minimums",
-      "procedure": 18,
-      "step": 50,
-      "setting": "Set",
+      "procedure": 11,
+      "step": 60,
+      "setting": "from charts",
       "action_label": "SET",
       "dataref_expression": "laminar/B738/pfd/dh_pilot:>=200",
       "role": "PM",
       "auto_check_rule": {
         "dataref": "laminar/B738/pfd/dh_pilot",
         "op": "gte",
-        "value": 0
+        "value": 200
       },
       "attributes": []
     }
@@ -7636,8 +7717,8 @@
     "pk": 324,
     "fields": {
       "item": "Navigation Radios & Course",
-      "procedure": 18,
-      "step": 60,
+      "procedure": 11,
+      "step": 80,
       "setting": "Set / Verified",
       "action_label": "SET",
       "dataref_expression": "",
@@ -7651,8 +7732,8 @@
     "pk": 325,
     "fields": {
       "item": "Autobrake",
-      "procedure": 18,
-      "step": 70,
+      "procedure": 11,
+      "step": 120,
       "setting": "Set As Calculated",
       "action_label": "SET",
       "dataref_expression": "laminar/B738/autobrake/autobrake_pos:>1",
@@ -7670,14 +7751,14 @@
     "pk": 326,
     "fields": {
       "item": "Approach Briefing",
-      "procedure": 18,
-      "step": 80,
+      "procedure": 24,
+      "step": 40,
       "setting": "Completed",
       "action_label": "DONE",
       "dataref_expression": "",
       "role": "PF",
       "auto_check_rule": null,
-      "attributes": []
+      "attributes": [4]
     }
   },
   {
@@ -7685,8 +7766,8 @@
     "pk": 327,
     "fields": {
       "item": "Landing Lights",
-      "procedure": 18,
-      "step": 90,
+      "procedure": 24,
+      "step": 10,
       "setting": "On (Passing 10,000 ft)",
       "action_label": "SET",
       "dataref_expression": "(laminar/B738/switch/land_lights_left_pos:1)&&(laminar/B738/switch/land_lights_right_pos:1)",
@@ -7713,8 +7794,8 @@
     "pk": 328,
     "fields": {
       "item": "Engine Start Switches",
-      "procedure": 18,
-      "step": 100,
+      "procedure": 24,
+      "step": 50,
       "setting": "Continuous (Passing 10,000 ft)",
       "action_label": "SET",
       "dataref_expression": "(laminar/B738/engine/starter1_pos:2)&&(laminar/B738/engine/starter2_pos:2)",
@@ -7733,7 +7814,7 @@
           }
         ]
       },
-      "attributes": []
+      "attributes": [4]
     }
   },
   {
@@ -7741,12 +7822,12 @@
     "pk": 329,
     "fields": {
       "item": "Altimeters",
-      "procedure": 18,
-      "step": 110,
-      "setting": "Set QNH (Passing Transition Level)",
+      "procedure": 24,
+      "step": 20,
+      "setting": "Before passing transition level",
       "action_label": "SET",
       "dataref_expression": "(laminar/B738/EFIS/baro_set_std_pilot:0)&&(laminar/B738/EFIS/baro_set_std_copilot:0)",
-      "role": "C",
+      "role": "BOTH",
       "auto_check_rule": {
         "all": [
           {
@@ -8053,10 +8134,10 @@
       "step": 30,
       "setting": "Retracted (Flaps 0)",
       "action_label": "SET",
-      "dataref_expression": "sim/cockpit2/controls/flap_ratio:0",
+      "dataref_expression": "sim/cockpit2/controls/flap_handle_request_ratio:0",
       "role": "PM",
       "auto_check_rule": {
-        "dataref": "sim/cockpit2/controls/flap_ratio",
+        "dataref": "sim/cockpit2/controls/flap_handle_request_ratio",
         "op": "eq",
         "value": 0
       },
@@ -8917,6 +8998,51 @@
         "value": 0
       },
       "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 386,
+    "fields": {
+      "item": "Landing Performance Calculation",
+      "procedure": 11,
+      "step": 10,
+      "setting": "Completed",
+      "action_label": "DONE",
+      "dataref_expression": "",
+      "role": "PM",
+      "auto_check_rule": null,
+      "attributes": [4]
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 387,
+    "fields": {
+      "item": "DESCENT CHECKLIST",
+      "procedure": 11,
+      "step": 130,
+      "setting": "Complete",
+      "action_label": "COMPLETE",
+      "dataref_expression": "",
+      "role": "PF",
+      "auto_check_rule": null,
+      "attributes": []
+    }
+  },
+  {
+    "model": "checklist.checkitem",
+    "pk": 388,
+    "fields": {
+      "item": "APPROACH CHECKLIST",
+      "procedure": 24,
+      "step": 60,
+      "setting": "Complete",
+      "action_label": "COMPLETE",
+      "dataref_expression": "",
+      "role": "PF",
+      "auto_check_rule": null,
+      "attributes": [4]
     }
   }
 ]
