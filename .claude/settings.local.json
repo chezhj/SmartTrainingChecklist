@@ -16,7 +16,9 @@
       "Bash(git push *)",
       "Bash(pytest checklist/tests/test_rules.py -v)",
       "Bash(pytest --tb=short -q)",
-      "Bash(python -c ' *)"
+      "Bash(python -c ' *)",
+      "Bash(findstr /N \"\\\\\"procedure\\\\\": 6\" checklist\\\\fixtures\\\\checklist_content.json)",
+      "Bash(pytest checklist/tests/test_plugin_report_miss.py -v)"
     ]
   }
 }
