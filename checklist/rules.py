@@ -126,6 +126,8 @@ def collect_leaf_evaluations(rule: dict, state: dict) -> list:
             dist   = round(_haversine_meters(ac_lat, ac_lon, ref_lat, ref_lon), 1)
             result = dist < rule["meters"]
         return [{"op": "near", "ref_lat": rule["ref_lat"], "ref_lon": rule["ref_lon"],
+                 "ref_lat_val": ref_lat, "ref_lon_val": ref_lon,
+                 "ac_lat_val": ac_lat, "ac_lon_val": ac_lon,
                  "threshold_m": rule["meters"], "dist_m": dist, "result": result}]
 
     dataref = rule.get("dataref")

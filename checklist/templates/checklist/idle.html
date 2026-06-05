@@ -149,10 +149,13 @@
                 if (c.op === 'near') {
                     var icon = c.result ? '<span class="debug-pass">&#10003;</span>' : '<span class="debug-fail">&#10007;</span>';
                     var latDr = String(c.ref_lat || '').split('/').pop();
+                    var fmt5 = function(v) { return typeof v === 'number' ? v.toFixed(5) : '?'; };
+                    var coords = '<span class="debug-coords">ref (' + fmt5(c.ref_lat_val) + ', ' + fmt5(c.ref_lon_val) + ')  ac (' + fmt5(c.ac_lat_val) + ', ' + fmt5(c.ac_lon_val) + ')</span>';
                     return '<div class="debug-cond">' + icon
                         + '<span class="debug-dr" title="' + escHtml(c.ref_lat + ' / ' + c.ref_lon) + '">' + escHtml(latDr) + '</span>'
                         + '<span class="debug-expr">near &lt; ' + escHtml(String(c.threshold_m)) + ' m</span>'
                         + '<span class="debug-actual">&#8594; ' + escHtml(String(c.dist_m)) + ' m</span>'
+                        + coords
                         + '</div>';
                 }
                 var icon = c.pass ? '<span class="debug-pass">&#10003;</span>' : '<span class="debug-fail">&#10007;</span>';
@@ -231,7 +234,10 @@
        fallback reveals buttons for manual access but does not redirect. */
     function applyShowProcedures(slugs, autoNav) {
         if (!slugs) return;
-        slugs.forEach(function (slug) {
+        /* show_procedures is ordered by step ascending (server-side), so the first
+           slug to navigate to is always the lowest-step firing rule. Break after the
+           first navigation to prevent two simultaneous rules from racing. */
+        for (var slug of slugs) {
             if (!revealedSlugs.has(slug)) {
                 document.querySelectorAll('[data-conditional-slug="' + slug + '"]').forEach(function (el) {
                     el.classList.remove('js-hidden');
@@ -243,9 +249,10 @@
             if (autoNav && !navigatedSlugs.has(slug)) {
                 navigatedSlugs.add(slug);
                 window.location.href = '/' + slug;
+                break;  /* only navigate to the first (lowest step) firing rule */
             }
-        });
-        /* Hide any previously revealed procedure no longer in the list */
+        }
+        /* Hide procedures whose rule stopped firing before the pilot acted */
         revealedSlugs.forEach(function (slug) {
             if (slugs.indexOf(slug) === -1) {
                 document.querySelectorAll('[data-conditional-slug="' + slug + '"]').forEach(function (el) {

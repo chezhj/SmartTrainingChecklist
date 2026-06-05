@@ -133,7 +133,6 @@
                 <span>&nbsp;</span>
             {% endif %}
 
-
             {% if nextproc and procedure.auto_continue %}
                 <a class="nav-btn nav-btn-primary nav-btn-next js-nav-btn"
                    href="{% url 'checklist:detail' nextproc.slug %}">Next →</a>
@@ -221,11 +220,16 @@
         var labelEl = document.getElementById('label-completed');
         if (labelEl) labelEl.classList.toggle('js-hidden', checkedCount === 0);
 
-        /* Auto-advance when all items are checked this visit (requires auto_continue flag) */
-        if (autoContinue && hasCheckedThisVisit && checkedCount === totalItems && totalItems > 0) {
+        /* Auto-advance when all items are checked this visit.
+           autoContinue controls destination only: True → nextproc, False → idle. */
+        if (hasCheckedThisVisit && checkedCount === totalItems && totalItems > 0) {
             setTimeout(function () {
                 {% if nextproc %}
-                window.location.href = '{% url "checklist:detail" nextproc.slug %}';
+                if (autoContinue) {
+                    window.location.href = '{% url "checklist:detail" nextproc.slug %}';
+                } else {
+                    window.location.href = '{% url "checklist:idle" %}';
+                }
                 {% else %}
                 window.location.href = '{% url "checklist:idle" %}';
                 {% endif %}
@@ -310,11 +314,14 @@
                 if (c.op === 'near') {
                     var icon = c.result ? '<span class="debug-pass">&#10003;</span>' : '<span class="debug-fail">&#10007;</span>';
                     var latDr = String(c.ref_lat || '').split('/').pop();
+                    var fmt5 = function(v) { return typeof v === 'number' ? v.toFixed(5) : '?'; };
+                    var coords = '<span class="debug-coords">ref (' + fmt5(c.ref_lat_val) + ', ' + fmt5(c.ref_lon_val) + ')  ac (' + fmt5(c.ac_lat_val) + ', ' + fmt5(c.ac_lon_val) + ')</span>';
                     return '<div class="debug-cond">'
                         + icon
                         + '<span class="debug-dr" title="' + escHtml(c.ref_lat + ' / ' + c.ref_lon) + '">' + escHtml(latDr) + '</span>'
                         + '<span class="debug-expr">near &lt; ' + escHtml(String(c.threshold_m)) + ' m</span>'
                         + '<span class="debug-actual">&#8594; ' + escHtml(String(c.dist_m)) + ' m</span>'
+                        + coords
                         + '</div>';
                 }
                 var icon = c.pass
@@ -461,7 +468,9 @@
     };
 
     /* ── applyShowProcedures: reveal/hide conditional nav items ── */
-    var currentSlug = '{{ procedure.slug }}';
+    /* On procedure pages, show_procedures only drives button visibility — never
+       auto-navigation. The pilot completes the current procedure first, then
+       auto-advance (updateProgress) or the pilot's own tap handles the transition. */
     function applyShowProcedures(slugs, autoNav) {
         if (!slugs) return;
         /* Reveal newly active conditional procedures */
@@ -472,16 +481,8 @@
                 });
                 revealedSlugs.add(slug);
             }
-            /* Auto-navigate to the triggered procedure unless already on it.
-               navigatedSlugs guards against re-firing on every poll tick, but is
-               NOT pre-populated by the manual fallback (autoNav=false), so the
-               first real sim-connected poll always triggers navigation. */
-            if (autoNav && slug !== currentSlug && !navigatedSlugs.has(slug)) {
-                navigatedSlugs.add(slug);
-                window.location.href = '/' + slug;
-            }
         });
-        /* Hide any previously revealed procedure no longer in the list */
+        /* Hide procedures whose rule stopped firing before the pilot acted */
         revealedSlugs.forEach(function (slug) {
             if (slugs.indexOf(slug) === -1) {
                 document.querySelectorAll('[data-conditional-slug="' + slug + '"]').forEach(function (el) {

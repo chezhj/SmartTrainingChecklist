@@ -168,33 +168,18 @@ CHANGE: the whole counter is not needed
 
 * * *
 
-## 9\. Auto-Advance (auto_continue)
+## 9\. Auto-Advance
 
-Condition for automatic navigation to next procedure after all items are checked:
+When all items of a procedure are checked and at least one item was checked **this visit** (`hasCheckedThisVisit`), navigate after 600 ms:
 
-- `procedure.auto_continue == True`
-- At least one item was manually checked **this visit** (`allowAutoAdvance = true`)
-- `checkedCount === totalItems` and `totalItems > 0`
+- `auto_continue == True` → next linear procedure (lowest `step > current.step` where `show_rule=null` and has visible items), or `/idle` if none.
+- `auto_continue == False` → `/idle`.
 
-Delay: 600 ms, then navigate to `nextproc` (or `/idle` if last procedure).
+`auto_continue` controls **destination only** — it no longer gates whether auto-advance fires.
 
-CHANGE:   
-Question 1: Why is manually checked item needed?  
-Question 2: Naming conflict: auto-advance is also used to scroll within a procedure. Rename scroll?  
-The business rule should be: always do a  "next" (advance) when all items of a procedure have been checked off. The next target should be:
+The `hasCheckedThisVisit` guard prevents auto-advancing when a pilot revisits an already-complete procedure (e.g., after a connection drop and reload).
 
-```
-c = current_procedure
-
-if c.auto_continue == True {
-    target = procedure t with
-        t.step > c.step AND
-        t.show_rule = Null
-        t.has_items_to_show 
-} else {
-    return target = idle
-}
-```
+Note: scroll-to-next-unchecked within a procedure is a separate mechanism — see Rule 13.
 
 Source: `detail.html` — `updateProgress()` JS
 
@@ -202,22 +187,26 @@ Source: `detail.html` — `updateProgress()` JS
 
 ## 10\. Conditional Procedure Reveal — Two-Set Pattern
 
-The JS maintains two sets to track conditional procedure state without conflicts:
+The JS maintains two sets to track conditional procedure state. Behaviour differs by page:
+
+**`idle.html`** — auto-navigates on first firing slug (lowest `step`):
 
 | Set | Purpose | Manual fallback populates? |
 | --- | --- | --- |
 | `revealedSlugs` | Which nav buttons are currently visible | YES |
-| `navigatedSlugs` | Which slugs we've already auto-navigated to | NO  |
+| `navigatedSlugs` | Which slugs we’ve already auto-navigated to | NO  |
 
-**Why two sets:** The manual fallback (sim disconnected) adds to `revealedSlugs` so buttons stay visible. It does NOT add to `navigatedSlugs`. This means when the sim reconnects and a rule fires, `navigatedSlugs.has(slug)` is still false → auto-navigation always runs even if the button was already visible.
+**`detail.html`** — reveals buttons only, never auto-navigates. `navigatedSlugs` is unused on procedure pages (pilot is never interrupted mid-checklist).
 
-**Hide and reset:** When a slug is no longer in the active `show_procedures` list, it is removed from **both** sets and hidden — so it can re-trigger later.
+**Why two sets (idle.html):** The manual fallback (sim disconnected) adds to `revealedSlugs` so buttons stay visible. It does NOT add to `navigatedSlugs`. This means when the sim reconnects and a rule fires, `navigatedSlugs.has(slug)` is still false → auto-navigation always runs even if the button was already visible.
+
+**Race fix (idle.html):** When multiple rules fire simultaneously, only the first (lowest `step`) slug triggers navigation — the loop breaks after the first navigation assignment.
+
+**Hide logic (both pages):** When a slug is no longer in `show_procedures`, it is removed from both sets and hidden. This fires when a rule *stops firing* before the pilot acts (dataref condition reverts). It does NOT fire for completion — completed procedures self-hide via `updateProgress()` and remove themselves from `revealedSlugs` directly.
 
 **Conditional procedure completion:** When all items in a conditional procedure are done, it hides itself from nav. `revealedSlugs` is updated. It reappears when `show_rule` fires again.
 
 Source: `detail.html` and `idle.html` — `applyShowProcedures()` JS; `CLAUDE.md` architecture notes
-
-TODO: needed?
 
 * * *
 
@@ -244,7 +233,7 @@ Server-side thresholds (`api_views.py — poll_view()`):
 
 When `sim_connected == false`, the browser reveals **all** conditional procedures in the nav (making them manually tappable). Auto-navigation does NOT fire. `navigatedSlugs` is not populated so reconnection will still trigger navigation.
 
-CHANGE QUESTION: What does auto-navigation mean? Check 9 as rule.
+Auto-navigation (from `show_procedures`) applies from idle only. On a procedure page, the manual fallback still reveals all conditional buttons for manual access but does not auto-navigate.
 
 Source: `detail.html` / `idle.html` — poll handler
 
@@ -304,17 +293,24 @@ Source: `plugin_views.py — plugin_state()` lines 350–377
 
 * * *
 
-## 16\. Conditional Procedure Auto-Reset (poll)
+## 16\. Conditional Procedure Edge Detection (poll)
 
-In `/api/poll/`, if a procedure's `show_rule` fires but all visible items for that procedure are already done:
+`poll_view` tracks the last-known `show_rule` result per procedure in `FlightSession.show_rule_state` (a JSON dict `{str(proc.pk): bool}`). On every poll, for each conditional procedure:
 
-- All `FlightItemState` rows for that procedure are deleted.
-- The procedure still appears in `show_procedures` (it fires, then resets).
-- On the next poll, the browser will navigate to it again if `autoNav=true`.
+| Rule result | Previous result | Items done? | Action |
+| --- | --- | --- | --- |
+| False | any | — | Hidden — not in `show_procedures`. `False` recorded in `show_rule_state`. |
+| True | False (rising edge) | any | `FlightItemState` rows for procedure deleted. Slug added to `show_procedures`. Browser auto-navigates. |
+| True | True (continuously true) | No | Slug added to `show_procedures`. Pilot is mid-checklist. |
+| True | True (continuously true) | Yes | Silently skipped. States preserved. No loop. |
 
-This allows conditional checklists (e.g., emergency procedures) to repeat cleanly.
+`show_rule_state` is written for **every** poll evaluation — including when the rule is `False`. This is essential: if `False` were not recorded, the next `True` evaluation would not be recognized as a rising edge, and the procedure would never re-trigger.
 
-Source: `api_views.py — poll_view()` lines 93–113
+`show_rule_state` is persisted to the DB (saved only when changed). Preserved through server restarts.
+
+**Re-trigger semantics**: a procedure re-triggers only when its `show_rule` transitions from `False` to `True`. Descent re-triggers after a go-around (rule went false during climb). Waypoint procedures re-trigger at each new waypoint (aircraft moved away then approached a new one). Emergency procedures re-trigger each time the condition starts fresh.
+
+Source: `api_views.py — poll_view()`, `models.py — FlightSession.show_rule_state`
 
 * * *
 

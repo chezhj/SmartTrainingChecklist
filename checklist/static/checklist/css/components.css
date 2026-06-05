@@ -1801,6 +1801,8 @@
 }
 
 .btn-setup-secondary {
+  display: inline-flex;
+  align-items: center;
   height: 44px;
   padding: 0 24px;
   background: var(--color-card);
@@ -2258,6 +2260,7 @@
 
 .debug-expr   { color: rgba(255, 255, 255, 0.35); white-space: nowrap; }
 .debug-actual { color: rgba(255, 255, 255, 0.62); white-space: nowrap; }
+.debug-coords { grid-column: 2 / -1; color: rgba(255, 255, 255, 0.30); font-size: 0.625rem; }
 
 .debug-pass { color: #4ade80; font-style: normal; }
 .debug-fail { color: #f87171; font-style: normal; }
