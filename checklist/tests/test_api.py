@@ -186,8 +186,9 @@ class TestPollView(TestCase):
             _last_datarefs.pop(self.session.pk, None)
             cond_proc.delete()
 
-    def test_poll_auto_resets_conditional_procedure_when_all_done_and_rule_fires(self):
-        """When show_rule fires and all items are already checked, states are deleted."""
+    def test_poll_rising_edge_clears_states_and_shows_slug(self):
+        """First time the rule fires (rising edge: prev=False → current=True), states are
+        cleared and slug added to show_procedures regardless of existing state."""
         from checklist.plugin_views import _last_datarefs
         cond_proc = Procedure.objects.create(
             title="Waypoint", step=98, slug="waypoint-test",
@@ -202,14 +203,120 @@ class TestPollView(TestCase):
             source="manual",
             checked_at=datetime.now(tz=timezone.utc),
         )
+        # show_rule_state starts as {} → prev = False → rising edge
         _last_datarefs[self.session.pk] = {"sim/test/wp": 1}
         _set_session_key(self.client, self.session.session_key)
         try:
             data = _get_poll(self.client).json()
-            # Procedure slug still returned (rule fired, reset happened)
             self.assertIn(cond_proc.slug, data["show_procedures"])
-            # State was deleted (clean slate for next execution)
             self.assertFalse(FlightItemState.objects.filter(pk=state.pk).exists())
+        finally:
+            _last_datarefs.pop(self.session.pk, None)
+            cond_proc.delete()
+
+    def test_poll_continuously_true_all_done_not_in_show_procedures(self):
+        """When rule is continuously True (prev=True) and all items are done, procedure is
+        silently skipped — no loop, no state deletion."""
+        from checklist.plugin_views import _last_datarefs
+        cond_proc = Procedure.objects.create(
+            title="Descent", step=97, slug="descent-edge-test",
+            show_rule={"dataref": "sim/test/descend", "op": "eq", "value": 1},
+            sop=self.sop,
+        )
+        item = CheckItemFactory(procedure=cond_proc)
+        # Pre-set show_rule_state: procedure was already True last poll
+        self.session.show_rule_state = {str(cond_proc.pk): True}
+        self.session.save()
+        state = FlightItemState.objects.create(
+            flight_session=self.session,
+            checklist_item=item,
+            status="checked",
+            source="manual",
+            checked_at=datetime.now(tz=timezone.utc),
+        )
+        _last_datarefs[self.session.pk] = {"sim/test/descend": 1}
+        _set_session_key(self.client, self.session.session_key)
+        try:
+            data = _get_poll(self.client).json()
+            # No re-trigger: slug absent, states preserved
+            self.assertNotIn(cond_proc.slug, data["show_procedures"])
+            self.assertTrue(FlightItemState.objects.filter(pk=state.pk).exists())
+        finally:
+            _last_datarefs.pop(self.session.pk, None)
+            cond_proc.delete()
+
+    def test_poll_continuously_true_items_incomplete_shows_slug(self):
+        """When rule is continuously True and items are NOT all done, procedure stays in
+        show_procedures so the pilot can return to it."""
+        from checklist.plugin_views import _last_datarefs
+        cond_proc = Procedure.objects.create(
+            title="Descent B", step=96, slug="descent-partial-test",
+            show_rule={"dataref": "sim/test/descend2", "op": "eq", "value": 1},
+            sop=self.sop,
+        )
+        CheckItemFactory(procedure=cond_proc)  # item not checked
+        # prev=True (already fired last poll)
+        self.session.show_rule_state = {str(cond_proc.pk): True}
+        self.session.save()
+        _last_datarefs[self.session.pk] = {"sim/test/descend2": 1}
+        _set_session_key(self.client, self.session.session_key)
+        try:
+            data = _get_poll(self.client).json()
+            self.assertIn(cond_proc.slug, data["show_procedures"])
+        finally:
+            _last_datarefs.pop(self.session.pk, None)
+            cond_proc.delete()
+
+    def test_poll_false_rule_records_false_enabling_next_rising_edge(self):
+        """When the rule is False, show_rule_state records False. The next poll where the
+        rule is True will be treated as a rising edge."""
+        from checklist.plugin_views import _last_datarefs
+        cond_proc = Procedure.objects.create(
+            title="Descent C", step=95, slug="descent-retrigger-test",
+            show_rule={"dataref": "sim/test/alt", "op": "eq", "value": 1},
+            sop=self.sop,
+        )
+        # Start with prev=True (procedure was active)
+        self.session.show_rule_state = {str(cond_proc.pk): True}
+        self.session.save()
+
+        _last_datarefs[self.session.pk] = {"sim/test/alt": 0}  # rule fires False
+        _set_session_key(self.client, self.session.session_key)
+        try:
+            # First poll: rule False — slug not in show_procedures, state saved as False
+            data = _get_poll(self.client).json()
+            self.assertNotIn(cond_proc.slug, data["show_procedures"])
+            self.session.refresh_from_db()
+            self.assertFalse(self.session.show_rule_state.get(str(cond_proc.pk), True))
+
+            # Second poll: rule True — rising edge (False→True), slug shown
+            _last_datarefs[self.session.pk] = {"sim/test/alt": 1}
+            data = _get_poll(self.client).json()
+            self.assertIn(cond_proc.slug, data["show_procedures"])
+        finally:
+            _last_datarefs.pop(self.session.pk, None)
+            cond_proc.delete()
+
+    def test_poll_show_rule_state_saved_only_on_change(self):
+        """show_rule_state is only persisted to DB when the result changes."""
+        from checklist.plugin_views import _last_datarefs
+        cond_proc = Procedure.objects.create(
+            title="Stable", step=94, slug="stable-rule-test",
+            show_rule={"dataref": "sim/test/stable", "op": "eq", "value": 1},
+            sop=self.sop,
+        )
+        # Pre-set: rule was already True
+        self.session.show_rule_state = {str(cond_proc.pk): True}
+        self.session.save()
+        original_updated = self.session.pk  # just to force a fresh load below
+
+        _last_datarefs[self.session.pk] = {"sim/test/stable": 1}  # still True
+        _set_session_key(self.client, self.session.session_key)
+        try:
+            _get_poll(self.client)
+            self.session.refresh_from_db()
+            # State should remain True (no write needed for same value)
+            self.assertTrue(self.session.show_rule_state.get(str(cond_proc.pk)))
         finally:
             _last_datarefs.pop(self.session.pk, None)
             cond_proc.delete()

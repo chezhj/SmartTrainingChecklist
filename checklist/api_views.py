@@ -76,9 +76,12 @@ def poll_view(request):
         sim_connected = age < 5
         sim_initializing = not sim_connected and age < 15
 
-    # ── show_procedures: conditional procedures whose show_rule currently fires ─
-    # Also provides live values for the idle page and auto-resets any conditional
-    # procedure where the rule fires but all items are already done (re-trigger).
+    # ── show_procedures: conditional procedures to show/auto-navigate ──────────
+    # Edge-triggered: a procedure is added to show_procedures only on a rising
+    # edge (show_rule was False last poll, is True now) OR when the rule is
+    # continuously True and items are still incomplete (pilot is mid-checklist).
+    # Once all items are done and no new rising edge occurs, the procedure is
+    # silently dropped — no loop, no auto-reset.
     from .plugin_views import _last_datarefs
     last_state = _last_datarefs.get(session.pk, {})
 
@@ -87,31 +90,54 @@ def poll_view(request):
             flight_session=session, is_active=True
         ).values_list("attribute_id", flat=True)
     )
+
+    prev_state = session.show_rule_state   # {str(proc.pk): bool}
+    new_state = {}
     show_procedures = []
-    for proc in Procedure.objects.exclude(show_rule=None):
-        if not evaluate_rule(proc.show_rule, last_state):
+
+    for proc in Procedure.objects.exclude(show_rule=None).order_by('step'):
+        current = evaluate_rule(proc.show_rule, last_state)
+        prev = prev_state.get(str(proc.pk), False)
+
+        # Record current result unconditionally — including False values.
+        # If we skip False, the next True cannot be detected as a rising edge.
+        new_state[str(proc.pk)] = current
+
+        if not current:
+            # Rule not firing. Procedure hidden. prev recorded as False above.
             continue
-        # Check whether all visible items are already done.
-        proc_items = list(
-            CheckItem.objects.filter(procedure=proc).prefetch_related("attributes")
-        )
-        visible_items = [i for i in proc_items if i.shouldshow(active_attr_ids_for_show)]
-        if visible_items:
-            done_ids = set(
-                FlightItemState.objects.filter(
-                    flight_session=session,
-                    checklist_item__in=visible_items,
-                    status__in=("checked", "skipped"),
-                ).values_list("checklist_item_id", flat=True)
+
+        rising_edge = not prev  # current=True, prev=False
+
+        if rising_edge:
+            # New event: clear states so the procedure starts fresh.
+            FlightItemState.objects.filter(
+                flight_session=session,
+                checklist_item__procedure=proc,
+            ).delete()
+            show_procedures.append(proc.slug)
+        else:
+            # Rule continuously True. Only show if pilot has not yet finished.
+            proc_items = list(
+                CheckItem.objects.filter(procedure=proc).prefetch_related("attributes")
             )
-            all_done = all(i.pk in done_ids for i in visible_items)
-            if all_done:
-                # Auto-reset so the next activation starts clean.
-                FlightItemState.objects.filter(
-                    flight_session=session,
-                    checklist_item__procedure=proc,
-                ).delete()
-        show_procedures.append(proc.slug)
+            visible_items = [i for i in proc_items if i.shouldshow(active_attr_ids_for_show)]
+            if visible_items:
+                done_ids = set(
+                    FlightItemState.objects.filter(
+                        flight_session=session,
+                        checklist_item__in=visible_items,
+                        status__in=("checked", "skipped"),
+                    ).values_list("checklist_item_id", flat=True)
+                )
+                all_done = all(i.pk in done_ids for i in visible_items)
+                if not all_done:
+                    show_procedures.append(proc.slug)
+                # all_done + continuously True → silently skip. States preserved. No loop.
+
+    if new_state != prev_state:
+        session.show_rule_state = new_state
+        session.save(update_fields=["show_rule_state"])
 
     # Live values for the idle page.
     idle_datarefs = IdleDataref.objects.all()
@@ -193,7 +219,7 @@ def poll_view(request):
         # show_rule evaluations for conditional procedures
         debug_show_procedures = []
         try:
-            for proc in Procedure.objects.exclude(show_rule=None):
+            for proc in Procedure.objects.exclude(show_rule=None).order_by('step'):
                 debug_show_procedures.append({
                     "proc_id": proc.pk,
                     "title": proc.title,
