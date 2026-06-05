@@ -221,6 +221,12 @@ class FlightSession(models.Model):
         blank=True,
         help_text="Session-wide pilot decisions on live_rule suggestions. {str(attr_id): bool}",
     )
+    show_rule_state = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Last evaluated show_rule result per procedure: {str(proc.pk): bool}. "
+                  "Used for rising-edge detection in poll_view.",
+    )
 
     class Meta:
         ordering = ["-created_at"]
@@ -357,3 +363,42 @@ class Attribute(models.Model):
 
     def __str__(self) -> str:
         return self.title.__str__()
+
+
+class RuleMissReport(models.Model):
+    """
+    Pilot-triggered diagnostic snapshot: the first unchecked visible item
+    at the moment the pilot pressed simflow/report_miss, along with its
+    rule and the leaf-condition evaluation results.
+    """
+
+    flight_session = models.ForeignKey(
+        FlightSession, on_delete=models.CASCADE, related_name="rule_miss_reports"
+    )
+    reported_at = models.DateTimeField(db_index=True)
+
+    # Denormalised snapshot — survives item renames and SOP edits
+    reported_item = models.ForeignKey(
+        CheckItem,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="rule_miss_reports",
+    )
+    reported_item_label = models.CharField(max_length=50)
+    active_phase = models.CharField(max_length=50)
+
+    rule = models.JSONField(null=True, blank=True)
+    leaf_evaluations = models.JSONField()
+
+    # Pre-computed for fast admin filtering without JSON scanning
+    conditions_total = models.PositiveSmallIntegerField(default=0)
+    conditions_failing = models.PositiveSmallIntegerField(default=0)
+
+    plugin_version = models.CharField(max_length=20, blank=True)
+
+    class Meta:
+        ordering = ["-reported_at"]
+
+    def __str__(self) -> str:
+        return f"Miss: {self.reported_item_label} @ {self.reported_at:%Y-%m-%d %H:%M:%S}"

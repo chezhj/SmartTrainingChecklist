@@ -25,6 +25,7 @@ from .models import (
     FlightSessionAttribute,
     IdleDataref,
     Procedure,
+    RuleMissReport,
     SOP,
     UserProfile,
 )
@@ -522,3 +523,106 @@ def plugin_state(request):
         "skipped": newly_skipped,
         "watch": unique_watch,
     })
+
+
+@require_api_key
+@require_POST
+def plugin_report_miss(request):
+    """
+    POST /api/plugin/report-miss/
+
+    Pilot triggers this when the first unchecked item hasn't auto-checked.
+    Server finds the first unchecked visible item (required or optional),
+    evaluates its rule against the cached dataref snapshot, and persists
+    a RuleMissReport. Items with a null auto_check_rule are reported with
+    leaf_evaluations=[] so the pilot knows the item has no automation.
+
+    Body:   {"session_id": <int>}
+    200:    {"status": "ok", "report_id": <int>}
+    204:    procedure complete — nothing to report
+    400:    bad body
+    401:    bad API key
+    404:    no active session or no active phase
+    422:    no cached dataref state (plugin state POST never received)
+    """
+    profile = request.plugin_profile
+
+    data, err = _parse_body(request)
+    if err:
+        return err
+
+    session_id = data.get("session_id")
+    if not isinstance(session_id, int):
+        return JsonResponse({"detail": "session_id must be an integer."}, status=400)
+
+    try:
+        session = FlightSession.objects.get(
+            pk=session_id, user_profile=profile, is_active=True
+        )
+    except FlightSession.DoesNotExist:
+        return JsonResponse({}, status=404)
+
+    if not session.active_phase:
+        return JsonResponse({}, status=404)
+
+    try:
+        procedure = Procedure.objects.get(slug=session.active_phase)
+    except Procedure.DoesNotExist:
+        return JsonResponse({}, status=404)
+
+    active_attr_ids = list(
+        FlightSessionAttribute.objects.filter(
+            flight_session=session, is_active=True
+        ).values_list("attribute_id", flat=True)
+    )
+    done_ids = set(
+        FlightItemState.objects.filter(
+            flight_session=session, status__in=("checked", "skipped")
+        ).values_list("checklist_item_id", flat=True)
+    )
+
+    target_item = None
+    for item in CheckItem.objects.filter(procedure=procedure).order_by("step"):
+        if item.pk not in done_ids and item.shouldshow(active_attr_ids):
+            target_item = item
+            break
+
+    if target_item is None:
+        return JsonResponse({}, status=204)
+
+    datarefs = _last_datarefs.get(session.pk)
+    if datarefs is None:
+        return JsonResponse(
+            {"detail": "No dataref state cached for this session."},
+            status=422,
+        )
+
+    rule = target_item.auto_check_rule
+    leaf_evals = collect_leaf_evaluations(rule, datarefs) if rule else []
+
+    now = datetime.now(tz=timezone.utc)
+    report = RuleMissReport.objects.create(
+        flight_session=session,
+        reported_at=now,
+        reported_item=target_item,
+        reported_item_label=target_item.item,
+        active_phase=session.active_phase,
+        rule=rule,
+        leaf_evaluations=leaf_evals,
+        conditions_total=len(leaf_evals),
+        conditions_failing=sum(1 for e in leaf_evals if not e.get("pass", True)),
+        plugin_version=request.headers.get("X-Plugin-Version", ""),
+    )
+
+    _session_log(session.pk, {
+        "ts": now.isoformat(),
+        "event": "rule_miss_reported",
+        "report_id": report.pk,
+        "item_id": target_item.pk,
+        "item": target_item.item,
+        "active_phase": session.active_phase,
+        "rule": rule,
+        "leaf_evaluations": leaf_evals,
+    })
+
+    return JsonResponse({"status": "ok", "report_id": report.pk})

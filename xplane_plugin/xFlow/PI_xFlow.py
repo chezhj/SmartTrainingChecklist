@@ -22,6 +22,7 @@ Installation:
 Commands registered:
   simflow/check_next_item  — manually check the next checklist item
   simflow/dump_watch       — log current watch list and dataref values (INFO)
+  simflow/report_miss      — report the first unchecked item as a rule miss
   Bind via X-Plane Settings → Keyboard or Joystick.
 """
 
@@ -64,6 +65,9 @@ _COMMAND_DESC = "simFlow – Check next checklist item"
 
 _DUMP_COMMAND_FULL = "simflow/dump_watch"
 _DUMP_COMMAND_DESC = "simFlow – Dump watch list and current dataref values to log"
+
+_MISS_COMMAND_FULL = "simflow/report_miss"
+_MISS_COMMAND_DESC = "simFlow – Report rule miss for the first unchecked checklist item"
 
 # ── Flight loop interval ───────────────────────────────────────────────────── #
 
@@ -130,6 +134,9 @@ class PythonInterface:
         self._dump_cmd = CheckCommand(
             _DUMP_COMMAND_FULL, _DUMP_COMMAND_DESC, self._on_dump_watch
         )
+        self._miss_cmd = CheckCommand(
+            _MISS_COMMAND_FULL, _MISS_COMMAND_DESC, self._on_report_miss
+        )
 
         # Session state — populated by _fetch_session()
         self._session_id: int | None = None
@@ -193,6 +200,7 @@ class PythonInterface:
     def XPluginStop(self):
         self._check_cmd.destroy()
         self._dump_cmd.destroy()
+        self._miss_cmd.destroy()
 
     # ── Flight loop ────────────────────────────────────────────────────────── #
 
@@ -274,14 +282,18 @@ class PythonInterface:
                     self._drefs[path] = dref
                 # XPLM type bits: Int=1, Float=2, Double=4, FloatArray=8,
                 #                 IntArray=16, Data/string=32.
-                # Must use getDatai for int datarefs — getDataf returns 0.0 for them.
+                # Priority: Double > Float > Int-only, so that datarefs typed as
+                # both Int+Float (e.g. FMS lat/lon) use getDataf and keep precision.
+                # getDataf returns 0.0 for purely-int datarefs, so Int is last.
                 dtype = xp.getDataRefTypes(dref)
                 if dtype & 32:
                     val = xp.getDatas(dref, 0, 64).rstrip("\x00").strip()
-                elif dtype & 1:
-                    val = xp.getDatai(dref)
                 elif dtype & 4:
                     val = xp.getDatad(dref)
+                elif dtype & 2:
+                    val = xp.getDataf(dref)
+                elif dtype & 1:
+                    val = xp.getDatai(dref)
                 else:
                     val = xp.getDataf(dref)
 
@@ -342,7 +354,52 @@ class PythonInterface:
         if not watch:
             self._log("INFO", "  (watch list is empty — no active session or no rules)")
 
+    def _on_report_miss(self, phase: int):
+        if phase != 0:
+            return
+        threading.Thread(target=self._post_report_miss, daemon=True).start()
+
     # ── HTTP workers (daemon threads) ──────────────────────────────────────── #
+
+    def _post_report_miss(self) -> None:
+        if not self._api_key or self._api_key == PLACEHOLDER:
+            self._log("ERROR", "api_key not set — edit config.ini")
+            return
+
+        with self._lock:
+            session_id = self._session_id
+        if session_id is None:
+            self._log("WARNING", "report_miss: no active session")
+            return
+
+        url = self._backend_url.rstrip("/") + "/api/plugin/report-miss/"
+        headers = {
+            "Authorization": f"Bearer {self._api_key}",
+            "Content-Type": "application/json",
+            "X-Plugin-Version": PLUGIN_VERSION,
+        }
+
+        self._log("DEBUG", f"POST {url}")
+        try:
+            status, data = self._http_post_json(url, headers, {"session_id": session_id})
+        except Exception as exc:
+            self._log("ERROR", _classify_error(exc))
+            return
+
+        self._log("DEBUG", f"report-miss response status {status}")
+
+        if status == 200:
+            self._log("INFO", f"rule miss reported (report_id={data.get('report_id')})")
+        elif status == 204:
+            self._log("INFO", "report_miss: procedure complete, nothing to report")
+        elif status == 401:
+            self._log("ERROR", "authentication failed — check api_key in config.ini")
+        elif status == 404:
+            self._log("INFO", "report_miss: no active session or phase")
+        elif status == 422:
+            self._log("WARNING", f"report_miss: {data.get('detail', 'no cached state')}")
+        else:
+            self._log("INFO", f"report_miss: unexpected status {status}")
 
     def _fetch_session(self) -> None:
         """

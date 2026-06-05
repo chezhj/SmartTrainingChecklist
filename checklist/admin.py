@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Attribute, CheckItem, Procedure, SOP
+from .models import Attribute, CheckItem, Procedure, RuleMissReport, SOP
 
 
 class CheckInline(admin.TabularInline):
@@ -44,6 +44,48 @@ class AttributeAdmin(admin.ModelAdmin):
     ]
 
 
+def _fail_pct(obj):
+    if obj.conditions_total == 0:
+        return "—"
+    return f"{100 * obj.conditions_failing // obj.conditions_total}% ({obj.conditions_failing}/{obj.conditions_total})"
+
+_fail_pct.short_description = "% failing"
+
+
+class RuleMissReportAdmin(admin.ModelAdmin):
+    list_display = [
+        "reported_at",
+        "reported_item_label",
+        "active_phase",
+        "conditions_total",
+        "conditions_failing",
+        _fail_pct,
+        "plugin_version",
+    ]
+    list_filter = [
+        "active_phase",
+        "plugin_version",
+        ("reported_at", admin.DateFieldListFilter),
+    ]
+    search_fields = ["reported_item_label", "active_phase"]
+    readonly_fields = [
+        "reported_at",
+        "flight_session",
+        "reported_item",
+        "reported_item_label",
+        "active_phase",
+        "plugin_version",
+        "rule",
+        "leaf_evaluations",
+        "conditions_total",
+        "conditions_failing",
+    ]
+    ordering = ["-reported_at"]
+
+    def has_add_permission(self, request):
+        return False
+
+
 admin.site.site_header = "SimFlow Admin"
 admin.site.site_title = "SimFlow"
 
@@ -51,3 +93,4 @@ admin.site.register(SOP, SOPAdmin)
 admin.site.register(Procedure, ProcedureAdmin)
 admin.site.register(CheckItem)
 admin.site.register(Attribute, AttributeAdmin)
+admin.site.register(RuleMissReport, RuleMissReportAdmin)
