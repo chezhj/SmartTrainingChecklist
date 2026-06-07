@@ -1,4 +1,4 @@
-# SimFlow
+# xFlow
 
 X-Plane procedure companion for sim flying (737). Stay in the flow.
 

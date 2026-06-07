@@ -391,7 +391,7 @@ class Attribute(models.Model):
 class RuleMissReport(models.Model):
     """
     Pilot-triggered diagnostic snapshot: the first unchecked visible item
-    at the moment the pilot pressed simflow/report_miss, along with its
+    at the moment the pilot pressed xFlow/report_miss, along with its
     rule and the leaf-condition evaluation results.
     """
 

@@ -1,5 +1,5 @@
 """
-xFlow — simFlow X-Plane plugin
+xFlow — X-Plane plugin
 Phase 3: flight loop dataref monitoring + manual check-next command.
 
 Installation:
@@ -13,16 +13,16 @@ Installation:
        X-Plane 12/Resources/plugins/PythonPlugins/xFlow/config.ini
 
   Edit config.ini:
-    api_key     — paste your key from the simFlow profile page
+    api_key     — paste your key from the xFlow profile page
     backend_url — leave as-is for local dev; change for production
     log_level   — DEBUG / INFO / WARNING / ERROR (default: INFO)
                   DEBUG shows watch list contents, dataref values, raw responses
                   WARNING suppresses INFO but shows missing/broken datarefs
 
 Commands registered:
-  simflow/check_next_item  — manually check the next checklist item
-  simflow/dump_watch       — log current watch list and dataref values (INFO)
-  simflow/report_miss      — report the first unchecked item as a rule miss
+  xFlow/check_next_item  — manually check the next checklist item
+  xFlow/dump_watch       — log current watch list and dataref values (INFO)
+  xFlow/report_miss      — report the first unchecked item as a rule miss
   Bind via X-Plane Settings → Keyboard or Joystick.
 """
 
@@ -55,19 +55,19 @@ except ImportError:
 PLUGIN_VERSION = "0.6.0"
 
 plugin_name = "xFlow"
-plugin_sig = "xppython3.simflow"
-plugin_desc = "simFlow – X-Plane checklist integration"
+plugin_sig = "xppython3.xflow"
+plugin_desc = "xFlow – X-Plane checklist integration"
 
 # ── Command ────────────────────────────────────────────────────────────────── #
 
-_COMMAND_FULL = "simflow/check_next_item"
-_COMMAND_DESC = "simFlow – Check next checklist item"
+_COMMAND_FULL = "xFlow/check_next_item"
+_COMMAND_DESC = "xFlow – Check next checklist item"
 
-_DUMP_COMMAND_FULL = "simflow/dump_watch"
-_DUMP_COMMAND_DESC = "simFlow – Dump watch list and current dataref values to log"
+_DUMP_COMMAND_FULL = "xFlow/dump_watch"
+_DUMP_COMMAND_DESC = "xFlow – Dump watch list and current dataref values to log"
 
-_MISS_COMMAND_FULL = "simflow/report_miss"
-_MISS_COMMAND_DESC = "simFlow – Report rule miss for the first unchecked checklist item"
+_MISS_COMMAND_FULL = "xFlow/report_miss"
+_MISS_COMMAND_DESC = "xFlow – Report rule miss for the first unchecked checklist item"
 
 # ── Flight loop interval ───────────────────────────────────────────────────── #
 
