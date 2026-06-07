@@ -91,6 +91,132 @@
   background: rgba(34, 201, 160, 0.12);
 }
 
+/* ── Procedure groups (picker) ──────────────────────────────────── */
+
+.proc-group {
+  padding-top: 4px;
+}
+
+.proc-group-header {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.3);
+  padding: 10px 16px 5px;
+  /* reset button defaults — header is now a collapse toggle */
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+}
+
+.proc-group-header:hover {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.proc-group-label {
+  flex: 1;
+  min-width: 0;
+}
+
+.proc-group-summary {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.25);
+  letter-spacing: 0.04em;
+}
+
+.proc-group-chevron {
+  font-size: 9px;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.3);
+  transition: transform var(--transition-fast);
+}
+
+.proc-group.is-collapsed .proc-group-chevron {
+  transform: rotate(-90deg);
+}
+
+.proc-group.is-collapsed .proc-group-body {
+  display: none;
+}
+
+.proc-group--emergency .proc-group-header {
+  color: var(--color-red);
+}
+
+.proc-group--emergency .proc-group-summary,
+.proc-group--emergency .proc-group-chevron {
+  color: rgba(201, 64, 64, 0.6);
+}
+
+.proc-group--emergency .proc-sidebar-item {
+  border-left-color: rgba(201, 64, 64, 0.35);
+}
+
+/* Suggested: a firing show_rule highlights the item (amber, distinct from teal active) */
+.proc-sidebar-item.suggested {
+  background: rgba(245, 166, 35, 0.08);
+  border-left-color: var(--color-amber);
+}
+
+.proc-sidebar-item.suggested .proc-sidebar-name {
+  color: #fff;
+}
+
+.proc-sidebar-item.suggested .proc-sidebar-name::after {
+  content: '●';
+  color: var(--color-amber);
+  font-size: 8px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+/* ── Suggestion banner (detail page) ────────────────────────────── */
+
+.suggest-banner {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  background: rgba(245, 166, 35, 0.12);
+  border-bottom: 1px solid rgba(245, 166, 35, 0.4);
+  color: var(--color-ink);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.suggest-banner:hover {
+  background: rgba(245, 166, 35, 0.18);
+}
+
+.suggest-banner-icon {
+  color: var(--color-amber);
+  flex-shrink: 0;
+}
+
+.suggest-banner-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.suggest-banner-cta {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+  flex-shrink: 0;
+}
+
 
 /* ── Connection bar ─────────────────────────────────────────────── */
 

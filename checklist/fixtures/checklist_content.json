@@ -1932,7 +1932,7 @@
       "setting": "set initial (cleared) Altitude",
       "action_label": "SET",
       "dataref_expression": "",
-      "role": "C",
+      "role": "PF",
       "auto_check_rule": {
         "dataref": "laminar/B738/autopilot/mcp_alt_dial",
         "op": "gt",
@@ -1951,7 +1951,7 @@
       "setting": "Arm",
       "action_label": "ARMED",
       "dataref_expression": "(laminar/B738/autopilot/vnav_status1:1)",
-      "role": "C",
+      "role": "PF",
       "auto_check_rule": {
         "dataref": "laminar/B738/autopilot/vnav_status1",
         "op": "eq",
@@ -1972,7 +1972,7 @@
       "setting": "Arm (or HDG )",
       "action_label": "ARMED",
       "dataref_expression": "(laminar/B738/autopilot/lnav_status:1)||(laminar/B738/autopilot/hdg_sel_status:1)",
-      "role": "C",
+      "role": "PF",
       "auto_check_rule": {
         "any": [
           {

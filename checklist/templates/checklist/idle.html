@@ -39,22 +39,36 @@
         </div>
 
         <div class="proc-sidebar-list">
-            {% for proc in all_procedures %}
-                <a class="proc-sidebar-item js-nav-btn{% if proc.show_rule %} js-hidden{% endif %}"
-                   href="{% url 'checklist:detail' proc.slug %}"
-                   {% if proc.show_rule %}data-conditional-slug="{{ proc.slug }}"{% endif %}>
-                    <span class="proc-sidebar-name">{{ proc.title }}</span>
-                    <span class="proc-sidebar-badge">{{ proc.step }}</span>
-                </a>
+            {% for group in procedure_groups %}
+                <div class="proc-group{% if group.is_emergency %} proc-group--emergency{% endif %}{% if group.collapsed %} is-collapsed{% endif %}">
+                    <button type="button" class="proc-group-header js-group-toggle"
+                            aria-expanded="{% if group.collapsed %}false{% else %}true{% endif %}">
+                        <span class="proc-group-label">{{ group.label }}</span>
+                        <span class="proc-group-summary">{{ group.done }}/{{ group.total }}</span>
+                        <span class="proc-group-chevron" aria-hidden="true">▾</span>
+                    </button>
+                    <div class="proc-group-body">
+                        {% for proc in group.procedures %}
+                            <a class="proc-sidebar-item js-nav-btn"
+                               href="{% url 'checklist:detail' proc.slug %}"
+                               {% if proc.show_rule %}data-conditional-slug="{{ proc.slug }}"{% endif %}>
+                                <span class="proc-sidebar-name">{{ proc.title }}</span>
+                                <span class="proc-sidebar-badge">{{ proc.step }}</span>
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
             {% endfor %}
         </div>
 
         <a class="sidebar-export-link" href="{% url 'checklist:export' %}">Export xChecklist</a>
     </nav>
+    <div class="proc-sidebar-backdrop js-hidden" id="proc-sidebar-backdrop"></div>
 
     <div class="proc-main">
 
         <div class="proc-header">
+            <button type="button" class="proc-menu-toggle" id="proc-menu-toggle" aria-label="Show procedures">☰</button>
             <div class="proc-header-left">
                 <div class="proc-phase">In Flight</div>
                 <div class="proc-title">No active procedure</div>
@@ -126,8 +140,7 @@
 (function () {
     'use strict';
 
-    var conditionalSlugs = {{ conditional_proc_slugs_json|safe }};
-    var revealedSlugs    = new Set();  /* display state */
+    var revealedSlugs    = new Set();  /* "What's next" button display state */
     var navigatedSlugs   = new Set();  /* prevents re-nav per page load */
 
     function escHtml(s) {
@@ -229,34 +242,40 @@
         });
     }
 
-    /* ── Reveal conditional procedures from show_procedures ── */
-    /* autoNav=true only when the rule actually fired (sim connected); manual
-       fallback reveals buttons for manual access but does not redirect. */
-    function applyShowProcedures(slugs, autoNav) {
-        if (!slugs) return;
+    /* ── Apply firing rules from show_procedures ── */
+    /* Idle is the hub: every procedure is always visible in the grouped sidebar.
+       A firing rule (1) reveals its prominent "What's next" button, (2) highlights
+       its sidebar item as suggested, and (3) auto-navigates (idle = no active
+       procedure, so a firing rule should fire). */
+    function applyShowProcedures(slugs) {
+        slugs = slugs || [];
         /* show_procedures is ordered by step ascending (server-side), so the first
-           slug to navigate to is always the lowest-step firing rule. Break after the
-           first navigation to prevent two simultaneous rules from racing. */
+           slug is always the lowest-step firing rule. Break after the first
+           navigation to prevent two simultaneous rules from racing. */
         for (var slug of slugs) {
             if (!revealedSlugs.has(slug)) {
-                document.querySelectorAll('[data-conditional-slug="' + slug + '"]').forEach(function (el) {
+                document.querySelectorAll('.idle-next-btn--conditional[data-conditional-slug="' + slug + '"]').forEach(function (el) {
                     el.classList.remove('js-hidden');
+                });
+                document.querySelectorAll('.proc-sidebar-item[data-conditional-slug="' + slug + '"]').forEach(function (el) {
+                    el.classList.add('suggested');
                 });
                 revealedSlugs.add(slug);
             }
-            /* navigatedSlugs is NOT pre-populated by the manual fallback (autoNav=false),
-               so the first sim-connected poll always triggers navigation. */
-            if (autoNav && !navigatedSlugs.has(slug)) {
+            if (!navigatedSlugs.has(slug)) {
                 navigatedSlugs.add(slug);
                 window.location.href = '/' + slug;
                 break;  /* only navigate to the first (lowest step) firing rule */
             }
         }
-        /* Hide procedures whose rule stopped firing before the pilot acted */
+        /* Clear procedures whose rule stopped firing before the pilot acted */
         revealedSlugs.forEach(function (slug) {
             if (slugs.indexOf(slug) === -1) {
-                document.querySelectorAll('[data-conditional-slug="' + slug + '"]').forEach(function (el) {
+                document.querySelectorAll('.idle-next-btn--conditional[data-conditional-slug="' + slug + '"]').forEach(function (el) {
                     el.classList.add('js-hidden');
+                });
+                document.querySelectorAll('.proc-sidebar-item[data-conditional-slug="' + slug + '"]').forEach(function (el) {
+                    el.classList.remove('suggested');
                 });
                 revealedSlugs.delete(slug);
                 navigatedSlugs.delete(slug);
@@ -274,11 +293,7 @@
             var data = await res.json();
             lastPoll = Math.floor(Date.now() / 1000);
 
-            /* Manual fallback: no sim → reveal all conditional procedures (no auto-nav) */
-            var activeConditionals = data.sim_connected
-                ? (data.show_procedures || [])
-                : conditionalSlugs;
-            applyShowProcedures(activeConditionals, data.sim_connected);
+            applyShowProcedures(data.show_procedures || []);
             applyLiveValues(data.show_live_values || []);
             if (data.debug_show_procedures !== undefined) {
                 renderDebugRules(data.debug_show_procedures || [], data.debug_attributes || []);
@@ -292,6 +307,37 @@
             updateConnectionBadge(false, null, false, false, false);
         }
     }
+
+    /* ── Mobile drawer: toggle the procedure sidebar off-canvas ── */
+    (function () {
+        var sidebar  = document.querySelector('.proc-sidebar');
+        var toggle   = document.getElementById('proc-menu-toggle');
+        var backdrop = document.getElementById('proc-sidebar-backdrop');
+        if (!sidebar || !toggle) return;
+        function openDrawer()  { sidebar.classList.add('is-open'); if (backdrop) backdrop.classList.remove('js-hidden'); }
+        function closeDrawer() { sidebar.classList.remove('is-open'); if (backdrop) backdrop.classList.add('js-hidden'); }
+        toggle.addEventListener('click', openDrawer);
+        if (backdrop) backdrop.addEventListener('click', closeDrawer);
+        sidebar.querySelectorAll('.proc-sidebar-item').forEach(function (el) {
+            el.addEventListener('click', closeDrawer);
+        });
+    })();
+
+    /* ── Picker: collapsible groups + auto-scroll to the first open item ── */
+    (function () {
+        document.querySelectorAll('.js-group-toggle').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var group = btn.closest('.proc-group');
+                if (!group) return;
+                var collapsed = group.classList.toggle('is-collapsed');
+                btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+            });
+        });
+        var target = document.querySelector('.proc-group:not(.is-collapsed) .proc-sidebar-item');
+        if (target && target.scrollIntoView) {
+            target.scrollIntoView({ block: 'center' });
+        }
+    })();
 
     pollIdle();
     var pollTimer = setInterval(pollIdle, POLL_INTERVAL);

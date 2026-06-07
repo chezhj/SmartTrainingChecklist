@@ -39,22 +39,42 @@
         </div>
 
         <div class="proc-sidebar-list">
-            {% for proc in all_procedures %}
-                <a class="proc-sidebar-item js-nav-btn {% if proc.slug == procedure.slug %}active{% elif proc.step < procedure.step %}done{% endif %}{% if proc.show_rule %} js-hidden{% endif %}"
-                   href="{% url 'checklist:detail' proc.slug %}"
-                   {% if proc.show_rule %}data-conditional-slug="{{ proc.slug }}"{% endif %}>
-                    <span class="proc-sidebar-name">{{ proc.title }}</span>
-                    <span class="proc-sidebar-badge">{{ proc.step }}</span>
-                </a>
+            {% for group in procedure_groups %}
+                <div class="proc-group{% if group.is_emergency %} proc-group--emergency{% endif %}{% if group.collapsed %} is-collapsed{% endif %}">
+                    <button type="button" class="proc-group-header js-group-toggle"
+                            aria-expanded="{% if group.collapsed %}false{% else %}true{% endif %}">
+                        <span class="proc-group-label">{{ group.label }}</span>
+                        <span class="proc-group-summary">{{ group.done }}/{{ group.total }}</span>
+                        <span class="proc-group-chevron" aria-hidden="true">▾</span>
+                    </button>
+                    <div class="proc-group-body">
+                        {% for proc in group.procedures %}
+                            <a class="proc-sidebar-item js-nav-btn {% if proc.slug == procedure.slug %}active{% elif proc.step < procedure.step %}done{% endif %}"
+                               href="{% url 'checklist:detail' proc.slug %}"
+                               {% if proc.show_rule %}data-conditional-slug="{{ proc.slug }}"{% endif %}>
+                                <span class="proc-sidebar-name">{{ proc.title }}</span>
+                                <span class="proc-sidebar-badge">{{ proc.step }}</span>
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
             {% endfor %}
         </div>
 
         <a class="sidebar-export-link" href="{% url 'checklist:export' %}">Export xChecklist</a>
     </nav>
+    <div class="proc-sidebar-backdrop js-hidden" id="proc-sidebar-backdrop"></div>
 
     <div class="proc-main">
 
+        <a class="suggest-banner js-hidden" id="suggest-banner" href="#" aria-live="polite">
+            <span class="suggest-banner-icon" aria-hidden="true">⚠</span>
+            <span class="suggest-banner-text"></span>
+            <span class="suggest-banner-cta">Open →</span>
+        </a>
+
         <div class="proc-header">
+            <button type="button" class="proc-menu-toggle" id="proc-menu-toggle" aria-label="Show procedures">☰</button>
             <div class="proc-header-left">
                 <div class="proc-title">{{ procedure.title }}</div>
                 <div class="proc-meta">
@@ -79,9 +99,10 @@
                     </svg>
                     <div class="progress-ring-label" id="ring-label">0%</div>
                 </div>
-                <form method="post" action="{% url 'checklist:procedure_reset' procedure.slug %}">
+                <form method="post" action="{% url 'checklist:procedure_reset' procedure.slug %}"
+                      onsubmit="return confirm('Restart this procedure? Checked items will be cleared.');">
                     {% csrf_token %}
-                    <button type="submit" class="btn-reset-proc">Reset</button>
+                    <button type="submit" class="btn-reset-proc">Restart procedure</button>
                 </form>
             </div>
         </div>
@@ -183,9 +204,8 @@
     var hasCheckedThisVisit        = false; /* true only after an item is checked this visit */
     var autoContinue            = {{ procedure.auto_continue|lower }};
     var isConditionalProcedure  = {% if procedure.show_rule %}true{% else %}false{% endif %};
-    var conditionalSlugs        = {{ conditional_proc_slugs_json|safe }};
-    var revealedSlugs           = new Set();  /* display state */
-    var navigatedSlugs          = new Set();  /* prevents re-nav per page load */
+    var currentSlug             = '{{ procedure.slug }}';
+    var suggestedSlugs          = new Set();  /* firing rules other than the current proc */
     var CIRCUMFERENCE = 119.4;
 
     function updateProgress() {
@@ -236,12 +256,12 @@
             }, 600);
         }
 
-        /* If this is a conditional procedure and all items are done, hide it
-           in the nav — it will re-appear when show_rule fires again. */
+        /* Conditional procedures stay visible in the nav (always reachable). When
+           complete, they mark as done; the server's edge detection stops listing
+           them in show_procedures so the suggested highlight clears on next poll. */
         if (isConditionalProcedure && checkedCount === totalItems && totalItems > 0) {
-            var selfNav = document.querySelector('[data-conditional-slug="{{ procedure.slug }}"]');
-            if (selfNav) selfNav.classList.add('js-hidden');
-            revealedSlugs.delete('{{ procedure.slug }}');
+            var selfNav = document.querySelector('[data-conditional-slug="' + currentSlug + '"]');
+            if (selfNav) selfNav.classList.add('done');
         }
     }
 
@@ -467,31 +487,64 @@
         }
     };
 
-    /* ── applyShowProcedures: reveal/hide conditional nav items ── */
-    /* On procedure pages, show_procedures only drives button visibility — never
-       auto-navigation. The pilot completes the current procedure first, then
-       auto-advance (updateProgress) or the pilot's own tap handles the transition. */
-    function applyShowProcedures(slugs, autoNav) {
-        if (!slugs) return;
-        /* Reveal newly active conditional procedures */
-        slugs.forEach(function (slug) {
-            if (!revealedSlugs.has(slug)) {
+    /* ── applySuggestions: highlight firing rules + show banner ── */
+    /* Procedures are always visible/reachable now. show_procedures only flags the
+       "suggested" highlight on the nav item and a non-blocking banner. It never
+       auto-navigates on a procedure page — the pilot is mid-checklist. */
+    var banner     = document.getElementById('suggest-banner');
+    var bannerText = banner ? banner.querySelector('.suggest-banner-text') : null;
+
+    function navElFor(slug) {
+        return document.querySelector('a[data-conditional-slug="' + slug + '"]');
+    }
+    function navTitleFor(slug) {
+        var el = navElFor(slug);
+        var name = el ? el.querySelector('.proc-sidebar-name') : null;
+        return name ? name.textContent.trim() : slug;
+    }
+
+    function applySuggestions(slugs) {
+        slugs = slugs || [];
+        var firing = slugs.filter(function (s) { return s !== currentSlug; });
+
+        /* Add highlight to newly firing procedures */
+        firing.forEach(function (slug) {
+            if (!suggestedSlugs.has(slug)) {
                 document.querySelectorAll('[data-conditional-slug="' + slug + '"]').forEach(function (el) {
-                    el.classList.remove('js-hidden');
+                    el.classList.add('suggested');
+                    /* Never let a suggested item stay hidden inside a folded group */
+                    var group = el.closest('.proc-group');
+                    if (group && group.classList.contains('is-collapsed')) {
+                        group.classList.remove('is-collapsed');
+                        var hdr = group.querySelector('.js-group-toggle');
+                        if (hdr) hdr.setAttribute('aria-expanded', 'true');
+                    }
                 });
-                revealedSlugs.add(slug);
+                suggestedSlugs.add(slug);
             }
         });
-        /* Hide procedures whose rule stopped firing before the pilot acted */
-        revealedSlugs.forEach(function (slug) {
-            if (slugs.indexOf(slug) === -1) {
+        /* Remove highlight from procedures whose rule stopped firing */
+        suggestedSlugs.forEach(function (slug) {
+            if (firing.indexOf(slug) === -1) {
                 document.querySelectorAll('[data-conditional-slug="' + slug + '"]').forEach(function (el) {
-                    el.classList.add('js-hidden');
+                    el.classList.remove('suggested');
                 });
-                revealedSlugs.delete(slug);
-                navigatedSlugs.delete(slug);
+                suggestedSlugs.delete(slug);
             }
         });
+
+        /* Banner reflects the first firing procedure (lowest step, as ordered by server) */
+        if (banner) {
+            if (firing.length) {
+                var slug = firing[0];
+                var navEl = navElFor(slug);
+                if (navEl) banner.href = navEl.getAttribute('href');
+                if (bannerText) bannerText.textContent = navTitleFor(slug) + ' suggested — tap to open';
+                banner.classList.remove('js-hidden');
+            } else {
+                banner.classList.add('js-hidden');
+            }
+        }
     }
 
     /* ── updateConnectionBadge: called by polling JS ── */
@@ -530,6 +583,41 @@
         }
     };
 
+    /* ── Mobile drawer: toggle the procedure sidebar off-canvas ── */
+    (function () {
+        var sidebar  = document.querySelector('.proc-sidebar');
+        var toggle   = document.getElementById('proc-menu-toggle');
+        var backdrop = document.getElementById('proc-sidebar-backdrop');
+        if (!sidebar || !toggle) return;
+        function openDrawer()  { sidebar.classList.add('is-open'); if (backdrop) backdrop.classList.remove('js-hidden'); }
+        function closeDrawer() { sidebar.classList.remove('is-open'); if (backdrop) backdrop.classList.add('js-hidden'); }
+        toggle.addEventListener('click', openDrawer);
+        if (backdrop) backdrop.addEventListener('click', closeDrawer);
+        /* Close after picking a procedure */
+        sidebar.querySelectorAll('.proc-sidebar-item').forEach(function (el) {
+            el.addEventListener('click', closeDrawer);
+        });
+    })();
+
+    /* ── Picker: collapsible groups + auto-scroll the active item into view ── */
+    (function () {
+        /* Toggle a group open/closed when its header is clicked */
+        document.querySelectorAll('.js-group-toggle').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var group = btn.closest('.proc-group');
+                if (!group) return;
+                var collapsed = group.classList.toggle('is-collapsed');
+                btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+            });
+        });
+        /* Centre the active procedure (or, failing that, the first non-done one) */
+        var target = document.querySelector('.proc-sidebar-item.active')
+                  || document.querySelector('.proc-group:not(.is-collapsed) .proc-sidebar-item:not(.done)');
+        if (target && target.scrollIntoView) {
+            target.scrollIntoView({ block: 'center' });
+        }
+    })();
+
     /* Initial progress render */
     updateProgress();
 
@@ -549,11 +637,9 @@
             lastPoll = Math.floor(Date.now() / 1000);
 
             data.checked_items.forEach(function (item) { markItem(item.id, item.source); });
-            /* Manual fallback: no sim → reveal all conditional procedures */
-            var activeConditionals = data.sim_connected
-                ? (data.show_procedures || [])
-                : conditionalSlugs;
-            applyShowProcedures(activeConditionals, data.sim_connected);
+            /* Every procedure is always reachable in the nav now; show_procedures
+               only drives the suggested highlight + banner (no auto-nav here). */
+            applySuggestions(data.show_procedures || []);
             if (data.debug_rules !== undefined) { renderDebugRules(data.debug_rules, data.debug_attributes || [], data.debug_show_procedures || []); }
 
             /* Derive 5-state badge: connected / reconnecting / initializing / disconnected / manual */

@@ -50,6 +50,19 @@ class SOP(models.Model):
 
 
 class Procedure(models.Model):
+    NORMAL = "normal"
+    SITUATIONAL = "situational"
+    EMERGENCY = "emergency"
+    REFERENCE = "reference"
+    CATEGORY_CHOICES = [
+        (NORMAL, "Normal"),
+        (SITUATIONAL, "Situational"),
+        (EMERGENCY, "Emergency"),
+        (REFERENCE, "Reference"),
+    ]
+    # Display order for the grouped procedure picker.
+    CATEGORY_ORDER = [NORMAL, SITUATIONAL, EMERGENCY, REFERENCE]
+
     sop = models.ForeignKey(
         SOP,
         on_delete=models.CASCADE,
@@ -63,7 +76,17 @@ class Procedure(models.Model):
     show_rule = models.JSONField(
         null=True,
         blank=True,
-        help_text="Rule evaluated against live datarefs. When true, procedure appears in nav. Null = always visible.",
+        help_text="Rule evaluated against live datarefs. When true, the procedure is "
+                  "auto-navigated/suggested. Null = no auto behaviour. Visibility is "
+                  "independent — every procedure is always reachable in the picker.",
+    )
+    category = models.CharField(
+        max_length=20,
+        choices=CATEGORY_CHOICES,
+        default=NORMAL,
+        db_index=True,
+        help_text="Grouping bucket for the procedure picker. Behaviour (auto-nav / "
+                  "suggested highlight) is driven by show_rule, not by this field.",
     )
 
     def __str__(self) -> str:

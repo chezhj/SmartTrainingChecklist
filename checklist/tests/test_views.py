@@ -824,3 +824,141 @@ class TestNextprocSkipsConditional(ViewTestCase):
         response = procedure_detail(request, slug=proc_a.slug)
         self.assertIsNone(response.context_data["nextproc"])
         proc_a.delete(); cond.delete()
+
+
+class TestProcedureGroups(ViewTestCase):
+    """_build_procedure_groups and the grouped picker context (Rule 25)."""
+
+    def _make(self, **kw):
+        from checklist.tests.testFactories import SOPFactory as _SOPFactory
+        from checklist.models import Procedure
+        kw.setdefault("sop", _SOPFactory())
+        return Procedure.objects.create(**kw)
+
+    def test_groups_ordered_by_category_order(self):
+        from checklist.models import Procedure
+        from checklist.views import _build_procedure_groups
+        em = self._make(title="Engine Fire", step=300, slug="eng-fire-grp", category=Procedure.EMERGENCY)
+        nm = self._make(title="Before Start", step=301, slug="before-start-grp", category=Procedure.NORMAL)
+        si = self._make(title="After Takeoff", step=302, slug="after-to-grp", category=Procedure.SITUATIONAL)
+        groups = _build_procedure_groups([em, nm, si])
+        keys = [g["key"] for g in groups]
+        self.assertEqual(keys, [Procedure.NORMAL, Procedure.SITUATIONAL, Procedure.EMERGENCY])
+        em.delete(); nm.delete(); si.delete()
+
+    def test_empty_groups_dropped_and_emergency_flagged(self):
+        from checklist.models import Procedure
+        from checklist.views import _build_procedure_groups
+        nm = self._make(title="Taxi", step=310, slug="taxi-grp", category=Procedure.NORMAL)
+        em = self._make(title="Rapid Descent", step=311, slug="rapid-grp", category=Procedure.EMERGENCY)
+        groups = _build_procedure_groups([nm, em])
+        keys = [g["key"] for g in groups]
+        self.assertEqual(keys, [Procedure.NORMAL, Procedure.EMERGENCY])
+        self.assertNotIn(Procedure.SITUATIONAL, keys)
+        emergency_group = next(g for g in groups if g["key"] == Procedure.EMERGENCY)
+        self.assertTrue(emergency_group["is_emergency"])
+        normal_group = next(g for g in groups if g["key"] == Procedure.NORMAL)
+        self.assertFalse(normal_group["is_emergency"])
+        nm.delete(); em.delete()
+
+    def test_unknown_category_falls_into_other(self):
+        from checklist.views import _build_procedure_groups
+        weird = self._make(title="Weird", step=320, slug="weird-grp", category="phase-cruise")
+        groups = _build_procedure_groups([weird])
+        self.assertEqual(groups[-1]["key"], "other")
+        self.assertIn(weird, groups[-1]["procedures"])
+        weird.delete()
+
+    def test_done_counts_and_collapse_respect_current_step(self):
+        from checklist.models import Procedure
+        from checklist.views import _build_procedure_groups
+        done_proc = self._make(title="Early", step=5, slug="done-cnt", category=Procedure.NORMAL)
+        cur_proc = self._make(title="Later", step=14, slug="cur-cnt", category=Procedure.NORMAL)
+        groups = _build_procedure_groups([done_proc, cur_proc], current_step=14)
+        normal = groups[0]
+        self.assertEqual(normal["done"], 1)
+        self.assertEqual(normal["total"], 2)
+        self.assertFalse(normal["all_done"])
+        self.assertFalse(normal["collapsed"])
+        done_proc.delete(); cur_proc.delete()
+
+    def test_fully_done_normal_group_collapses_but_emergency_never(self):
+        from checklist.models import Procedure
+        from checklist.views import _build_procedure_groups
+        nm = self._make(title="Old", step=5, slug="nm-coll", category=Procedure.NORMAL)
+        em = self._make(title="Fire", step=6, slug="em-coll", category=Procedure.EMERGENCY)
+        groups = _build_procedure_groups([nm, em], current_step=999)
+        by_key = {g["key"]: g for g in groups}
+        self.assertTrue(by_key[Procedure.NORMAL]["all_done"])
+        self.assertTrue(by_key[Procedure.NORMAL]["collapsed"])
+        self.assertTrue(by_key[Procedure.EMERGENCY]["all_done"])
+        self.assertFalse(by_key[Procedure.EMERGENCY]["collapsed"])
+        nm.delete(); em.delete()
+
+    def test_detail_context_contains_procedure_groups(self):
+        from checklist.tests.testFactories import SOPFactory as _SOPFactory
+        from checklist.models import Procedure
+        sop = _SOPFactory()
+        proc = Procedure.objects.create(title="Picker Proc", step=330, slug="picker-proc", sop=sop)
+        CheckItemFactory(procedure=proc)
+        request = self.create_request_with_session("/")
+        _create_session_with_flight(request, [])
+        response = procedure_detail(request, slug=proc.slug)
+        self.assertIn("procedure_groups", response.context_data)
+        all_slugs = [p.slug for g in response.context_data["procedure_groups"] for p in g["procedures"]]
+        self.assertIn(proc.slug, all_slugs)
+        proc.delete()
+
+    def test_idle_context_contains_procedure_groups(self):
+        request = self.create_request_with_session("/idle/")
+        _create_session_with_flight(request, [])
+        response = idle_view(request)
+        self.assertIn("procedure_groups", response.context_data)
+
+    def test_conditional_procedure_is_in_picker_groups(self):
+        """A show_rule procedure is always reachable via the grouped picker."""
+        from checklist.tests.testFactories import SOPFactory as _SOPFactory
+        from checklist.models import Procedure
+        sop = _SOPFactory()
+        anchor = Procedure.objects.create(title="Anchor", step=340, slug="anchor-cond", sop=sop)
+        CheckItemFactory(procedure=anchor)
+        cond = Procedure.objects.create(
+            title="Conditional Pick", step=341, slug="cond-pick",
+            show_rule={"dataref": "x", "op": "eq", "value": 1},
+            category=Procedure.SITUATIONAL, sop=sop,
+        )
+        request = self.create_request_with_session("/")
+        _create_session_with_flight(request, [])
+        response = procedure_detail(request, slug=anchor.slug)
+        picker_slugs = [p.slug for g in response.context_data["procedure_groups"] for p in g["procedures"]]
+        self.assertIn(cond.slug, picker_slugs)
+        anchor.delete(); cond.delete()
+
+
+class TestProcedureReset(ViewTestCase):
+    """Restart clears that procedure's checked state and refocuses active_phase."""
+
+    def test_reset_clears_state_and_sets_active_phase(self):
+        from checklist.tests.testFactories import SOPFactory as _SOPFactory
+        from checklist.models import Procedure, FlightItemState
+        from checklist.views import procedure_reset_view
+        sop = _SOPFactory()
+        proc = Procedure.objects.create(title="Restartable", step=350, slug="restart-proc", sop=sop)
+        item = CheckItemFactory(procedure=proc)
+        request = self.create_request_with_session("/")
+        flight = _create_session_with_flight(request, [])
+        FlightItemState.objects.create(
+            flight_session=flight, checklist_item=item, status="checked", source="manual"
+        )
+        post = self.req_factory.post(f"/{proc.slug}/reset/")
+        post.session = request.session
+        response = procedure_reset_view(post, slug=proc.slug)
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(
+            FlightItemState.objects.filter(
+                flight_session=flight, checklist_item__procedure=proc
+            ).exists()
+        )
+        flight.refresh_from_db()
+        self.assertEqual(flight.active_phase, proc.slug)
+        proc.delete()

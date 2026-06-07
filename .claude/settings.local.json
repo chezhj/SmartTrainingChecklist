@@ -18,7 +18,9 @@
       "Bash(pytest --tb=short -q)",
       "Bash(python -c ' *)",
       "Bash(findstr /N \"\\\\\"procedure\\\\\": 6\" checklist\\\\fixtures\\\\checklist_content.json)",
-      "Bash(pytest checklist/tests/test_plugin_report_miss.py -v)"
+      "Bash(pytest checklist/tests/test_plugin_report_miss.py -v)",
+      "Skill(smart-commit)",
+      "Skill(smart-commit:*)"
     ]
   }
 }

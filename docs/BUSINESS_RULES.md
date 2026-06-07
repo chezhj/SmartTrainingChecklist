@@ -106,24 +106,16 @@ Source: `views.py — _create_flight_session()`, `profile_view()`
 
 * * *
 
-## 5\. Procedure Page Visit — State Reset
+## 5\. Procedure State Reset — Preserve by Default
 
-**Every visit** to a procedure page deletes all `FlightItemState` rows for that procedure. This gives a fresh visual slate. The `active_phase` frontier is not affected by this reset — it only advances forward.
+Procedure check state (`FlightItemState`) is **preserved across plain visits and reloads**. Opening a procedure — manually from the picker, by reload after a connection drop, or by navigating back to it — never wipes its checks. State is cleared only by two explicit triggers:
 
-Source: `views.py — procedure_detail()` lines 603–606
+1.  **Rising edge of a `show_rule`** (see Rule 16). When a conditional procedure's rule transitions false→true in `poll_view`, its state is cleared so the procedure starts fresh — these are exactly the procedures that get genuinely re-used (e.g. a go-around re-arming an approach).
+2.  **Explicit "Restart procedure"** — the pilot taps Restart on the procedure page, which POSTs to `procedure_reset_view` (guarded by a `confirm()`), deleting that procedure's `FlightItemState` rows.
 
-CHANGE:
+Most procedures (e.g. getting the aircraft ready for flight) are run once and never reused, so automatic clearing on visit would only destroy useful state. Re-use is either rule-driven (1) or a deliberate pilot action (2).
 
-I think i need to challenge this. when do I want a fresh page (clean all checks)
-
-1.  when i use a procedure again
-2.  NOT when I reload because of a connection drop
-
-Number 1 normally happens when  
-a.        A procedure is triggered by its show rule  
-b.        The flight follows a non regular pattern, like after a go-around
-
-So the question is, what should happen when a user manually selects a "done" procedure from the list . I think it is easier to give the oppertunity to clear the procedure by the user and not automate, unless triggered by some rule, because that are the ones you actually re-use. The most procedures (like the ones to get the plane ready for flight, will almost never be reused
+Source: `views.py — procedure_detail()` (no reset on visit), `views.py — procedure_reset_view()`, `api_views.py — poll_view()` (rising-edge clear)
 
 * * *
 
@@ -158,11 +150,13 @@ Source: `views.py — procedure_detail()` lines 629–635
 
 * * *
 
-## 8\. Procedure Navigation — Linear vs. Conditional
+## 8\. Procedure Navigation — Always-Visible Grouped Picker
+
+**Visibility is decoupled from auto-navigation.** Every procedure is always reachable in the nav, grouped by `Procedure.category` (see Rule 25). `show_rule` no longer controls visibility — it only drives auto-navigation and the "suggested" highlight (Rules 10 & 16).
 
 - **Linear nav** (Prev/Next): only procedures where `show_rule` is `null`.
-- **Conditional procedures** (`show_rule` set): hidden in nav by default (`js-hidden` CSS class). They appear/disappear dynamically based on plugin dataref state.
-- Conditional procedures are not counted in the step total for linear nav.
+- **Picker / sidebar**: renders all procedures, grouped by category in `CATEGORY_ORDER`. Conditional procedures (`show_rule` set) are tappable at any time, even when their rule never fires — no dead-ends.
+- The grouped structure (`procedure_groups`) is built in `views._build_procedure_groups()` and passed to both `detail.html` and `idle.html`.
 
 CHANGE: the whole counter is not needed
 
@@ -185,28 +179,23 @@ Source: `detail.html` — `updateProgress()` JS
 
 * * *
 
-## 10\. Conditional Procedure Reveal — Two-Set Pattern
+## 10\. Firing Rules — Suggested Highlight, Banner, Auto-Nav
 
-The JS maintains two sets to track conditional procedure state. Behaviour differs by page:
+`show_procedures` (slugs of conditional procedures whose `show_rule` currently fires, edge-detected per Rule 16) drives **behaviour, not visibility** — every procedure is always visible (Rule 8). Behaviour differs by page:
 
-**`idle.html`** — auto-navigates on first firing slug (lowest `step`):
+**`detail.html`** (pilot is mid-checklist — never interrupted):
+- Each firing slug other than the current procedure gets a `.suggested` highlight on its nav item.
+- A non-blocking **suggestion banner** appears at the top of `.proc-main` for the first firing slug ("⚠ X suggested — tap to open"). Tapping navigates; nothing is forced.
+- When a slug stops firing, its highlight clears. Function: `applySuggestions()`.
 
-| Set | Purpose | Manual fallback populates? |
-| --- | --- | --- |
-| `revealedSlugs` | Which nav buttons are currently visible | YES |
-| `navigatedSlugs` | Which slugs we’ve already auto-navigated to | NO  |
+**`idle.html`** (no active procedure — a firing rule *should* fire):
+- Each firing slug reveals its prominent "What's next" button **and** marks its sidebar item `.suggested`.
+- **Auto-navigates** to the first firing slug (lowest `step`); `navigatedSlugs` prevents re-navigating to the same slug within a page load. The loop breaks after the first navigation so two simultaneous rules don't race.
+- When a slug stops firing before the pilot acts, its button is re-hidden and its `.suggested` highlight cleared. Function: `applyShowProcedures()`.
 
-**`detail.html`** — reveals buttons only, never auto-navigates. `navigatedSlugs` is unused on procedure pages (pilot is never interrupted mid-checklist).
+**Completion:** a completed conditional procedure stays visible in the nav (marked `done`). The server's edge detection (Rule 16) stops listing it in `show_procedures`, so the suggested highlight clears on the next poll. It re-suggests when `show_rule` fires again (rising edge).
 
-**Why two sets (idle.html):** The manual fallback (sim disconnected) adds to `revealedSlugs` so buttons stay visible. It does NOT add to `navigatedSlugs`. This means when the sim reconnects and a rule fires, `navigatedSlugs.has(slug)` is still false → auto-navigation always runs even if the button was already visible.
-
-**Race fix (idle.html):** When multiple rules fire simultaneously, only the first (lowest `step`) slug triggers navigation — the loop breaks after the first navigation assignment.
-
-**Hide logic (both pages):** When a slug is no longer in `show_procedures`, it is removed from both sets and hidden. This fires when a rule *stops firing* before the pilot acts (dataref condition reverts). It does NOT fire for completion — completed procedures self-hide via `updateProgress()` and remove themselves from `revealedSlugs` directly.
-
-**Conditional procedure completion:** When all items in a conditional procedure are done, it hides itself from nav. `revealedSlugs` is updated. It reappears when `show_rule` fires again.
-
-Source: `detail.html` and `idle.html` — `applyShowProcedures()` JS; `CLAUDE.md` architecture notes
+Source: `detail.html` — `applySuggestions()`; `idle.html` — `applyShowProcedures()`
 
 * * *
 
@@ -229,20 +218,11 @@ Server-side thresholds (`api_views.py — poll_view()`):
 
 * * *
 
-## 12\. Manual Fallback (No Sim)
+## 12\. No-Sim Behaviour
 
-When `sim_connected == false`, the browser reveals **all** conditional procedures in the nav (making them manually tappable). Auto-navigation does NOT fire. `navigatedSlugs` is not populated so reconnection will still trigger navigation.
-
-Auto-navigation (from `show_procedures`) applies from idle only. On a procedure page, the manual fallback still reveals all conditional buttons for manual access but does not auto-navigate.
+There is no longer a manual fallback that reveals hidden conditionals when the sim is disconnected — **every procedure is always reachable** (Rule 8), online or offline. With no live datarefs, `show_rule`s evaluate `False`, so `show_procedures` is empty: no auto-navigation, no suggested highlight, no banner. The pilot navigates manually via the grouped picker.
 
 Source: `detail.html` / `idle.html` — poll handler
-
-```js
-var activeConditionals = data.sim_connected
-    ? (data.show_procedures || [])
-    : conditionalSlugs;   // all conditional slugs when offline
-applyShowProcedures(activeConditionals, data.sim_connected);  // autoNav=false when offline
-```
 
 * * *
 
@@ -441,6 +421,18 @@ Each flight session logs to `logs/session_<id>.jsonl`. Events logged:
 | `manual_checked` | Plugin `check-next` endpoint marks an item manually |
 
 Each entry includes `ts` (ISO timestamp), `item_id`, `item` name, and the relevant rule + dataref values at the time.
+
+* * *
+
+## 25\. Procedure Category — Grouping & Emergency Section
+
+`Procedure.category` (`normal` / `situational` / `emergency` / `reference`, default `normal`, indexed) buckets procedures for the picker. The picker renders groups in `Procedure.CATEGORY_ORDER` (`normal`, `situational`, `emergency`, `reference`); empty groups are dropped, and any unrecognised category falls into a trailing "Other" group. The **emergency** group is flagged `is_emergency` and styled with a red header/accent.
+
+`category` is **presentation only** — it controls grouping and emergency styling, nothing else. All runtime behaviour (auto-nav, the suggested highlight, the banner) is driven by `show_rule` (Rules 8, 10, 16), independent of category. A `situational` procedure is just one that happens to carry a `show_rule`; the data migration seeds `situational` for every procedure with a non-null `show_rule` and leaves the rest `normal`. Emergency procedures are assigned `emergency` in fixtures.
+
+Because grouping is purely category-driven in the template, finer phase buckets (Preflight / Departure / Cruise / Arrival) can be introduced later by extending `CATEGORY_CHOICES` and re-tagging fixtures — no view or template change required.
+
+Source: `models.py — Procedure.CATEGORY_CHOICES / CATEGORY_ORDER`, `views.py — _build_procedure_groups()`, migration `0033_procedure_category`
 
 &nbsp;
 

@@ -81,9 +81,34 @@ body {
 
 .proc-header {
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
   background: var(--color-card);
   border-bottom: 1px solid var(--color-border);
   padding: 13px 16px 11px;
+}
+
+/* Mobile drawer toggle — hidden from tablet up (sidebar is always shown there) */
+.proc-menu-toggle {
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  border: none;
+  color: var(--color-ink-mid);
+  font-size: 19px;
+  line-height: 1;
+  padding: 0;
+  margin-right: 12px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* Backdrop behind the off-canvas drawer (mobile only) */
+.proc-sidebar-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(13, 21, 18, 0.45);
+  z-index: 40;
 }
 
 /* Ring + stats: mobile hidden, shown at tablet+ */
@@ -104,7 +129,7 @@ body {
   overflow: hidden;
 }
 
-/* Sidebar: hidden on mobile, shown tablet+ via media query below */
+/* Sidebar: off-canvas drawer on mobile, static column tablet+ (media query below) */
 .proc-sidebar {
   display: none;
   width: 270px;
@@ -113,6 +138,19 @@ body {
   background: var(--color-dark);
   border-right: 1px solid rgba(255, 255, 255, 0.04);
   overflow: hidden;
+}
+
+/* Mobile: when opened via the toggle, slide in as a fixed overlay */
+.proc-sidebar.is-open {
+  display: flex;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 50;
+  width: 84vw;
+  max-width: 320px;
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.4);
 }
 
 /* Main content column */
@@ -170,8 +208,19 @@ body {
     overflow: hidden;
   }
 
-  .proc-sidebar {
+  .proc-sidebar,
+  .proc-sidebar.is-open {
     display: flex;          /* show sidebar from tablet up */
+    position: static;       /* never off-canvas on tablet+ */
+    width: 270px;
+    max-width: none;
+    box-shadow: none;
+  }
+
+  /* Drawer affordances are mobile-only */
+  .proc-menu-toggle,
+  .proc-sidebar-backdrop {
+    display: none;
   }
 
   /* Main area fills remaining width */

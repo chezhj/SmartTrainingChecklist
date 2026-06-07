@@ -582,6 +582,49 @@ def _apply_attribute_overrides(request):
     return JsonResponse({"status": "ok"})
 
 
+def _build_procedure_groups(all_procedures, current_step=None):
+    """Group procedures by category in CATEGORY_ORDER for the picker.
+
+    Empty groups are dropped. Unknown/blank categories fall into a trailing
+    "Other" group so nothing is ever unreachable.
+
+    When ``current_step`` is given, each group is annotated with done/total
+    counts (a procedure counts as done when its step is below the current one),
+    and ``collapsed`` marks fully-done non-emergency groups so the picker can
+    fold them away by default.
+    """
+    labels = dict(Procedure.CATEGORY_CHOICES)
+
+    def _make_group(key, procs):
+        done = sum(
+            1 for p in procs if current_step is not None and p.step < current_step
+        )
+        total = len(procs)
+        all_done = bool(procs) and done == total
+        is_emergency = key == Procedure.EMERGENCY
+        return {
+            "key": key,
+            "label": labels.get(key, key.title()),
+            "is_emergency": is_emergency,
+            "procedures": procs,
+            "done": done,
+            "total": total,
+            "all_done": all_done,
+            "collapsed": all_done and not is_emergency,
+        }
+
+    groups = []
+    for key in Procedure.CATEGORY_ORDER:
+        procs = [p for p in all_procedures if p.category == key]
+        if procs:
+            groups.append(_make_group(key, procs))
+    known = set(Procedure.CATEGORY_ORDER)
+    other = [p for p in all_procedures if p.category not in known]
+    if other:
+        groups.append(_make_group("other", other))
+    return groups
+
+
 def procedure_detail(request, slug=None, pk=None):
     """Show all check items for the given procedure slug."""
     if request.method == "POST":
@@ -696,6 +739,9 @@ def procedure_detail(request, slug=None, pk=None):
         "prevproc": prevproc,
         "proctime": query_time,
         "all_procedures": all_procedures,
+        "procedure_groups": _build_procedure_groups(
+            all_procedures, current_step=procedure2view.step
+        ),
         "conditional_proc_slugs_json": json.dumps(conditional_proc_slugs),
         "flight_session": flight_session,
         "poll_interval_ms": settings.POLL_INTERVAL_MS,
@@ -775,6 +821,9 @@ def idle_view(request):
     context = {
         "live_values": live_values,
         "all_procedures": all_procedures,
+        "procedure_groups": _build_procedure_groups(
+            all_procedures, current_step=active_phase_step
+        ),
         "conditional_proc_slugs_json": json.dumps(conditional_proc_slugs),
         "has_conditional_procs": bool(conditional_proc_slugs),
         "next_linear_proc": next_linear_proc,
