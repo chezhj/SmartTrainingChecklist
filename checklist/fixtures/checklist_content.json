@@ -4703,7 +4703,7 @@
     "fields": {
       "item": "Execute",
       "procedure": 10,
-      "step": 15,
+      "step": 16,
       "setting": "press",
       "action_label": "EXECUTED",
       "dataref_expression": "",
@@ -5023,7 +5023,7 @@
     "fields": {
       "item": "Verify LEGS page",
       "procedure": 10,
-      "step": 16,
+      "step": 14,
       "setting": "Verify for discontinuities",
       "action_label": "VERIFIED",
       "dataref_expression": "",
@@ -7230,7 +7230,7 @@
     "fields": {
       "item": "Activate",
       "procedure": 10,
-      "step": 14,
+      "step": 15,
       "setting": "press",
       "action_label": "ACTIVATED",
       "dataref_expression": "",
