@@ -176,15 +176,6 @@
                 "dataref": "laminar/B738/fms/vnav_td_dist",
                 "op": "lt",
                 "value": 60
-              }
-            ]
-          },
-          {
-            "all": [
-              {
-                "dataref": "sim/cockpit2/gauges/indicators/altitude_ft_pilot",
-                "op": "lt",
-                "value": 18000
               },
               {
                 "dataref": "sim/flightmodel/position/y_agl",
@@ -193,16 +184,6 @@
               },
               {
                 "dataref": "laminar/b738/fmodpack/flightphase_landed",
-                "op": "eq",
-                "value": 0
-              },
-              {
-                "dataref": "sim/flightmodel/position/vh_ind_fpm",
-                "op": "lt",
-                "value": -200
-              },
-              {
-                "dataref": "laminar/B738/FMS/approach_speed",
                 "op": "eq",
                 "value": 0
               }
@@ -270,7 +251,7 @@
       "step": 12,
       "slug": "icing-spray-procedure",
       "show_expression": "",
-      "auto_continue": false,
+      "auto_continue": true,
       "show_rule": null,
       "sop": 1
     }
@@ -3334,6 +3315,30 @@
                 "dataref": "laminar/B738/engine/starter2_pos",
                 "op": "eq",
                 "value": 1
+              },
+              {
+                "dataref": "sim/cockpit2/temperature/outside_air_temp_degc",
+                "op": "gte",
+                "value": 10
+              }
+            ]
+          },
+          {
+            "all": [
+              {
+                "dataref": "laminar/B738/engine/starter1_pos",
+                "op": "eq",
+                "value": 1
+              },
+              {
+                "dataref": "laminar/B738/engine/starter2_pos",
+                "op": "eq",
+                "value": 1
+              },
+              {
+                "dataref": "sim/weather/precipitation",
+                "op": "lte",
+                "value": 0.1
               }
             ]
           },
@@ -3353,6 +3358,11 @@
                 "dataref": "sim/cockpit2/temperature/outside_air_temp_degc",
                 "op": "lt",
                 "value": 10
+              },
+              {
+                "dataref": "sim/weather/precipitation",
+                "op": "gte",
+                "value": 0.1
               }
             ]
           }
@@ -4867,7 +4877,7 @@
         "op": "eq",
         "value": 2
       },
-      "attributes": []
+      "attributes": [4]
     }
   },
   {
@@ -5032,7 +5042,7 @@
         "fmc_line": "laminar/B738/fmc1/Line06_L",
         "contains": "STEP"
       },
-      "attributes": []
+      "attributes": [4]
     }
   },
   {
@@ -7613,7 +7623,7 @@
         "op": "eq",
         "value": 1
       },
-      "attributes": []
+      "attributes": [4]
     }
   },
   {
@@ -7653,10 +7663,10 @@
       "step": 10,
       "setting": "Made",
       "action_label": "PLAYED",
-      "dataref_expression": "laminar/b738/fmodpack/play_cruise_msg:1",
+      "dataref_expression": "laminar/b738/fmodpack/played_cruise_msg:1",
       "role": "PF",
       "auto_check_rule": {
-        "dataref": "laminar/b738/fmodpack/play_cruise_msg",
+        "dataref": "laminar/b738/fmodpack/played_cruise_msg",
         "op": "eq",
         "value": 1
       },
@@ -7716,7 +7726,7 @@
     "model": "checklist.checkitem",
     "pk": 324,
     "fields": {
-      "item": "Navigation Radios & Course",
+      "item": "Navigation Radios",
       "procedure": 11,
       "step": 80,
       "setting": "Set / Verified",
@@ -8332,7 +8342,12 @@
       "action_label": "SET",
       "dataref_expression": "",
       "role": "PM",
-      "auto_check_rule": null,
+      "auto_check_rule": {
+        "dataref": "laminar/B738/flight_model/stab_trim_units",
+        "op": "abs_diff_lte",
+        "value": 5,
+        "tolerance": 0.5
+      },
       "attributes": []
     }
   },
